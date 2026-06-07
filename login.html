@@ -17,11 +17,26 @@
     <div id="error" class="error" style="display:none"></div>
     <div id="ok" class="ok" style="display:none"></div>
 
+    <!-- FORMULARIO NORMAL -->
     <form id="form">
-      <input type="text" id="nombre" class="input" placeholder="Tu nombre o apodo" style="display:none">
+      <input type="text" id="nombre" class="input" placeholder="Nombre" required style="display:none">
+      <input type="text" id="apellido" class="input" placeholder="Apellido" required style="display:none">
+      <input type="text" id="apodo" class="input" placeholder="Apodo (opcional)" style="display:none">
       <input type="email" id="email" class="input" placeholder="Email" required autocomplete="email">
       <input type="password" id="password" class="input" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6" autocomplete="current-password">
       <button type="submit" class="btn" id="btnSubmit">Ingresar</button>
+    </form>
+
+    <!-- FORMULARIO RECUPERAR CONTRASEÑA -->
+    <form id="formRecuperar" style="display:none">
+      <p style="color:var(--text2); font-size:13px; margin-bottom:16px;">
+        Ingresá tu email y te enviaremos un link para crear una nueva contraseña.
+      </p>
+      <input type="email" id="emailRecuperar" class="input" placeholder="Email" required autocomplete="email">
+      <button type="submit" class="btn" id="btnRecuperar">Enviar link de recuperación</button>
+      <button type="button" class="btn btn-secundario" id="btnVolverLogin" style="margin-top:8px;">
+        ← Volver al login
+      </button>
     </form>
 
     <p style="margin-top:16px; font-size:13px; color:var(--text2)">
@@ -31,12 +46,18 @@
       </button>
     </p>
 
-    <p style="margin-top:12px; font-size:12px">
-      <a href="/instructivo">📘 Leer reglamento completo</a>
+    <p style="margin-top:8px; font-size:12px">
+      <button id="btnOlvide" style="background:none;border:none;color:var(--text2);cursor:pointer;font-family:inherit;font-size:12px;text-decoration:underline;">
+        Olvidé mi contraseña
+      </button>
     </p>
 
     <p style="margin-top:8px; font-size:12px">
-      <a href="/">← Volver al inicio</a>
+      <a href="instructivo.html">📘 Leer reglamento completo</a>
+    </p>
+
+    <p style="margin-top:8px; font-size:12px">
+      <a href="index.html">← Volver al inicio</a>
     </p>
   </div>
 </div>
@@ -46,6 +67,7 @@
   import { 
     createUserWithEmailAndPassword, 
     signInWithEmailAndPassword,
+    sendPasswordResetEmail,
     onAuthStateChanged
   } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
   import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
@@ -56,20 +78,66 @@
 
   // Si ya está logueado, mandar al prode
   onAuthStateChanged(auth, (user) => {
-    if (user) window.location.href = "/prode.html";
+    if (user) window.location.href = "prode.html";
   });
 
+  // Cambiar entre login y registro
   $("btnCambiar").onclick = () => {
     modo = modo === "login" ? "registro" : "login";
     $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
     $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
     $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";
     $("nombre").style.display = modo === "registro" ? "block" : "none";
+    $("apellido").style.display = modo === "registro" ? "block" : "none";
+    $("apodo").style.display = modo === "registro" ? "block" : "none";
     $("btnSubmit").textContent = modo === "login" ? "Ingresar" : "Registrarme";
     $("nombre").required = modo === "registro";
+    $("apellido").required = modo === "registro";
     ocultarMensajes();
   };
 
+  // Mostrar formulario de recuperar contraseña
+  $("btnOlvide").onclick = () => {
+    $("form").style.display = "none";
+    $("formRecuperar").style.display = "block";
+    $("btnCambiar").parentElement.style.display = "none";
+    $("btnOlvide").parentElement.style.display = "none";
+    ocultarMensajes();
+  };
+
+  // Volver al login desde recuperar
+  $("btnVolverLogin").onclick = () => {
+    $("form").style.display = "block";
+    $("formRecuperar").style.display = "none";
+    $("btnCambiar").parentElement.style.display = "block";
+    $("btnOlvide").parentElement.style.display = "block";
+    ocultarMensajes();
+  };
+
+  // Enviar email de recuperación
+  $("formRecuperar").onsubmit = async (e) => {
+    e.preventDefault();
+    ocultarMensajes();
+
+    const email = $("emailRecuperar").value.trim().toLowerCase();
+    const btn = $("btnRecuperar");
+
+    btn.disabled = true;
+    btn.textContent = "Enviando...";
+
+    try {
+      await sendPasswordResetEmail(auth, email);
+      mostrarOk(`✅ Email enviado a ${email}. Revisá tu bandeja de entrada (y spam).`);
+      btn.disabled = false;
+      btn.textContent = "Enviar link de recuperación";
+    } catch (err) {
+      mostrarError(traducirError(err.code));
+      btn.disabled = false;
+      btn.textContent = "Enviar link de recuperación";
+    }
+  };
+
+  // Login o Registro
   $("form").onsubmit = async (e) => {
     e.preventDefault();
     ocultarMensajes();
@@ -77,11 +145,19 @@
     const email = $("email").value.trim().toLowerCase();
     const password = $("password").value;
     const nombre = $("nombre").value.trim();
+    const apellido = $("apellido").value.trim();
+    const apodo = $("apodo").value.trim();
     const btn = $("btnSubmit");
 
-    if (modo === "registro" && !nombre) {
-      mostrarError("Ingresá tu nombre o apodo");
-      return;
+    if (modo === "registro") {
+      if (!nombre) {
+        mostrarError("Ingresá tu nombre");
+        return;
+      }
+      if (!apellido) {
+        mostrarError("Ingresá tu apellido");
+        return;
+      }
     }
 
     btn.disabled = true;
@@ -95,18 +171,19 @@
       } else {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         user = cred.user;
-        // Guardar perfil en Firestore
         await setDoc(doc(db, "usuarios", user.uid), {
           uid: user.uid,
           email: email,
           nombre: nombre,
+          apellido: apellido,
+          apodo: apodo || null,
           esAdmin: email === ADMIN_EMAIL.toLowerCase(),
           fechaRegistro: serverTimestamp(),
           puntosTotales: 0
         });
       }
       mostrarOk(modo === "login" ? "Ingresando..." : "¡Cuenta creada! Ingresando...");
-      setTimeout(() => window.location.href = "/prode.html", 800);
+      setTimeout(() => window.location.href = "prode.html", 800);
     } catch (err) {
       mostrarError(traducirError(err.code));
       btn.disabled = false;
@@ -124,6 +201,7 @@
       "auth/weak-password": "La contraseña debe tener al menos 6 caracteres",
       "auth/too-many-requests": "Demasiados intentos. Probá más tarde",
       "auth/network-request-failed": "Error de conexión. Verificá tu internet",
+      "auth/api-key-not-valid": "Error de configuración. Contactá al administrador",
     };
     return errores[code] || "Error: " + code;
   }
