@@ -3,7 +3,7 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-aut
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "AIzaSyBdkM8KiMdV1WMHapZRoGdSZjf0",
+  apiKey: "AIzaSyBdkM8FIqI6P8KiMdV1WMHapZRoGdSZjf0",
   authDomain: "prode-mundial-2026-f0b9f.firebaseapp.com",
   projectId: "prode-mundial-2026-f0b9f",
   storageBucket: "prode-mundial-2026-f0b9f.firebasestorage.app",
@@ -15,6 +15,5 @@ const app = initializeApp(firebaseConfig);
 export const auth = getAuth(app);
 export const db = getFirestore(app);
 
-// ⚠️ ESTE ES TU EMAIL DE ADMINISTRADOR
-// Solo tú tendrás acceso al panel de administración
+// Tu email de administrador
 export const ADMIN_EMAIL = "aomasjhys@gmail.com";
