@@ -1,0 +1,366 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Reglamento · Prode Mundial 2026</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .instructivo { max-width: 900px; margin: 0 auto; padding: 40px 24px; }
+    .instructivo-hero { text-align: center; padding: 40px 20px; background: linear-gradient(135deg, #1a2a6c 0%, var(--bg) 100%); border-radius: var(--r-lg); margin-bottom: 40px; border: 1px solid var(--border); }
+    .instructivo-hero .emoji { font-size: 64px; margin-bottom: 12px; }
+    .instructivo-hero h1 { font-family: 'Anton', sans-serif; font-size: 42px; color: var(--gold); letter-spacing: 2px; line-height: 1; margin-bottom: 12px; }
+    .instructivo-hero p { color: var(--text2); font-size: 16px; max-width: 600px; margin: 0 auto; }
+    
+    .seccion { background: var(--card); border: 1px solid var(--border); border-radius: var(--r); padding: 28px; margin-bottom: 20px; box-shadow: var(--shadow-sm); }
+    .seccion h2 { font-family: 'Anton', sans-serif; font-size: 26px; color: var(--gold); margin-bottom: 16px; padding-bottom: 12px; border-bottom: 2px solid var(--border); display: flex; align-items: center; gap: 12px; }
+    .seccion h3 { font-size: 17px; color: var(--text); margin: 20px 0 10px; font-weight: 700; }
+    .seccion p, .seccion li { color: var(--text); font-size: 14px; line-height: 1.7; margin-bottom: 10px; }
+    .seccion ul, .seccion ol { padding-left: 24px; margin-bottom: 14px; }
+    .seccion li { margin-bottom: 8px; }
+    .seccion strong { color: var(--gold); }
+    
+    .destacado { background: var(--gold-soft); border-left: 4px solid var(--gold); padding: 14px 18px; border-radius: 6px; margin: 16px 0; font-size: 14px; }
+    .destacado.alerta { background: var(--red-soft); border-left-color: var(--red); }
+    .destacado.info { background: var(--blue-soft); border-left-color: var(--blue); }
+
+    .tabla-puntos-wrap { overflow-x: auto; margin: 16px 0; border-radius: var(--r); border: 1px solid var(--border); }
+    .tabla-puntos-wrap table { width: 100%; border-collapse: collapse; font-size: 13px; margin: 0; }
+    .tabla-puntos-wrap th { background: var(--bg2); color: var(--gold); padding: 12px 10px; text-align: center; font-size: 11px; text-transform: uppercase; border-bottom: 2px solid var(--border); }
+    .tabla-puntos-wrap td { padding: 10px; text-align: center; border-bottom: 1px solid #1e2640; color: var(--text); }
+    .tabla-puntos-wrap tr:last-child td { border-bottom: none; }
+    .max-pts { font-weight: 800; color: var(--gold); font-family: 'Anton', sans-serif; font-size: 16px; }
+
+    .campeon-box { background: linear-gradient(135deg, var(--bg3), var(--card)); border: 2px solid var(--gold); border-radius: var(--r); padding: 24px; margin: 16px 0; text-align: center; }
+    .campeon-opciones { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 16px; }
+    .campeon-opc { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px; text-align: center; }
+    .campeon-opc .pos { font-family: 'Anton', sans-serif; font-size: 32px; line-height: 1; margin-bottom: 6px; }
+    .campeon-opc.o1 .pos { color: #f5c842; }
+    .campeon-opc.o2 .pos { color: #c0c0c0; }
+    .campeon-opc.o3 .pos { color: #cd7f32; }
+    .campeon-opc .pts { font-size: 14px; color: var(--text); font-weight: 700; }
+    .campeon-opc .desc { font-size: 11px; color: var(--text2); margin-top: 4px; }
+
+    .faq-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 10px; }
+    .faq-item summary { cursor: pointer; font-weight: 700; color: var(--text); font-size: 14px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
+    .faq-item summary::after { content: "+"; color: var(--gold); font-size: 20px; font-weight: 700; }
+    .faq-item[open] summary::after { content: "−"; }
+    .faq-item p { margin-top: 12px; color: var(--text2); font-size: 13px; }
+
+    .indice { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 20px; margin-bottom: 30px; }
+    .indice h3 { margin-top: 0; color: var(--gold); font-family: 'Anton', sans-serif; font-size: 18px; }
+    .indice ol { padding-left: 20px; }
+    .indice li { margin-bottom: 6px; font-size: 13px; }
+    .indice a { color: var(--text); text-decoration: none; transition: color .2s; }
+    .indice a:hover { color: var(--gold); }
+
+    @media (max-width: 600px) {
+      .instructivo { padding: 20px 14px; }
+      .instructivo-hero h1 { font-size: 30px; }
+      .seccion { padding: 18px; }
+      .seccion h2 { font-size: 20px; }
+      .campeon-opciones { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">
+    <span class="copa">🏆</span>
+    <div>
+      <h1>PRODE MUNDIAL 2026</h1>
+      <p>📘 Instructivo y Reglamento Oficial</p>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="/">🏠 Inicio</a>
+    <a href="/#ranking">🏅 Ranking</a>
+    <a href="/#resultados">📊 Resultados</a>
+    <a href="/login">🔐 Ingresar</a>
+  </nav>
+</header>
+
+<main class="instructivo">
+
+  <div class="instructivo-hero">
+    <div class="emoji">📘</div>
+    <h1>INSTRUCTIVO<br>Y REGLAMENTO</h1>
+    <p>Todo lo que tenés que saber para participar del Prode Mundial 2026. Leelo completo antes de empezar a jugar.</p>
+  </div>
+
+  <div class="indice">
+    <h3>📑 Índice de contenidos</h3>
+    <ol>
+      <li><a href="#s1">Bienvenida y objetivo del Prode</a></li>
+      <li><a href="#s2">Cómo registrarse y participar</a></li>
+      <li><a href="#s3">Pronósticos de partidos (3 capas)</a></li>
+      <li><a href="#s4">Pronóstico del Campeón del Mundo</a></li>
+      <li><a href="#s5">Sistema de puntuación</a></li>
+      <li><a href="#s6">Reglas de bloqueo y modificaciones</a></li>
+      <li><a href="#s7">Bonus de fidelidad</a></li>
+      <li><a href="#s8">Criterios de desempate</a></li>
+      <li><a href="#s9">Cronograma y fechas clave</a></li>
+      <li><a href="#s10">Preguntas frecuentes</a></li>
+    </ol>
+  </div>
+
+  <section class="seccion" id="s1">
+    <h2> 1. Bienvenida y objetivo</h2>
+    <p>El <strong>Prode Mundial 2026</strong> es un juego de pronósticos deportivos sin fines de lucro, organizado con motivo de la Copa del Mundo FIFA 2026 que se disputará en 🇲 México, 🇺🇸 Estados Unidos y 🇨🇦 Canadá.</p>
+    <p>El objetivo es <strong>acumular la mayor cantidad de puntos</strong> acertando los resultados de los 104 partidos del torneo y el equipo que se consagrará campeón.</p>
+    <div class="destacado">
+       <strong>Ganador:</strong> quien termine en la <strong>1° posición</strong> del ranking general al finalizar el torneo será declarado <strong>Campeón del Prode Mundial 2026</strong>.
+    </div>
+  </section>
+
+  <section class="seccion" id="s2">
+    <h2>📝 2. Cómo registrarse y participar</h2>
+    <ol>
+      <li>Ingresá a la sección <a href="/login"><strong> Ingresar</strong></a>.</li>
+      <li>Hacé clic en <strong>"Registrate"</strong> y completá:
+        <ul>
+          <li>Tu <strong>nombre o apodo</strong> (así vas a aparecer en el ranking).</li>
+          <li>Un <strong>email válido</strong> (sirve como usuario).</li>
+          <li>Una <strong>contraseña</strong> de mínimo 6 caracteres.</li>
+        </ul>
+      </li>
+      <li>Una vez registrado, ingresá con tu email y contraseña.</li>
+      <li>Empezá a cargar tus pronósticos desde la sección <strong>"⚽ Mis Pronósticos"</strong>.</li>
+    </ol>
+    <div class="destacado alerta">
+      ⚠️ <strong>Importante:</strong> Cada persona puede tener <strong>una única cuenta</strong>. El administrador se reserva el derecho de eliminar cuentas duplicadas.
+    </div>
+  </section>
+
+  <section class="seccion" id="s3">
+    <h2>⚽ 3. Pronósticos de partidos (3 capas)</h2>
+
+    <h3>3.1. Fase de grupos (72 partidos)</h3>
+    <p>Para cada partido de la fase de grupos debés indicar el <strong>resultado exacto al final de los 90 minutos</strong>.</p>
+    <p><strong>Ejemplo:</strong> Argentina 2 – 1 Australia</p>
+    <ul>
+      <li>Solo se considera el resultado del <strong>tiempo reglamentario (90 minutos + adicionales)</strong>.</li>
+      <li><strong>No</strong> se tiene en cuenta alargue ni penales en fase de grupos.</li>
+    </ul>
+
+    <h3>3.2. Fase eliminatoria (32 partidos)</h3>
+    <p>En dieciseisavos, octavos, cuartos, semifinales, 3er puesto y final, el pronóstico es más completo y tiene <strong>3 capas</strong>:</p>
+    <ol>
+      <li><strong>Resultado a los 90 minutos</strong> (como en fase de grupos).</li>
+      <li>Si pronosticás <strong>empate</strong>, debés indicar adicionalmente:
+        <ul>
+          <li><strong>Resultado del alargue</strong>: Gana Local / Gana Visitante / Empate → Penales</li>
+          <li>Si elegís "Empate → Penales", debés indicar <strong>qué equipo gana por penales</strong>.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <div class="destacado info">
+      💡 <strong>Ejemplo completo:</strong> En cuartos de final pronosticás: Argentina 1 – Brasil 1 (90'). Alargue: Empate → Penales. Ganador penales: Argentina.
+    </div>
+  </section>
+
+  <section class="seccion" id="s4">
+    <h2>🏆 4. Pronóstico del Campeón del Mundo</h2>
+    <p>Además de los partidos, cada participante debe elegir <strong>3 selecciones en orden de preferencia</strong> como candidatas a ganar el Mundial 2026.</p>
+
+    <div class="campeon-box">
+      <h3 style="color:var(--gold); font-family:'Anton'; font-size:22px; margin-bottom:16px;">🥇  🥉 Elegí tu podio de favoritos</h3>
+      <p style="color:var(--text2); font-size:14px; margin-bottom:16px;">
+        Seleccioná 3 selecciones distintas. Si alguna se consagra campeona, sumás puntos extra.
+      </p>
+      <div class="campeon-opciones">
+        <div class="campeon-opc o1">
+          <div class="pos">1°</div>
+          <div class="pts">🥇 CAMPEÓN</div>
+          <div class="desc">Hasta +100 pts si acierta</div>
+        </div>
+        <div class="campeon-opc o2">
+          <div class="pos">2°</div>
+          <div class="pts">🥈 CAMPEÓN</div>
+          <div class="desc">Hasta +80 pts si acierta</div>
+        </div>
+        <div class="campeon-opc o3">
+          <div class="pos">3°</div>
+          <div class="pts">🥉 CAMPEÓN</div>
+          <div class="desc">Hasta +60 pts si acierta</div>
+        </div>
+      </div>
+    </div>
+
+    <h3>📋 Reglas del pronóstico de campeón</h3>
+    <ul>
+      <li>Debés elegir <strong>3 selecciones distintas</strong> entre las 48 clasificadas.</li>
+      <li>El orden importa: la <strong>1° opción</strong> es tu candidato principal a campeón, la <strong>2°</strong> y <strong>3°</strong> son tus alternativas.</li>
+      <li>Si el campeón real es tu <strong>1° opción</strong> → sumás los puntos vigentes de la opción 1.</li>
+      <li>Si el campeón real es tu <strong>2° opción</strong> → sumás los puntos vigentes de la opción 2.</li>
+      <li>Si el campeón real es tu <strong>3° opción</strong> → sumás los puntos vigentes de la opción 3.</li>
+    </ul>
+
+    <h3>⏳ Puntos decrecientes según el momento</h3>
+    <p>Cuanto antes hagas tu pronóstico, más puntos sumás si acertás:</p>
+    <div class="tabla-puntos-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Momento del pronóstico</th>
+            <th>Opción 1</th>
+            <th>Opción 2</th>
+            <th>Opción 3</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td>Antes del partido inaugural</td><td class="max-pts">100</td><td class="max-pts">80</td><td class="max-pts">60</td></tr>
+          <tr><td>Antes de Fecha 2 (jugando F1)</td><td class="max-pts">90</td><td class="max-pts">70</td><td class="max-pts">50</td></tr>
+          <tr><td>Antes de Fecha 3 (jugando F2)</td><td class="max-pts">80</td><td class="max-pts">60</td><td class="max-pts">40</td></tr>
+          <tr><td>Antes de 16avos (jugando F3)</td><td class="max-pts">70</td><td class="max-pts">50</td><td class="max-pts">30</td></tr>
+          <tr><td>Antes de Octavos (jugando 16avos)</td><td class="max-pts">50</td><td class="max-pts">30</td><td class="max-pts">10</td></tr>
+          <tr><td>Antes de Cuartos (jugando Octavos)</td><td class="max-pts">40</td><td class="max-pts">20</td><td class="max-pts">0</td></tr>
+          <tr><td>Antes de Semis (jugando Cuartos)</td><td class="max-pts">30</td><td class="max-pts">10</td><td class="max-pts">0</td></tr>
+          <tr><td>Antes de la Final (jugando Semis)</td><td class="max-pts">10</td><td class="max-pts">0</td><td class="max-pts">0</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="destacado alerta">
+      🔒 <strong>Atención:</strong> Una vez guardado el pronóstico del campeón, <strong>NO se puede modificar</strong>. Los puntos que te correspondan quedan "congelados" en el momento que lo guardaste.
+    </div>
+  </section>
+
+  <section class="seccion" id="s5">
+    <h2>📊 5. Sistema de puntuación por partido</h2>
+    <p>Cada partido suma puntos por <strong>componentes independientes</strong> que se acumulan entre sí. El peso de cada componente crece a medida que avanza el torneo.</p>
+
+    <div class="tabla-puntos-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Fase</th>
+            <th>Signo (90')</th>
+            <th>Gol Local</th>
+            <th>Gol Visit.</th>
+            <th>Exacto</th>
+            <th>Alargue</th>
+            <th>Penales</th>
+            <th>Máximo</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Fase de Grupos</strong></td><td>1</td><td>1</td><td>1</td><td>+3</td><td>—</td><td>—</td><td class="max-pts">6</td></tr>
+          <tr><td><strong>16avos de Final</strong></td><td>3</td><td>2</td><td>2</td><td>+9</td><td>+3</td><td>+2</td><td class="max-pts">21</td></tr>
+          <tr><td><strong>Octavos de Final</strong></td><td>6</td><td>3</td><td>3</td><td>+15</td><td>+6</td><td>+3</td><td class="max-pts">36</td></tr>
+          <tr><td><strong>Cuartos de Final</strong></td><td>10</td><td>5</td><td>5</td><td>+25</td><td>+10</td><td>+5</td><td class="max-pts">60</td></tr>
+          <tr><td><strong>Semifinales</strong></td><td>15</td><td>7</td><td>7</td><td>+40</td><td>+15</td><td>+8</td><td class="max-pts">92</td></tr>
+          <tr><td><strong>3er Puesto</strong></td><td>20</td><td>10</td><td>10</td><td>+50</td><td>+20</td><td>+10</td><td class="max-pts">120</td></tr>
+          <tr><td><strong> Final</strong></td><td>30</td><td>15</td><td>15</td><td>+80</td><td>+30</td><td>+15</td><td class="max-pts">185</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="destacado info">
+      💡 <strong>Los componentes son acumulativos.</strong> Ejemplo: Si en un partido de octavos acertás signo (6) + gol local (3) + gol visitante (3) + resultado exacto (15), sumás <strong>27 puntos</strong> por ese partido.
+    </div>
+  </section>
+
+  <section class="seccion" id="s6">
+    <h2> 6. Reglas de bloqueo y modificaciones</h2>
+    <ul>
+      <li>🔒 <strong>Un pronóstico guardado es DEFINITIVO.</strong> No puede modificarse bajo ninguna circunstancia.</li>
+      <li> Cada partido <strong>se bloquea 5 minutos antes del kickoff</strong> (hora Argentina). Un cronómetro en pantalla te mostrará el tiempo restante.</li>
+      <li> El pronóstico del campeón se puede hacer hasta 5 minutos antes de la Final, pero los puntos disminuyen con cada fase.</li>
+      <li>0️⃣ Si no cargás pronóstico para un partido = <strong>0 puntos</strong> (sin penalización extra).</li>
+      <li>⚽ <strong>Errás el signo pero acertás un gol</strong> → ¡igual sumás ese punto!</li>
+    </ul>
+  </section>
+
+  <section class="seccion" id="s7">
+    <h2>🎟️ 7. Bonus de fidelidad</h2>
+    <p>Para premiar a los participantes más comprometidos, se otorga un <strong>bonus de +100 puntos</strong> a quienes completen todos los pronósticos.</p>
+    <div class="destacado">
+      🎯 <strong>Requisito:</strong> Haber pronosticado los <strong>104 partidos</strong> del torneo (los 72 de fase de grupos + los 32 eliminatorios).
+    </div>
+  </section>
+
+  <section class="seccion" id="s8">
+    <h2>⚖️ 8. Criterios de desempate</h2>
+    <p>Si dos o más participantes terminan con la misma cantidad de puntos, se aplican los siguientes criterios en orden:</p>
+    <ol>
+      <li><strong>Mayor cantidad de partidos acertados con resultado exacto</strong>.</li>
+      <li><strong>Mayor puntaje acumulado en la Final</strong>.</li>
+      <li><strong>Mayor puntaje acumulado en Semifinales</strong>.</li>
+      <li><strong>Mayor cantidad de fases con al menos un acierto</strong>.</li>
+      <li>En última instancia, <strong>sorteo público</strong> entre los empatados.</li>
+    </ol>
+  </section>
+
+  <section class="seccion" id="s9">
+    <h2> 9. Cronograma y fechas clave</h2>
+    <div class="tabla-puntos-wrap">
+      <table>
+        <thead>
+          <tr><th>Fecha</th><th>Evento</th></tr>
+        </thead>
+        <tbody>
+          <tr><td><strong>Antes del 11/06/2026</strong></td><td>Cierre de inscripción y pronósticos del campeón</td></tr>
+          <tr><td><strong>11/06/2026</strong></td><td>🏁 Partido inaugural · Inicio fase de grupos</td></tr>
+          <tr><td><strong>11/06 al 27/06</strong></td><td>Fase de grupos (3 fechas)</td></tr>
+          <tr><td><strong>28/06 al 03/07</strong></td><td>Dieciseisavos de Final</td></tr>
+          <tr><td><strong>04/07 al 07/07</strong></td><td>Octavos de Final</td></tr>
+          <tr><td><strong>09/07 al 11/07</strong></td><td>Cuartos de Final</td></tr>
+          <tr><td><strong>14/07 y 15/07</strong></td><td>Semifinales</td></tr>
+          <tr><td><strong>18/07</strong></td><td>Partido por el 3er Puesto</td></tr>
+          <tr><td><strong>19/07/2026</strong></td><td>🏆 FINAL · Cierre del Prode</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  <section class="seccion" id="s10">
+    <h2>❓ 10. Preguntas frecuentes</h2>
+
+    <details class="faq-item">
+      <summary>¿Puedo cambiar un pronóstico después de guardarlo?</summary>
+      <p><strong>No.</strong> Una vez guardado, el pronóstico es definitivo e inmodificable. Esta regla aplica para garantizar la equidad del concurso.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>¿Qué pasa si me olvido de pronosticar un partido?</summary>
+      <p>Simplemente no sumás puntos por ese partido. No hay penalización, pero perdés la oportunidad de sumar.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>¿Los penales de la definición se suman al marcador?</summary>
+      <p><strong>No.</strong> Solo se considera el resultado del tiempo reglamentario (90' + adicionales) para los goles. Los penales solo se usan para determinar el ganador en fases eliminatorias cuando hay empate.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>¿Cómo se cargan los resultados oficiales?</summary>
+      <p>El administrador carga los resultados oficiales una vez finalizados los partidos, basándose en las planillas oficiales de FIFA. Los puntos se recalculan automáticamente.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>¿Puedo ver los pronósticos de otros participantes?</summary>
+      <p><strong>No.</strong> Cada usuario solo puede ver sus propios pronósticos. El ranking público muestra únicamente los puntos totales, no los pronósticos individuales.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>¿Qué pasa si un partido se suspende o posterga?</summary>
+      <p>El pronóstico sigue vigente y se computará cuando el partido se juegue. Si el partido finalmente no se disputa, se considerará como no pronosticado (0 puntos).</p>
+    </details>
+  </section>
+
+  <section class="seccion" style="text-align:center; background:linear-gradient(135deg, #1a2a6c, #0a0d14); border-color:var(--gold)">
+    <h2 style="border:none; justify-content:center">🏆 ¡Que comience el Mundial!</h2>
+    <p style="font-size:16px; margin-bottom:20px">Ya conocés todas las reglas. Ahora solo falta una cosa...</p>
+    <a href="/login" class="btn" style="display:inline-block; width:auto; padding:14px 40px; text-decoration:none">¡Empezar a jugar!</a>
+  </section>
+
+</main>
+
+<footer style="text-align:center; padding:30px; color:var(--text2); font-size:12px; border-top:1px solid var(--border); margin-top:40px">
+  Prode Mundial 2026 · Instructivo y Reglamento Oficial
+</footer>
+
+</body>
+</html>
