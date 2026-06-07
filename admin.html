@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Admin · Prode Mundial 2026</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">
+    <span class="copa">🔐</span>
+    <div>
+      <h1>PANEL ADMIN</h1>
+      <div class="user-info">
+        <strong id="userName">...</strong>
+        <span class="admin-tag">ADMIN</span>
+      </div>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="/"> Inicio</a>
+    <a href="/prode">⚽ Mis Pronósticos</a>
+    <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
+  </nav>
+</header>
+
+<main class="container">
+
+  <h2> Panel de Administración</h2>
+  <p style="color:var(--text2); margin-bottom:20px; font-size:14px;">
+    Desde acá cargás los resultados oficiales. Los puntos de todos los usuarios se recalculan automáticamente.
+  </p>
+
+  <div id="mensaje" style="display:none; padding:12px; border-radius:var(--r-sm); margin-bottom:16px; font-size:13px;"></div>
+
+  <!-- ACCIONES -->
+  <div class="acciones-admin">
+    <button class="btn-prueba" onclick="generarPrueba()">🧪 Generar resultados de PRUEBA</button>
+    <button class="btn-limpiar" onclick="limpiarPrueba()">🧹 Limpiar solo pruebas</button>
+    <button class="btn-reiniciar" onclick="reiniciar()">⚠️ REINICIAR PRODE</button>
+  </div>
+
+  <!-- TABS DE FASES -->
+  <div class="fase-tabs" id="faseTabs"></div>
+
+  <!-- LISTA DE PARTIDOS -->
+  <div id="partidosAdmin"></div>
+
+  <!-- CAMPEÓN REAL -->
+  <section class="admin-section" style="margin-top:30px;">
+    <h3> Cargar Campeón del Mundial (solo al finalizar)</h3>
+    <div style="padding:16px;">
+      <p style="color:var(--text2); font-size:13px; margin-bottom:16px;">
+        Una vez finalizada la final, cargá el campeón real para calcular los puntos extra de todos los usuarios.
+      </p>
+      <div style="display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
+        <div style="flex:1; min-width:200px;">
+          <label style="display:block; font-size:12px; color:var(--gold); margin-bottom:6px;">
+            🏆 Campeón del Mundial
+          </label>
+          <select id="realCampeon" class="sel" style="width:100%; padding:10px;">
+            <option value="">-- Seleccionar campeón --</option>
+          </select>
+        </div>
+        <button class="btn-res" onclick="guardarCampeonReal()" style="padding:10px 20px;">
+          💾 Guardar campeón
+        </button>
+      </div>
+      <div id="campeonRealActual" style="margin-top:12px; font-size:13px; color:var(--green);"></div>
+    </div>
+  </section>
+
+</main>
+
+<script type="module">
+  import { protegerPagina, cerrarSesion } from "./js/auth-guard.js";
+  window.cerrarSesion = cerrarSesion;
+  protegerPagina(true); // Requiere admin
+</script>
+<script type="module" src="./js/app-admin.js"></script>
+</body>
+</html>

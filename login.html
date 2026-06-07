@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ingresar · Prode Mundial 2026</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="splash">
+  <div class="splash-box">
+    <div class="copa">🏆</div>
+    <h1>PRODE<br>MUNDIAL 2026</h1>
+    <p id="subtitulo">Ingresá a tu cuenta</p>
+
+    <div id="error" class="error" style="display:none"></div>
+    <div id="ok" class="ok" style="display:none"></div>
+
+    <form id="form">
+      <input type="text" id="nombre" class="input" placeholder="Tu nombre o apodo" style="display:none">
+      <input type="email" id="email" class="input" placeholder="Email" required autocomplete="email">
+      <input type="password" id="password" class="input" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6" autocomplete="current-password">
+      <button type="submit" class="btn" id="btnSubmit">Ingresar</button>
+    </form>
+
+    <p style="margin-top:16px; font-size:13px; color:var(--text2)">
+      <span id="textoCambio">¿No tenés cuenta?</span>
+      <button id="btnCambiar" style="background:none;border:none;color:var(--gold);cursor:pointer;font-weight:700;margin-left:4px;font-family:inherit;font-size:13px">
+        Registrate
+      </button>
+    </p>
+
+    <p style="margin-top:12px; font-size:12px">
+      <a href="/instructivo">📘 Leer reglamento completo</a>
+    </p>
+
+    <p style="margin-top:8px; font-size:12px">
+      <a href="/">← Volver al inicio</a>
+    </p>
+  </div>
+</div>
+
+<script type="module">
+  import { auth, db, ADMIN_EMAIL } from "./js/firebase-config.js";
+  import { 
+    createUserWithEmailAndPassword, 
+    signInWithEmailAndPassword,
+    onAuthStateChanged
+  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+  import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+  let modo = "login";
+
+  const $ = id => document.getElementById(id);
+
+  // Si ya está logueado, mandar al prode
+  onAuthStateChanged(auth, (user) => {
+    if (user) window.location.href = "/prode.html";
+  });
+
+  $("btnCambiar").onclick = () => {
+    modo = modo === "login" ? "registro" : "login";
+    $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
+    $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
+    $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";
+    $("nombre").style.display = modo === "registro" ? "block" : "none";
+    $("btnSubmit").textContent = modo === "login" ? "Ingresar" : "Registrarme";
+    $("nombre").required = modo === "registro";
+    ocultarMensajes();
+  };
+
+  $("form").onsubmit = async (e) => {
+    e.preventDefault();
+    ocultarMensajes();
+
+    const email = $("email").value.trim().toLowerCase();
+    const password = $("password").value;
+    const nombre = $("nombre").value.trim();
+    const btn = $("btnSubmit");
+
+    if (modo === "registro" && !nombre) {
+      mostrarError("Ingresá tu nombre o apodo");
+      return;
+    }
+
+    btn.disabled = true;
+    btn.textContent = "Procesando...";
+
+    try {
+      let user;
+      if (modo === "login") {
+        const cred = await signInWithEmailAndPassword(auth, email, password);
+        user = cred.user;
+      } else {
+        const cred = await createUserWithEmailAndPassword(auth, email, password);
+        user = cred.user;
+        // Guardar perfil en Firestore
+        await setDoc(doc(db, "usuarios", user.uid), {
+          uid: user.uid,
+          email: email,
+          nombre: nombre,
+          esAdmin: email === ADMIN_EMAIL.toLowerCase(),
+          fechaRegistro: serverTimestamp(),
+          puntosTotales: 0
+        });
+      }
+      mostrarOk(modo === "login" ? "Ingresando..." : "¡Cuenta creada! Ingresando...");
+      setTimeout(() => window.location.href = "/prode.html", 800);
+    } catch (err) {
+      mostrarError(traducirError(err.code));
+      btn.disabled = false;
+      btn.textContent = modo === "login" ? "Ingresar" : "Registrarme";
+    }
+  };
+
+  function traducirError(code) {
+    const errores = {
+      "auth/invalid-email": "Email inválido",
+      "auth/user-not-found": "Usuario no registrado",
+      "auth/wrong-password": "Contraseña incorrecta",
+      "auth/invalid-credential": "Email o contraseña incorrectos",
+      "auth/email-already-in-use": "Ese email ya está registrado",
+      "auth/weak-password": "La contraseña debe tener al menos 6 caracteres",
+      "auth/too-many-requests": "Demasiados intentos. Probá más tarde",
+      "auth/network-request-failed": "Error de conexión. Verificá tu internet",
+    };
+    return errores[code] || "Error: " + code;
+  }
+
+  function mostrarError(msg) {
+    $("error").textContent = msg;
+    $("error").style.display = "block";
+  }
+
+  function mostrarOk(msg) {
+    $("ok").textContent = msg;
+    $("ok").style.display = "block";
+  }
+
+  function ocultarMensajes() {
+    $("error").style.display = "none";
+    $("ok").style.display = "none";
+  }
+</script>
+
+</body>
+</html>
