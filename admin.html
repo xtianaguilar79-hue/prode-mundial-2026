@@ -20,7 +20,7 @@
     </div>
   </div>
   <nav class="nav">
-    <a href="index.html">🏠 Inicio</a>
+    <a href="index.html"> Inicio</a>
     <a href="prode.html">⚽ Mis Pronósticos</a>
     <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
   </nav>
@@ -39,6 +39,7 @@
   <div class="acciones-admin">
     <button class="btn-prueba" onclick="generarPrueba()">🧪 Generar resultados de PRUEBA</button>
     <button class="btn-limpiar" onclick="limpiarPrueba()">🧹 Limpiar solo pruebas</button>
+    <button class="btn-res" onclick="actualizarEquipos()" style="background:var(--gold); color:#000;">🔄 Actualizar equipos</button>
     <button class="btn-reiniciar" onclick="reiniciar()">⚠️ REINICIAR PRODE</button>
   </div>
 
@@ -58,7 +59,7 @@
       <div style="display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
         <div style="flex:1; min-width:200px;">
           <label style="display:block; font-size:12px; color:var(--gold); margin-bottom:6px;">
-            🏆 Campeón del Mundial
+             Campeón del Mundial
           </label>
           <select id="realCampeon" class="sel" style="width:100%; padding:10px;">
             <option value="">-- Seleccionar campeón --</option>
