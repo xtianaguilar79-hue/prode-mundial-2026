@@ -5,7 +5,7 @@ import {
   calcularPuntosCampeon, msHastaBloqueo, formatearTiempo, partidoBloqueado
 } from "../datos-partidos.js";
 
-let usuario = null;
+let usuarioId = null;
 let perfil = null;
 let predicciones = {};
 let resultados = {};
@@ -15,10 +15,10 @@ let faseActiva = "j1";
 let intervalosCrono = [];
 
 window.addEventListener("usuarioListo", async (e) => {
-  usuario = e.detail.user;
+  usuarioId = e.detail.user.uid;  // ← Ahora sí tiene uid
   perfil = e.detail.perfil;
 
-  console.log(" app-prode.js iniciado para:", perfil.nombre, perfil.apellido);
+  console.log(" app-prode.js iniciado para:", perfil.nombre, perfil.apellido, "UID:", usuarioId);
 
   await cargarDatos();
   await cargarCampeon();
@@ -29,11 +29,10 @@ window.addEventListener("usuarioListo", async (e) => {
 
 async function cargarDatos() {
   try {
-    // Cargar predicciones del usuario
     const { data: predsData, error: predsError } = await supabase
       .from('predicciones')
       .select('*')
-      .eq('user_id', usuario.uid);
+      .eq('user_id', usuarioId);
 
     if (predsError) throw predsError;
 
@@ -42,7 +41,6 @@ async function cargarDatos() {
       predicciones[p.partido_id] = p;
     });
 
-    // Cargar todos los resultados
     const { data: resData, error: resError } = await supabase
       .from('resultados')
       .select('*');
@@ -56,7 +54,7 @@ async function cargarDatos() {
 
     actualizarStats();
   } catch (err) {
-    console.error("❌ Error al cargar datos:", err);
+    console.error(" Error al cargar datos:", err);
   }
 }
 
@@ -65,7 +63,7 @@ async function cargarCampeon() {
     const { data: campData, error: campError } = await supabase
       .from('campeones')
       .select('*')
-      .eq('user_id', usuario.uid)
+      .eq('user_id', usuarioId)
       .single();
 
     if (!campError && campData) {
@@ -82,7 +80,7 @@ async function cargarCampeon() {
       resultadoFinal = finalData;
     }
   } catch (err) {
-    console.error("❌ Error al cargar campeón:", err);
+    console.error(" Error al cargar campeón:", err);
   }
 }
 
@@ -102,7 +100,7 @@ function actualizarStats() {
 
   document.getElementById("statPts").textContent = total;
   document.getElementById("statPred").textContent = `${Object.keys(predicciones).length}/104`;
-  document.getElementById("statFidelidad").textContent = bonus > 0 ? "✓" : "✗";
+  document.getElementById("statFidelidad").textContent = bonus > 0 ? "✓" : "";
   document.getElementById("statFidelidad").style.color = bonus > 0 ? "var(--green)" : "var(--accent)";
 }
 
@@ -218,7 +216,6 @@ function renderTarjeta(p) {
 
   let marcadorHTML;
   if (guardado) {
-    // Mostrar pronóstico guardado con detalles de alargue/penales si existen
     let detalleHTML = `
       <div class="score-saved">
         <span>${pred.local}</span>
@@ -227,16 +224,14 @@ function renderTarjeta(p) {
       </div>
     `;
     
-    // Si es eliminatoria y hay alargue
-    if (esElim && (pred.alargue_local !== null || pred.alargue_visit !== null)) {
+    if (esElim && (pred.alargue_local !== null && pred.alargue_local !== undefined)) {
       detalleHTML += `
         <div style="font-size:10px; color:var(--text2); margin-top:4px; text-align:center;">
           Alargue: <strong>${pred.alargue_local} - ${pred.alargue_visit}</strong>
         </div>
       `;
       
-      // Si hay penales
-      if (pred.penales_local !== null || pred.penales_visit !== null) {
+      if (pred.penales_local !== null && pred.penales_local !== undefined) {
         detalleHTML += `
           <div style="font-size:10px; color:var(--text2); text-align:center;">
             Penales: <strong>${pred.penales_local} - ${pred.penales_visit}</strong>
@@ -247,7 +242,6 @@ function renderTarjeta(p) {
     
     marcadorHTML = detalleHTML;
   } else {
-    // Formulario para ingresar pronóstico
     marcadorHTML = `
       <div class="marcador">
         <input type="number" min="0" max="20" class="score-in" id="gL-${p.id}" placeholder="0" ${bloqueado ? "disabled" : ""}>
@@ -323,10 +317,9 @@ function renderTarjeta(p) {
   `;
 }
 
-// Event listener para mostrar/ocultar inputs de alargue/penales
 document.addEventListener("input", (e) => {
   if (!e.target.classList.contains("score-in")) return;
-  const id = e.target.id.replace("gL-", "").replace("gV-", "");
+  const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "");
   const gL = document.getElementById("gL-" + id)?.value;
   const gV = document.getElementById("gV-" + id)?.value;
   const extDiv = document.getElementById("ext-" + id);
@@ -334,7 +327,6 @@ document.addEventListener("input", (e) => {
   
   if (!extDiv) return;
 
-  // Mostrar alargue si hay empate en 90'
   if (gL !== "" && gV !== "" && parseInt(gL) === parseInt(gV)) {
     extDiv.style.display = "flex";
   } else {
@@ -342,7 +334,6 @@ document.addEventListener("input", (e) => {
     if (penDiv) penDiv.style.display = "none";
   }
 
-  // Mostrar penales si hay empate en alargue
   if (penDiv && extDiv.style.display === "flex") {
     const alL = document.getElementById("alL-" + id)?.value;
     const alV = document.getElementById("alV-" + id)?.value;
@@ -393,7 +384,6 @@ async function guardarPrediccion(id) {
     alargueLocal = parseInt(alL);
     alargueVisit = parseInt(alV);
     
-    // Si el alargue también es empate, pedir penales
     if (alargueLocal === alargueVisit) {
       const penL = document.getElementById("penL-" + id)?.value;
       const penV = document.getElementById("penV-" + id)?.value;
@@ -413,8 +403,19 @@ async function guardarPrediccion(id) {
     }
   }
 
+  console.log(" Guardando predicción:", {
+    user_id: usuarioId,
+    partido_id: id,
+    local: parseInt(gL),
+    visit: parseInt(gV),
+    alargue_local: alargueLocal,
+    alargue_visit: alargueVisit,
+    penales_local: penalesLocal,
+    penales_visit: penalesVisit
+  });
+
   const datos = {
-    user_id: usuario.uid,
+    user_id: usuarioId,
     partido_id: id,
     local: parseInt(gL),
     visit: parseInt(gV),
@@ -472,7 +473,7 @@ function renderCampeon() {
     document.getElementById("campeonGuardado").style.display = "block";
 
     document.getElementById("verCamp1").textContent = 
-      `${FLAGS[prediccionCampeon.opcion1] || "🏳️"} ${prediccionCampeon.opcion1}`;
+      `${FLAGS[prediccionCampeon.opcion1] || "️"} ${prediccionCampeon.opcion1}`;
     document.getElementById("verCamp2").textContent = 
       `${FLAGS[prediccionCampeon.opcion2] || "🏳️"} ${prediccionCampeon.opcion2}`;
     document.getElementById("verCamp3").textContent = 
@@ -542,7 +543,7 @@ function validarCampeon() {
     return false;
   }
   if (v1 && v3 && v1 === v3) {
-    mostrarMsgCampeon("⚠️ No podés repetir selecciones", "error");
+    mostrarMsgCampeon("️ No podés repetir selecciones", "error");
     return false;
   }
   if (v2 && v3 && v2 === v3) {
@@ -587,16 +588,16 @@ async function guardarCampeon() {
   if (!confirm(
     `¿Confirmás tu pronóstico del campeón?\n\n` +
     `🥇 Opción 1: ${v1} (+${pts[0]} pts si es campeón)\n` +
-    `🥈 Opción 2: ${v2} (+${pts[1]} pts si es campeón)\n` +
+    ` Opción 2: ${v2} (+${pts[1]} pts si es campeón)\n` +
     `🥉 Opción 3: ${v3} (+${pts[2]} pts si es campeón)\n\n` +
-    `⚠️ NO PODRÁS MODIFICARLO`
+    `️ NO PODRÁS MODIFICARLO`
   )) return;
 
   try {
     const { error } = await supabase
       .from('campeones')
       .upsert({
-        user_id: usuario.uid,
+        user_id: usuarioId,
         opcion1: v1,
         opcion2: v2,
         opcion3: v3,
