@@ -5,7 +5,7 @@ export async function protegerPagina(requiereAdmin = false) {
     const { data: { session }, error } = await supabase.auth.getSession();
     
     if (error || !session) {
-      console.log("️ No hay sesión, redirigiendo a login");
+      console.log("⚠️ No hay sesión, redirigiendo a login");
       window.location.href = "login.html";
       return;
     }
@@ -23,7 +23,7 @@ export async function protegerPagina(requiereAdmin = false) {
       return;
     }
 
-    console.log("✅ Usuario autenticado:", usuario.nombre, usuario.apellido);
+    console.log("✅ Usuario autenticado:", usuario.nombre, usuario.apellido, "ID:", usuario.id);
 
     // Mostrar nombre en el header
     const userNameEl = document.getElementById("userName");
@@ -46,13 +46,27 @@ export async function protegerPagina(requiereAdmin = false) {
       return;
     }
 
-    // Guardar usuario en window para usar en otros scripts
-    window.usuarioActual = usuario;
+    // Guardar usuario en window con el formato correcto
+    window.usuarioActual = {
+      uid: usuario.id,  // ← CLAVE: mapear id a uid para compatibilidad
+      id: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      apodo: usuario.apodo,
+      grupos: usuario.grupos,
+      es_admin: usuario.es_admin,
+      puntos_totales: usuario.puntos_totales
+    };
+    
     window.session = session;
 
-    // Disparar evento para que app-prode.js sepa que está listo
+    // Disparar evento
     window.dispatchEvent(new CustomEvent("usuarioListo", { 
-      detail: { user: session.user, perfil: usuario } 
+      detail: { 
+        user: { uid: usuario.id, id: usuario.id, email: session.user.email }, 
+        perfil: usuario 
+      } 
     }));
 
   } catch (err) {
