@@ -15,13 +15,13 @@
       <h1>PANEL ADMIN</h1>
       <div class="user-info">
         <strong id="userName">...</strong>
-        <span class="admin-tag">ADMIN</span>
+        <span id="adminTag" class="admin-tag" style="display:none">ADMIN</span>
       </div>
     </div>
   </div>
   <nav class="nav">
-    <a href="index.html"> Inicio</a>
-    <a href="prode.html">⚽ Mis Pronósticos</a>
+    <a href="index.html">🏠 Inicio</a>
+    <a href="prode.html"> Mis Pronósticos</a>
     <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
   </nav>
 </header>
@@ -35,7 +35,6 @@
 
   <div id="mensaje" style="display:none; padding:12px; border-radius:var(--r-sm); margin-bottom:16px; font-size:13px;"></div>
 
-  <!-- ACCIONES -->
   <div class="acciones-admin">
     <button class="btn-prueba" onclick="generarPrueba()">🧪 Generar resultados de PRUEBA</button>
     <button class="btn-limpiar" onclick="limpiarPrueba()">🧹 Limpiar solo pruebas</button>
@@ -43,13 +42,10 @@
     <button class="btn-reiniciar" onclick="reiniciar()">⚠️ REINICIAR PRODE</button>
   </div>
 
-  <!-- TABS DE FASES -->
   <div class="fase-tabs" id="faseTabs"></div>
 
-  <!-- LISTA DE PARTIDOS -->
   <div id="partidosAdmin"></div>
 
-  <!-- CAMPEÓN REAL -->
   <section class="admin-section" style="margin-top:30px;">
     <h3>🏆 Cargar Campeón del Mundial (solo al finalizar)</h3>
     <div style="padding:16px;">
@@ -59,7 +55,7 @@
       <div style="display:flex; gap:12px; align-items:end; flex-wrap:wrap;">
         <div style="flex:1; min-width:200px;">
           <label style="display:block; font-size:12px; color:var(--gold); margin-bottom:6px;">
-             Campeón del Mundial
+            🏆 Campeón del Mundial
           </label>
           <select id="realCampeon" class="sel" style="width:100%; padding:10px;">
             <option value="">-- Seleccionar campeón --</option>
@@ -76,9 +72,8 @@
 </main>
 
 <script type="module">
-  import { protegerPagina, cerrarSesion } from "./js/auth-guard.js";
+  import { cerrarSesion } from "./js/auth-guard.js";
   window.cerrarSesion = cerrarSesion;
-  protegerPagina(true);
 </script>
 <script type="module" src="./js/app-admin.js"></script>
 </body>
