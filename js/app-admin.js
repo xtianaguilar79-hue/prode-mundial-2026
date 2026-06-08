@@ -2,9 +2,11 @@ import { supabase } from "./supabase-config.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, SELECCIONES
 } from "../datos-partidos.js";
+import { actualizarEquiposEliminatorias, obtenerPartidosConEquiposReales } from "./clasificaciones.js";
 
 let faseActiva = "j1";
 let resultados = {};
+let partidosConEquiposReales = TODOS_PARTIDOS;
 
 async function cargarResultados() {
   try {
@@ -18,6 +20,16 @@ async function cargarResultados() {
     data.forEach(r => { resultados[r.partido_id] = r; });
   } catch (err) {
     console.error("Error al cargar resultados:", err);
+  }
+}
+
+async function cargarEquiposReales() {
+  try {
+    partidosConEquiposReales = await obtenerPartidosConEquiposReales();
+    console.log("✅ Equipos reales cargados en admin");
+  } catch (err) {
+    console.error("Error al cargar equipos reales:", err);
+    partidosConEquiposReales = TODOS_PARTIDOS;
   }
 }
 
@@ -62,19 +74,21 @@ function renderPartidos() {
   const partidos = getPartidosFase();
   
   cont.innerHTML = partidos.map(p => {
-    const flagL = FLAGS[p.local] || "🏳️";
-    const flagV = FLAGS[p.visit] || "🏳️";
+    // Buscar partido con equipos reales
+    const partidoReal = partidosConEquiposReales.find(x => x.id === p.id) || p;
+    const flagL = FLAGS[partidoReal.local] || "🏳️";
+    const flagV = FLAGS[partidoReal.visit] || "🏳️";
     const res = resultados[p.id];
     const esElim = !p.j || p.fase;
     
-    // Determinar si mostrar alargue/penales basado en resultado guardado
     let showAlargue = false;
     let showPenales = false;
     
     if (res) {
       if (res.local !== undefined && res.visit !== undefined && parseInt(res.local) === parseInt(res.visit)) {
         showAlargue = true;
-        if (res.alargue_local !== null && res.alargue_visit !== null && parseInt(res.alargue_local) === parseInt(res.alargue_visit)) {
+        if (res.alargue_local !== null && res.alargue_visit !== null && 
+            parseInt(res.alargue_local) === parseInt(res.alargue_visit)) {
           showPenales = true;
         }
       }
@@ -92,7 +106,7 @@ function renderPartidos() {
         <div class="partido-equipos">
           <div class="equipo">
             <span class="flag">${flagL}</span>
-            <span>${p.local}</span>
+            <span>${partidoReal.local}</span>
           </div>
           <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
             <div class="marcador">
@@ -118,7 +132,7 @@ function renderPartidos() {
             ` : ""}
           </div>
           <div class="equipo visitante">
-            <span>${p.visit}</span>
+            <span>${partidoReal.visit}</span>
             <span class="flag">${flagV}</span>
           </div>
         </div>
@@ -133,10 +147,8 @@ function renderPartidos() {
     `;
   }).join("");
 
-  // Event listeners para TODOS los inputs
   setupEventListeners();
 
-  // Event listeners para botones
   cont.querySelectorAll(".btn-res").forEach(btn => {
     btn.onclick = () => guardarResultado(btn.dataset.id);
   });
@@ -147,7 +159,6 @@ function renderPartidos() {
 }
 
 function setupEventListeners() {
-  // Escuchar cambios en TODOS los inputs (goles, alargue, penales)
   document.querySelectorAll(".score-in").forEach(input => {
     input.addEventListener("input", (e) => {
       const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "");
@@ -160,7 +171,6 @@ function setupEventListeners() {
       const extDiv = document.getElementById("ext-" + id);
       const penDiv = document.getElementById("pen-" + id);
       
-      // Mostrar/ocultar alargue si hay empate en 90'
       if (extDiv) {
         if (gL !== "" && gV !== "" && parseInt(gL) === parseInt(gV)) {
           extDiv.style.display = "flex";
@@ -170,7 +180,6 @@ function setupEventListeners() {
         }
       }
       
-      // Mostrar/ocultar penales si hay empate en alargue
       if (penDiv && extDiv && extDiv.style.display === "flex") {
         if (alL !== "" && alV !== "" && parseInt(alL) === parseInt(alV)) {
           penDiv.style.display = "flex";
@@ -190,7 +199,7 @@ async function guardarResultado(id) {
   const gV = document.getElementById("gV-" + id).value;
 
   if (gL === "" || gV === "") {
-    mostrarMensaje("⚠️ Completá ambos marcadores", "error");
+    mostrarMensaje("️ Completá ambos marcadores", "error");
     return;
   }
 
@@ -212,7 +221,6 @@ async function guardarResultado(id) {
     alargueLocal = parseInt(alL);
     alargueVisit = parseInt(alV);
     
-    // Si el alargue también es empate, pedir penales
     if (alargueLocal === alargueVisit) {
       const penL = document.getElementById("penL-" + id)?.value;
       const penV = document.getElementById("penV-" + id)?.value;
@@ -253,6 +261,7 @@ async function guardarResultado(id) {
 
     mostrarMensaje("✅ Resultado guardado correctamente", "ok");
     await cargarResultados();
+    await cargarEquiposReales();
     renderPartidos();
   } catch (err) {
     console.error(err);
@@ -273,6 +282,7 @@ async function borrarResultado(id) {
 
     mostrarMensaje("🗑️ Resultado borrado", "ok");
     await cargarResultados();
+    await cargarEquiposReales();
     renderPartidos();
   } catch (err) {
     console.error(err);
@@ -304,6 +314,7 @@ window.generarPrueba = async () => {
 
     mostrarMensaje("🧪 Resultados de prueba generados", "ok");
     await cargarResultados();
+    await cargarEquiposReales();
     renderPartidos();
   } catch (err) {
     console.error(err);
@@ -324,15 +335,16 @@ window.limpiarPrueba = async () => {
 
     mostrarMensaje("🧹 Pruebas limpiadas", "ok");
     await cargarResultados();
+    await cargarEquiposReales();
     renderPartidos();
   } catch (err) {
     console.error(err);
-    mostrarMensaje("❌ Error: " + err.message, "error");
+    mostrarMensaje(" Error: " + err.message, "error");
   }
 };
 
 window.reiniciar = async () => {
-  if (!confirm("⚠️ ¿REINICIAR TODO EL PRODE?\n\nSe borrarán:\n- Todos los resultados\n- Todas las predicciones\n- Todos los campeones\n\nEsta acción NO se puede deshacer.")) return;
+  if (!confirm("⚠️ ¿REINICIAR TODO EL PRODE?\n\nSe borrarán:\n- Todos los resultados\n- Todas las predicciones\n- Todos los campeones\n- Todos los clasificados\n\nEsta acción NO se puede deshacer.")) return;
 
   if (!confirm("⚠️ ¿ESTÁS SEGURO? Esta es la última confirmación.")) return;
 
@@ -341,9 +353,11 @@ window.reiniciar = async () => {
     await supabase.from('predicciones').delete().neq('id', '');
     await supabase.from('campeones').delete().neq('id', '');
     await supabase.from('config').delete().neq('id', '');
+    await supabase.from('clasificados').delete().neq('posicion', '');
 
     mostrarMensaje("⚠️ Prode reiniciado completamente", "ok");
     await cargarResultados();
+    await cargarEquiposReales();
     renderPartidos();
   } catch (err) {
     console.error(err);
@@ -378,6 +392,20 @@ window.guardarCampeonReal = async () => {
   }
 };
 
+window.actualizarEquipos = async () => {
+  if (!confirm("¿Actualizar los equipos de las fases eliminatorias?\n\nSe calcularán los clasificados y se actualizarán los cruces.")) return;
+
+  try {
+    const resultado = await actualizarEquiposEliminatorias();
+    mostrarMensaje(`✅ Equipos actualizados. Fase: ${resultado.fase}. Partidos actualizados: ${Object.keys(resultado.partidosActualizados).length}`, "ok");
+    await cargarEquiposReales();
+    renderPartidos();
+  } catch (err) {
+    console.error(err);
+    mostrarMensaje("❌ Error: " + err.message, "error");
+  }
+};
+
 async function cargarCampeonReal() {
   try {
     const { data, error } = await supabase
@@ -406,18 +434,17 @@ function mostrarMensaje(msg, tipo) {
   setTimeout(() => { el.style.display = "none"; }, 4000);
 }
 
-// Inicializar
 async function init() {
   await cargarResultados();
+  await cargarEquiposReales();
   await cargarCampeonReal();
   renderTabs();
   renderPartidos();
 
-  // Llenar select de campeón
   const select = document.getElementById("realCampeon");
   select.innerHTML = '<option value="">-- Seleccionar campeón --</option>' +
     SELECCIONES.sort((a, b) => a.localeCompare(b))
-      .map(s => `<option value="${s}">${FLAGS[s] || "🏳️"} ${s}</option>`)
+      .map(s => `<option value="${s}">${FLAGS[s] || "️"} ${s}</option>`)
       .join("");
 }
 
