@@ -1,29 +1,24 @@
-import { db } from "./firebase-config.js";
-import { 
-  collection, getDocs, doc, setDoc, query, where, 
-  writeBatch, serverTimestamp, getDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from "./supabase-config.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, SELECCIONES
 } from "../datos-partidos.js";
 
-let usuario = null;
 let faseActiva = "j1";
 let resultados = {};
 
-window.addEventListener("usuarioListo", async (e) => {
-  usuario = e.detail.user;
-  document.getElementById("userName").textContent = e.detail.perfil.nombre;
-  await cargarResultados();
-  inicializarCampeonReal();
-  renderTabs();
-  renderPartidos();
-});
-
 async function cargarResultados() {
-  const snap = await getDocs(collection(db, "resultados"));
-  resultados = {};
-  snap.forEach(d => { resultados[d.id] = d.data(); });
+  try {
+    const { data, error } = await supabase
+      .from('resultados')
+      .select('*');
+
+    if (error) throw error;
+
+    resultados = {};
+    data.forEach(r => { resultados[r.partido_id] = r; });
+  } catch (err) {
+    console.error("Error al cargar resultados:", err);
+  }
 }
 
 function renderTabs() {
@@ -65,254 +60,342 @@ function getPartidosFase() {
 function renderPartidos() {
   const cont = document.getElementById("partidosAdmin");
   const partidos = getPartidosFase();
+  
+  cont.innerHTML = partidos.map(p => {
+    const flagL = FLAGS[p.local] || "🏳️";
+    const flagV = FLAGS[p.visit] || "🏳️";
+    const res = resultados[p.id];
+    const esElim = !p.j || p.fase;
+    
+    return `
+      <div class="partido-card admin">
+        <div class="partido-meta">
+          <span class="badge badge-id">${p.id}</span>
+          ${p.grupo ? `<span class="badge badge-grupo">Grupo ${p.grupo}</span>` : ""}
+          ${p.fase ? `<span class="badge badge-grupo">${p.fase.toUpperCase()}</span>` : ""}
+          <span class="badge badge-fecha">${p.fecha} · ${p.hora} ARG</span>
+        </div>
 
-  cont.innerHTML = `
-    <div class="admin-section">
-      <h3>${partidos.length} partidos</h3>
-      ${partidos.map(p => {
-        const r = resultados[p.id] || {};
-        const esElim = !p.j;
-        
-        return `
-          <div class="res-row" data-id="${p.id}">
-            <span class="res-id">${p.id}</span>
-            <span class="res-match">${p.local} vs ${p.visit}</span>
-            
-            <input type="number" min="0" max="20" class="res-in" id="rL-${p.id}" value="${r.local ?? ""}" placeholder="L">
-            <span style="color:var(--text2);">–</span>
-            <input type="number" min="0" max="20" class="res-in" id="rV-${p.id}" value="${r.visit ?? ""}" placeholder="V">
-            
-            ${esElim ? `
-              <select class="sel" id="rAl-${p.id}" style="display:${r.local!==undefined && r.local===r.visit ? 'inline-block':'none'}; min-width:110px;">
-                <option value="">Alargue...</option>
-                <option value="L" ${r.alargue==='L'?'selected':''}>Gana Local</option>
-                <option value="E" ${r.alargue==='E'?'selected':''}>→ Penales</option>
-                <option value="V" ${r.alargue==='V'?'selected':''}>Gana Visit.</option>
-              </select>
-              <select class="sel" id="rPen-${p.id}" style="display:${r.alargue==='E' ? 'inline-block':'none'}; min-width:110px;">
-                <option value="">Ganador Pen.</option>
-                <option value="L" ${r.penales==='L'?'selected':''}>Local</option>
-                <option value="V" ${r.penales==='V'?'selected':''}>Visitante</option>
-              </select>
-            ` : ''}
-
-            <button class="btn-res" onclick="guardarResultado('${p.id}')">
-              ${r.local !== undefined ? "✓ Actualizar" : "Cargar"}
-            </button>
-            ${r.esPrueba ? `<span style="color:var(--accent); font-size:10px; font-weight:700;">🧪 PRUEBA</span>` : ""}
+        <div class="partido-equipos">
+          <div class="equipo">
+            <span class="flag">${flagL}</span>
+            <span>${p.local}</span>
           </div>
-        `;
-      }).join("")}
-    </div>
-  `;
+          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+            <div class="marcador">
+              <input type="number" min="0" max="20" class="score-in" id="gL-${p.id}" value="${res?.local ?? ''}" placeholder="0">
+              <span class="sep">–</span>
+              <input type="number" min="0" max="20" class="score-in" id="gV-${p.id}" value="${res?.visit ?? ''}" placeholder="0">
+            </div>
+            ${esElim ? `
+              <div class="ext-inputs" id="ext-${p.id}" style="display:${res?.local !== undefined && res?.visit !== undefined && parseInt(res.local) === parseInt(res.visit) ? 'flex' : 'none'}; flex-direction:column; gap:6px; margin-top:8px; width:100%;">
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <label style="font-size:11px; color:var(--text2); min-width:80px;">Alargue:</label>
+                  <input type="number" min="0" max="20" class="score-in" id="alL-${p.id}" value="${res?.alargue_local ?? ''}" placeholder="0" style="width:60px;">
+                  <span>–</span>
+                  <input type="number" min="0" max="20" class="score-in" id="alV-${p.id}" value="${res?.alargue_visit ?? ''}" placeholder="0" style="width:60px;">
+                </div>
+                <div id="pen-${p.id}" style="display:${res?.alargue_local !== undefined && parseInt(res.alargue_local) === parseInt(res.alargue_visit) ? 'flex' : 'none'}; gap:6px; align-items:center;">
+                  <label style="font-size:11px; color:var(--text2); min-width:80px;">Penales:</label>
+                  <input type="number" min="0" max="20" class="score-in" id="penL-${p.id}" value="${res?.penales_local ?? ''}" placeholder="0" style="width:60px;">
+                  <span>–</span>
+                  <input type="number" min="0" max="20" class="score-in" id="penV-${p.id}" value="${res?.penales_visit ?? ''}" placeholder="0" style="width:60px;">
+                </div>
+              </div>
+            ` : ""}
+          </div>
+          <div class="equipo visitante">
+            <span>${p.visit}</span>
+            <span class="flag">${flagV}</span>
+          </div>
+        </div>
+
+        <div class="partido-footer">
+          <button class="btn-guardar btn-res" data-id="${p.id}" style="padding:8px 16px;">
+            ${res ? "✓ Actualizar" : "💾 Cargar resultado"}
+          </button>
+          ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px; margin-left:8px;">🗑️ Borrar</button>` : ""}
+        </div>
+      </div>
+    `;
+  }).join("");
+
+  // Event listeners
+  cont.querySelectorAll(".btn-res").forEach(btn => {
+    btn.onclick = () => guardarResultado(btn.dataset.id);
+  });
+  
+  cont.querySelectorAll("[data-borrar]").forEach(btn => {
+    btn.onclick = () => borrarResultado(btn.dataset.borrar);
+  });
+
+  // Mostrar/ocultar alargue/penales al cambiar goles
+  cont.querySelectorAll(".score-in").forEach(input => {
+    input.addEventListener("input", (e) => {
+      const id = e.target.id.replace("gL-", "").replace("gV-", "");
+      const gL = document.getElementById("gL-" + id)?.value;
+      const gV = document.getElementById("gV-" + id)?.value;
+      const extDiv = document.getElementById("ext-" + id);
+      const penDiv = document.getElementById("pen-" + id);
+      
+      if (extDiv) {
+        if (gL !== "" && gV !== "" && parseInt(gL) === parseInt(gV)) {
+          extDiv.style.display = "flex";
+        } else {
+          extDiv.style.display = "none";
+        }
+      }
+      
+      if (penDiv) {
+        const alL = document.getElementById("alL-" + id)?.value;
+        const alV = document.getElementById("alV-" + id)?.value;
+        if (alL !== "" && alV !== "" && parseInt(alL) === parseInt(alV)) {
+          penDiv.style.display = "flex";
+        } else {
+          penDiv.style.display = "none";
+        }
+      }
+    });
+  });
 }
 
-// Event listeners dinámicos para mostrar/ocultar selects de alargue/penales
-document.addEventListener("change", (e) => {
-  if (e.target.id && e.target.id.startsWith("rAl-")) {
-    const id = e.target.id.replace("rAl-", "");
-    const penSel = document.getElementById("rPen-" + id);
-    if (penSel) {
-      penSel.style.display = e.target.value === "E" ? "inline-block" : "none";
-    }
-  }
-});
+async function guardarResultado(id) {
+  const p = TODOS_PARTIDOS.find(x => x.id === id);
+  if (!p) return;
 
-document.addEventListener("input", (e) => {
-  if (e.target.classList.contains("res-in")) {
-    const id = e.target.id.replace("rL-", "").replace("rV-", "");
-    const rL = document.getElementById("rL-" + id)?.value;
-    const rV = document.getElementById("rV-" + id)?.value;
-    const alSel = document.getElementById("rAl-" + id);
-    const penSel = document.getElementById("rPen-" + id);
-    
-    if (alSel && penSel) {
-      if (rL !== "" && rV !== "" && rL === rV) {
-        alSel.style.display = "inline-block";
-      } else {
-        alSel.style.display = "none";
-        penSel.style.display = "none";
-        alSel.value = "";
-        penSel.value = "";
-      }
-    }
-  }
-});
+  const gL = document.getElementById("gL-" + id).value;
+  const gV = document.getElementById("gV-" + id).value;
 
-window.guardarResultado = async (id) => {
-  const rL = document.getElementById("rL-" + id).value;
-  const rV = document.getElementById("rV-" + id).value;
-  
-  if (rL === "" || rV === "") {
-    mostrarMensaje("Completá ambos marcadores", "error");
+  if (gL === "" || gV === "") {
+    mostrarMensaje("⚠️ Completá ambos marcadores", "error");
     return;
   }
 
-  let alargue = "";
-  let penales = "";
-  const alSel = document.getElementById("rAl-" + id);
-  const penSel = document.getElementById("rPen-" + id);
+  const esElim = !p.j || p.fase;
+  let alargueLocal = null;
+  let alargueVisit = null;
+  let penalesLocal = null;
+  let penalesVisit = null;
 
-  if (alSel && alSel.style.display !== "none") {
-    alargue = alSel.value;
-    if (!alargue) {
-      mostrarMensaje("⚠️ Al ser un empate en eliminatoria, debés indicar el resultado del alargue", "error");
+  if (esElim && parseInt(gL) === parseInt(gV)) {
+    const alL = document.getElementById("alL-" + id)?.value;
+    const alV = document.getElementById("alV-" + id)?.value;
+    
+    if (alL === "" || alV === "") {
+      mostrarMensaje("⚠️ Completá el marcador del alargue", "error");
       return;
     }
-    if (alargue === "E" && penSel) {
-      penales = penSel.value;
-      if (!penales) {
-        mostrarMensaje("️ Debés indicar el ganador por penales", "error");
+    
+    alargueLocal = parseInt(alL);
+    alargueVisit = parseInt(alV);
+    
+    // Si el alargue también es empate, pedir penales
+    if (alargueLocal === alargueVisit) {
+      const penL = document.getElementById("penL-" + id)?.value;
+      const penV = document.getElementById("penV-" + id)?.value;
+      
+      if (penL === "" || penV === "") {
+        mostrarMensaje("⚠️ Completá el marcador de penales", "error");
         return;
       }
+      
+      if (parseInt(penL) === parseInt(penV)) {
+        mostrarMensaje("⚠️ En penales NO puede haber empate", "error");
+        return;
+      }
+      
+      penalesLocal = parseInt(penL);
+      penalesVisit = parseInt(penV);
+    } else {
+      // Alargue definió, penales no se usan
+      penalesLocal = 0;
+      penalesVisit = 0;
     }
   }
 
+  const datos = {
+    id: id,
+    partido_id: id,
+    local: parseInt(gL),
+    visit: parseInt(gV),
+    alargue_local: alargueLocal,
+    alargue_visit: alargueVisit,
+    penales_local: penalesLocal,
+    penales_visit: penalesVisit,
+    es_prueba: false
+  };
+
   try {
-    await setDoc(doc(db, "resultados", id), {
-      partidoId: id,
-      local: rL,
-      visit: rV,
-      alargue: alargue,
-      penales: penales,
-      fechaCarga: serverTimestamp()
-    });
-    mostrarMensaje(`✓ Resultado de ${id} cargado correctamente. Puntos recalculados.`, "ok");
+    const { error } = await supabase
+      .from('resultados')
+      .upsert(datos, { onConflict: 'id' });
+
+    if (error) throw error;
+
+    mostrarMensaje("✅ Resultado guardado correctamente", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
-    mostrarMensaje("Error: " + err.message, "error");
+    console.error(err);
+    mostrarMensaje("❌ Error: " + err.message, "error");
   }
-};
+}
+
+async function borrarResultado(id) {
+  if (!confirm(`¿Borrar el resultado del partido ${id}?`)) return;
+
+  try {
+    const { error } = await supabase
+      .from('resultados')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+
+    mostrarMensaje("🗑️ Resultado borrado", "ok");
+    await cargarResultados();
+    renderPartidos();
+  } catch (err) {
+    console.error(err);
+    mostrarMensaje("❌ Error: " + err.message, "error");
+  }
+}
 
 window.generarPrueba = async () => {
-  if (!confirm("¿Generar resultados aleatorios para TODOS los partidos? (modo prueba)")) return;
+  if (!confirm("¿Generar resultados de PRUEBA para todos los partidos?\n\nEsto es solo para testing.")) return;
 
   try {
-    const batch = writeBatch(db);
-    TODOS_PARTIDOS.forEach(p => {
-      const golesL = Math.floor(Math.random() * 5);
-      const golesV = Math.floor(Math.random() * 5);
-      batch.set(doc(db, "resultados", p.id), {
-        partidoId: p.id,
-        local: golesL.toString(),
-        visit: golesV.toString(),
-        fechaCarga: serverTimestamp(),
-        esPrueba: true
-      });
-    });
-    await batch.commit();
-    mostrarMensaje(`🧪 ${TODOS_PARTIDOS.length} resultados de prueba generados`, "ok");
+    const pruebas = TODOS_PARTIDOS.map(p => ({
+      id: p.id,
+      partido_id: p.id,
+      local: Math.floor(Math.random() * 4),
+      visit: Math.floor(Math.random() * 4),
+      es_prueba: true
+    }));
+
+    const { error } = await supabase
+      .from('resultados')
+      .upsert(pruebas, { onConflict: 'id' });
+
+    if (error) throw error;
+
+    mostrarMensaje("🧪 Resultados de prueba generados", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
-    mostrarMensaje("Error: " + err.message, "error");
+    console.error(err);
+    mostrarMensaje("❌ Error: " + err.message, "error");
   }
 };
 
 window.limpiarPrueba = async () => {
-  if (!confirm("¿Eliminar SOLO los resultados marcados como prueba?")) return;
+  if (!confirm("¿Borrar SOLO los resultados de PRUEBA?")) return;
 
   try {
-    const q = query(collection(db, "resultados"), where("esPrueba", "==", true));
-    const snap = await getDocs(q);
-    const batch = writeBatch(db);
-    snap.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    mostrarMensaje("🧹 Resultados de prueba eliminados", "ok");
+    const { error } = await supabase
+      .from('resultados')
+      .delete()
+      .eq('es_prueba', true);
+
+    if (error) throw error;
+
+    mostrarMensaje("🧹 Pruebas limpiadas", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
-    mostrarMensaje("Error: " + err.message, "error");
+    console.error(err);
+    mostrarMensaje("❌ Error: " + err.message, "error");
   }
 };
 
 window.reiniciar = async () => {
-  if (!confirm("⚠️ ¿BORRAR TODAS las predicciones y resultados?")) return;
-  if (!confirm("¿ESTÁS SEGURO? Se perderá todo. Esta acción NO se puede deshacer.")) return;
+  if (!confirm("⚠️ ¿REINICIAR TODO EL PRODE?\n\nSe borrarán:\n- Todos los resultados\n- Todas las predicciones\n- Todos los campeones\n\nEsta acción NO se puede deshacer.")) return;
+
+  if (!confirm("⚠️ ¿ESTÁS SEGURO? Esta es la última confirmación.")) return;
 
   try {
-    const predsSnap = await getDocs(collection(db, "predicciones"));
-    const resSnap = await getDocs(collection(db, "resultados"));
-    const campeonesSnap = await getDocs(collection(db, "campeones"));
-    const batch = writeBatch(db);
-    predsSnap.forEach(d => batch.delete(d.ref));
-    resSnap.forEach(d => batch.delete(d.ref));
-    campeonesSnap.forEach(d => batch.delete(d.ref));
-    await batch.commit();
-    mostrarMensaje("🔄 Prode reiniciado completamente", "ok");
+    await supabase.from('resultados').delete().neq('id', '');
+    await supabase.from('predicciones').delete().neq('id', '');
+    await supabase.from('campeones').delete().neq('id', '');
+    await supabase.from('config').delete().neq('id', '');
+
+    mostrarMensaje("⚠️ Prode reiniciado completamente", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
-    mostrarMensaje("Error: " + err.message, "error");
+    console.error(err);
+    mostrarMensaje("❌ Error: " + err.message, "error");
   }
 };
 
-// ═══════════════════════════════════════════════════════
-// CAMPEÓN REAL
-// ═══════════════════════════════════════════════════════
-
-function inicializarCampeonReal() {
-  const opciones = SELECCIONES
-    .sort((a, b) => a.localeCompare(b))
-    .map(s => `<option value="${s}">${FLAGS[s] || "🏳️"} ${s}</option>`)
-    .join("");
-  
-  const sel = document.getElementById("realCampeon");
-  if (sel) {
-    sel.innerHTML = '<option value="">-- Seleccionar campeón --</option>' + opciones;
+window.guardarCampeonReal = async () => {
+  const campeon = document.getElementById("realCampeon").value;
+  if (!campeon) {
+    alert("Seleccioná un campeón");
+    return;
   }
-  
-  cargarCampeonRealActual();
-}
 
-async function cargarCampeonRealActual() {
+  if (!confirm(`¿Confirmás que ${campeon} es el campeón del Mundial?\n\nEsta acción calculará los puntos de todos los usuarios.`)) return;
+
   try {
-    const snap = await getDoc(doc(db, "config", "final"));
-    if (snap.exists() && snap.data().campeon) {
-      const campeon = snap.data().campeon;
-      document.getElementById("campeonRealActual").innerHTML = 
-        `✓ Campeón cargado: <strong>${FLAGS[campeon] || "🏳️"} ${campeon}</strong>`;
-      document.getElementById("realCampeon").value = campeon;
+    const { error } = await supabase
+      .from('config')
+      .upsert({
+        id: 'final',
+        campeon: campeon
+      }, { onConflict: 'id' });
+
+    if (error) throw error;
+
+    mostrarMensaje(`🏆 Campeón guardado: ${campeon}`, "ok");
+    cargarCampeonReal();
+  } catch (err) {
+    console.error(err);
+    mostrarMensaje("❌ Error: " + err.message, "error");
+  }
+};
+
+async function cargarCampeonReal() {
+  try {
+    const { data, error } = await supabase
+      .from('config')
+      .select('*')
+      .eq('id', 'final')
+      .single();
+
+    if (!error && data) {
+      document.getElementById("realCampeon").value = data.campeon;
+      document.getElementById("campeonRealActual").textContent = 
+        `🏆 Campeón actual: ${FLAGS[data.campeon] || "🏳️"} ${data.campeon}`;
     }
   } catch (err) {
     console.error(err);
   }
 }
 
-window.guardarCampeonReal = async () => {
-  const campeon = document.getElementById("realCampeon").value;
-  
-  if (!campeon) {
-    mostrarMensaje("Seleccioná el campeón", "error");
-    return;
-  }
-  
-  if (!confirm(
-    `¿Confirmás el campeón del Mundial?\n\n` +
-    ` ${campeon}\n\n` +
-    `Esto calculará los puntos extra de todos los usuarios.\n` +
-    `Podés cambiarlo más tarde si es necesario.`
-  )) return;
-  
-  try {
-    await setDoc(doc(db, "config", "final"), {
-      campeon: campeon,
-      fechaCarga: serverTimestamp()
-    });
-    mostrarMensaje(` Campeón guardado: ${campeon}. Puntos recalculados.`, "ok");
-    cargarCampeonRealActual();
-  } catch (err) {
-    mostrarMensaje("Error: " + err.message, "error");
-  }
-};
-
 function mostrarMensaje(msg, tipo) {
-  const div = document.getElementById("mensaje");
-  div.textContent = msg;
-  div.style.background = tipo === "ok" ? "var(--green-soft)" : "var(--red-soft)";
-  div.style.border = tipo === "ok" ? "1px solid var(--green)" : "1px solid var(--red)";
-  div.style.color = tipo === "ok" ? "var(--green)" : "var(--red)";
-  div.style.display = "block";
-  setTimeout(() => div.style.display = "none", 4000);
+  const el = document.getElementById("mensaje");
+  el.textContent = msg;
+  el.style.background = tipo === "ok" ? "var(--green-soft)" : "var(--red-soft)";
+  el.style.border = tipo === "ok" ? "1px solid var(--green)" : "1px solid var(--red)";
+  el.style.color = tipo === "ok" ? "var(--green)" : "var(--red)";
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 4000);
 }
+
+// Inicializar
+async function init() {
+  await cargarResultados();
+  await cargarCampeonReal();
+  renderTabs();
+  renderPartidos();
+
+  // Llenar select de campeón
+  const select = document.getElementById("realCampeon");
+  select.innerHTML = '<option value="">-- Seleccionar campeón --</option>' +
+    SELECCIONES.sort((a, b) => a.localeCompare(b))
+      .map(s => `<option value="${s}">${FLAGS[s] || "🏳️"} ${s}</option>`)
+      .join("");
+}
+
+window.addEventListener("usuarioListo", init);
