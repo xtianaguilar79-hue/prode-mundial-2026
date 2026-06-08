@@ -41,6 +41,11 @@
     .campeon-opc .pts { font-size: 14px; color: var(--text); font-weight: 700; }
     .campeon-opc .desc { font-size: 11px; color: var(--text2); margin-top: 4px; }
 
+    .ejemplo-box { background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin: 12px 0; font-size: 13px; }
+    .ejemplo-box .titulo { color: var(--gold); font-weight: 700; margin-bottom: 8px; font-size: 12px; text-transform: uppercase; }
+    .ejemplo-box .fila { display: flex; justify-content: space-between; padding: 4px 0; border-bottom: 1px dashed var(--border); }
+    .ejemplo-box .fila:last-child { border-bottom: none; font-weight: 700; color: var(--gold); }
+
     .faq-item { background: var(--bg2); border: 1px solid var(--border); border-radius: 8px; padding: 16px 20px; margin-bottom: 10px; }
     .faq-item summary { cursor: pointer; font-weight: 700; color: var(--text); font-size: 14px; list-style: none; display: flex; justify-content: space-between; align-items: center; }
     .faq-item summary::after { content: "+"; color: var(--gold); font-size: 20px; font-weight: 700; }
@@ -74,10 +79,10 @@
     </div>
   </div>
   <nav class="nav">
-    <a href="/">🏠 Inicio</a>
-    <a href="/#ranking">🏅 Ranking</a>
-    <a href="/#resultados">📊 Resultados</a>
-    <a href="/login">🔐 Ingresar</a>
+    <a href="index.html">🏠 Inicio</a>
+    <a href="index.html#ranking">🏅 Ranking</a>
+    <a href="index.html#resultados">📊 Resultados</a>
+    <a href="login.html">🔐 Ingresar</a>
   </nav>
 </header>
 
@@ -94,7 +99,7 @@
     <ol>
       <li><a href="#s1">Bienvenida y objetivo del Prode</a></li>
       <li><a href="#s2">Cómo registrarse y participar</a></li>
-      <li><a href="#s3">Pronósticos de partidos (3 capas)</a></li>
+      <li><a href="#s3">Pronósticos de partidos (5 capas)</a></li>
       <li><a href="#s4">Pronóstico del Campeón del Mundo</a></li>
       <li><a href="#s5">Sistema de puntuación</a></li>
       <li><a href="#s6">Reglas de bloqueo y modificaciones</a></li>
@@ -106,23 +111,24 @@
   </div>
 
   <section class="seccion" id="s1">
-    <h2> 1. Bienvenida y objetivo</h2>
-    <p>El <strong>Prode Mundial 2026</strong> es un juego de pronósticos deportivos sin fines de lucro, organizado con motivo de la Copa del Mundo FIFA 2026 que se disputará en 🇲 México, 🇺🇸 Estados Unidos y 🇨🇦 Canadá.</p>
+    <h2>🏆 1. Bienvenida y objetivo</h2>
+    <p>El <strong>Prode Mundial 2026</strong> es un juego de pronósticos deportivos sin fines de lucro, organizado con motivo de la Copa del Mundo FIFA 2026 que se disputará en 🇲🇽 México, 🇺🇸 Estados Unidos y 🇨🇦 Canadá.</p>
     <p>El objetivo es <strong>acumular la mayor cantidad de puntos</strong> acertando los resultados de los 104 partidos del torneo y el equipo que se consagrará campeón.</p>
     <div class="destacado">
-       <strong>Ganador:</strong> quien termine en la <strong>1° posición</strong> del ranking general al finalizar el torneo será declarado <strong>Campeón del Prode Mundial 2026</strong>.
+      🏆 <strong>Ganador:</strong> quien termine en la <strong>1° posición</strong> del ranking general al finalizar el torneo será declarado <strong>Campeón del Prode Mundial 2026</strong>.
     </div>
   </section>
 
   <section class="seccion" id="s2">
     <h2>📝 2. Cómo registrarse y participar</h2>
     <ol>
-      <li>Ingresá a la sección <a href="/login"><strong> Ingresar</strong></a>.</li>
+      <li>Ingresá a la sección <a href="login.html"><strong>🔐 Ingresar</strong></a>.</li>
       <li>Hacé clic en <strong>"Registrate"</strong> y completá:
         <ul>
-          <li>Tu <strong>nombre o apodo</strong> (así vas a aparecer en el ranking).</li>
+          <li>Tu <strong>nombre y apellido</strong> (así vas a aparecer en el ranking).</li>
           <li>Un <strong>email válido</strong> (sirve como usuario).</li>
           <li>Una <strong>contraseña</strong> de mínimo 6 caracteres.</li>
+          <li>Opcionalmente, podés agregar un <strong>apodo</strong> y <strong>grupos</strong> (empresa, colegio, amigos) para competir en rankings paralelos.</li>
         </ul>
       </li>
       <li>Una vez registrado, ingresá con tu email y contraseña.</li>
@@ -134,30 +140,49 @@
   </section>
 
   <section class="seccion" id="s3">
-    <h2>⚽ 3. Pronósticos de partidos (3 capas)</h2>
+    <h2>⚽ 3. Pronósticos de partidos (5 capas)</h2>
 
     <h3>3.1. Fase de grupos (72 partidos)</h3>
     <p>Para cada partido de la fase de grupos debés indicar el <strong>resultado exacto al final de los 90 minutos</strong>.</p>
-    <p><strong>Ejemplo:</strong> Argentina 2 – 1 Australia</p>
+    <div class="ejemplo-box">
+      <div class="titulo">📋 Ejemplo</div>
+      <div class="fila"><span>Argentina 2 – 1 Australia</span><span>✓ Pronóstico válido</span></div>
+    </div>
     <ul>
       <li>Solo se considera el resultado del <strong>tiempo reglamentario (90 minutos + adicionales)</strong>.</li>
-      <li><strong>No</strong> se tiene en cuenta alargue ni penales en fase de grupos.</li>
+      <li><strong>No</strong> se tiene en cuenta alargue ni penales en fase de grupos (no los hay).</li>
     </ul>
 
     <h3>3.2. Fase eliminatoria (32 partidos)</h3>
-    <p>En dieciseisavos, octavos, cuartos, semifinales, 3er puesto y final, el pronóstico es más completo y tiene <strong>3 capas</strong>:</p>
+    <p>En dieciseisavos, octavos, cuartos, semifinales, 3er puesto y final, el pronóstico tiene <strong>hasta 5 capas</strong>:</p>
     <ol>
       <li><strong>Resultado a los 90 minutos</strong> (como en fase de grupos).</li>
-      <li>Si pronosticás <strong>empate</strong>, debés indicar adicionalmente:
-        <ul>
-          <li><strong>Resultado del alargue</strong>: Gana Local / Gana Visitante / Empate → Penales</li>
-          <li>Si elegís "Empate → Penales", debés indicar <strong>qué equipo gana por penales</strong>.</li>
-        </ul>
-      </li>
+      <li>Si pronosticás <strong>empate en 90'</strong>, <strong>debes</strong> indicar el <strong>resultado del alargue</strong> (ej: 2-1).</li>
+      <li>Si el alargue también termina en <strong>empate</strong>, <strong>debes</strong> indicar el <strong>resultado de los penales</strong> (ej: 5-4).</li>
     </ol>
 
     <div class="destacado info">
-      💡 <strong>Ejemplo completo:</strong> En cuartos de final pronosticás: Argentina 1 – Brasil 1 (90'). Alargue: Empate → Penales. Ganador penales: Argentina.
+      💡 <strong>Importante:</strong> Ya no se elige "Gana Local/Gana Visitante". Ahora se indica el <strong>marcador real</strong> tanto del alargue como de los penales.
+    </div>
+
+    <div class="ejemplo-box">
+      <div class="titulo">📋 Ejemplo completo - Cuartos de Final</div>
+      <div class="fila"><span>90 minutos:</span><span>Argentina 1 – 1 Brasil</span></div>
+      <div class="fila"><span>Alargue:</span><span>2 – 2 (empate en alargue)</span></div>
+      <div class="fila"><span>Penales:</span><span>5 – 4 (gana Argentina)</span></div>
+      <div class="fila"><span>✅ Pronóstico completo guardado</span></div>
+    </div>
+
+    <div class="ejemplo-box">
+      <div class="titulo">📋 Ejemplo 2 - Octavos de Final (alargue define)</div>
+      <div class="fila"><span>90 minutos:</span><span>Francia 1 – 1 Alemania</span></div>
+      <div class="fila"><span>Alargue:</span><span>2 – 1 (gana Francia en alargue)</span></div>
+      <div class="fila"><span>Penales:</span><span>No se juegan</span></div>
+      <div class="fila"><span>✅ Pronóstico completo guardado</span></div>
+    </div>
+
+    <div class="destacado alerta">
+      ⚠️ <strong>Regla clave:</strong> En fases eliminatorias, si pronosticás empate en 90' <strong>es obligatorio</strong> completar el marcador del alargue. Si el alargue también es empate, <strong>es obligatorio</strong> completar los penales.
     </div>
   </section>
 
@@ -166,7 +191,7 @@
     <p>Además de los partidos, cada participante debe elegir <strong>3 selecciones en orden de preferencia</strong> como candidatas a ganar el Mundial 2026.</p>
 
     <div class="campeon-box">
-      <h3 style="color:var(--gold); font-family:'Anton'; font-size:22px; margin-bottom:16px;">🥇  🥉 Elegí tu podio de favoritos</h3>
+      <h3 style="color:var(--gold); font-family:'Anton'; font-size:22px; margin-bottom:16px;">🥇 🥈 🥉 Elegí tu podio de favoritos</h3>
       <p style="color:var(--text2); font-size:14px; margin-bottom:16px;">
         Seleccioná 3 selecciones distintas. Si alguna se consagra campeona, sumás puntos extra.
       </p>
@@ -192,7 +217,7 @@
     <h3>📋 Reglas del pronóstico de campeón</h3>
     <ul>
       <li>Debés elegir <strong>3 selecciones distintas</strong> entre las 48 clasificadas.</li>
-      <li>El orden importa: la <strong>1° opción</strong> es tu candidato principal a campeón, la <strong>2°</strong> y <strong>3°</strong> son tus alternativas.</li>
+      <li>El orden importa: la <strong>1° opción</strong> es tu candidato principal, la <strong>2°</strong> y <strong>3°</strong> son alternativas.</li>
       <li>Si el campeón real es tu <strong>1° opción</strong> → sumás los puntos vigentes de la opción 1.</li>
       <li>Si el campeón real es tu <strong>2° opción</strong> → sumás los puntos vigentes de la opción 2.</li>
       <li>Si el campeón real es tu <strong>3° opción</strong> → sumás los puntos vigentes de la opción 3.</li>
@@ -232,45 +257,71 @@
     <h2>📊 5. Sistema de puntuación por partido</h2>
     <p>Cada partido suma puntos por <strong>componentes independientes</strong> que se acumulan entre sí. El peso de cada componente crece a medida que avanza el torneo.</p>
 
+    <h3>5.1. Tabla de puntos por fase</h3>
     <div class="tabla-puntos-wrap">
       <table>
         <thead>
           <tr>
             <th>Fase</th>
-            <th>Signo (90')</th>
-            <th>Gol Local</th>
-            <th>Gol Visit.</th>
-            <th>Exacto</th>
-            <th>Alargue</th>
-            <th>Penales</th>
-            <th>Máximo</th>
+            <th>Signo<br>(90')</th>
+            <th>Gol<br>Local</th>
+            <th>Gol<br>Visit.</th>
+            <th>Exacto<br>(90')</th>
+            <th>Alargue<br>(signo)</th>
+            <th>Penales<br>(signo)</th>
+            <th>Máximo<br>posible</th>
           </tr>
         </thead>
         <tbody>
           <tr><td><strong>Fase de Grupos</strong></td><td>1</td><td>1</td><td>1</td><td>+3</td><td>—</td><td>—</td><td class="max-pts">6</td></tr>
-          <tr><td><strong>16avos de Final</strong></td><td>3</td><td>2</td><td>2</td><td>+9</td><td>+3</td><td>+2</td><td class="max-pts">21</td></tr>
-          <tr><td><strong>Octavos de Final</strong></td><td>6</td><td>3</td><td>3</td><td>+15</td><td>+6</td><td>+3</td><td class="max-pts">36</td></tr>
-          <tr><td><strong>Cuartos de Final</strong></td><td>10</td><td>5</td><td>5</td><td>+25</td><td>+10</td><td>+5</td><td class="max-pts">60</td></tr>
-          <tr><td><strong>Semifinales</strong></td><td>15</td><td>7</td><td>7</td><td>+40</td><td>+15</td><td>+8</td><td class="max-pts">92</td></tr>
+          <tr><td><strong>16avos</strong></td><td>3</td><td>2</td><td>2</td><td>+9</td><td>+3</td><td>+2</td><td class="max-pts">21</td></tr>
+          <tr><td><strong>Octavos</strong></td><td>6</td><td>3</td><td>3</td><td>+15</td><td>+6</td><td>+3</td><td class="max-pts">36</td></tr>
+          <tr><td><strong>Cuartos</strong></td><td>10</td><td>5</td><td>5</td><td>+25</td><td>+10</td><td>+5</td><td class="max-pts">60</td></tr>
+          <tr><td><strong>Semis</strong></td><td>15</td><td>7</td><td>7</td><td>+40</td><td>+15</td><td>+8</td><td class="max-pts">92</td></tr>
           <tr><td><strong>3er Puesto</strong></td><td>20</td><td>10</td><td>10</td><td>+50</td><td>+20</td><td>+10</td><td class="max-pts">120</td></tr>
-          <tr><td><strong> Final</strong></td><td>30</td><td>15</td><td>15</td><td>+80</td><td>+30</td><td>+15</td><td class="max-pts">185</td></tr>
+          <tr><td><strong>Final 🏆</strong></td><td>30</td><td>15</td><td>15</td><td>+80</td><td>+30</td><td>+15</td><td class="max-pts">185</td></tr>
         </tbody>
       </table>
     </div>
 
+    <h3>5.2. Cómo se calculan los puntos</h3>
+    <p>Los componentes son <strong>acumulativos</strong>. Cada uno se suma independientemente:</p>
+    <ol>
+      <li><strong>Signo (90'):</strong> Acertás si el equipo que gana (o empate) es el correcto.</li>
+      <li><strong>Gol Local:</strong> Acertás la cantidad exacta de goles del local.</li>
+      <li><strong>Gol Visitante:</strong> Acertás la cantidad exacta de goles del visitante.</li>
+      <li><strong>Resultado Exacto (90'):</strong> Bonus por acertar el marcador completo.</li>
+      <li><strong>Alargue (solo eliminatorias):</strong> Acertás el signo del resultado del alargue.</li>
+      <li><strong>Penales (solo eliminatorias):</strong> Acertás el ganador por penales.</li>
+    </ol>
+
+    <div class="ejemplo-box">
+      <div class="titulo">📋 Ejemplo de cálculo - Octavos de Final</div>
+      <div class="fila"><span>Pronóstico: Argentina 2 - Brasil 2, Alargue 3-2, Penales 5-4</span></div>
+      <div class="fila"><span>Resultado real: Argentina 2 - Brasil 2, Alargue 3-2, Penales 4-5</span></div>
+      <div class="fila"><span>Signo 90' (empate):</span><span>+6 pts ✓</span></div>
+      <div class="fila"><span>Gol local (2):</span><span>+3 pts ✓</span></div>
+      <div class="fila"><span>Gol visitante (2):</span><span>+3 pts ✓</span></div>
+      <div class="fila"><span>Exacto 90' (2-2):</span><span>+15 pts ✓</span></div>
+      <div class="fila"><span>Signo alargue (gana local):</span><span>+6 pts ✓</span></div>
+      <div class="fila"><span>Penales (gana visitante):</span><span>0 pts ✗</span></div>
+      <div class="fila"><span>TOTAL:</span><span>33 puntos</span></div>
+    </div>
+
     <div class="destacado info">
-      💡 <strong>Los componentes son acumulativos.</strong> Ejemplo: Si en un partido de octavos acertás signo (6) + gol local (3) + gol visitante (3) + resultado exacto (15), sumás <strong>27 puntos</strong> por ese partido.
+      💡 <strong>Puntaje máximo posible:</strong> Si acertás TODO en los 104 partidos + campeón + bonus fidelidad, el máximo teórico es <strong>1.985 puntos</strong>.
     </div>
   </section>
 
   <section class="seccion" id="s6">
-    <h2> 6. Reglas de bloqueo y modificaciones</h2>
+    <h2>🔒 6. Reglas de bloqueo y modificaciones</h2>
     <ul>
       <li>🔒 <strong>Un pronóstico guardado es DEFINITIVO.</strong> No puede modificarse bajo ninguna circunstancia.</li>
-      <li> Cada partido <strong>se bloquea 5 minutos antes del kickoff</strong> (hora Argentina). Un cronómetro en pantalla te mostrará el tiempo restante.</li>
-      <li> El pronóstico del campeón se puede hacer hasta 5 minutos antes de la Final, pero los puntos disminuyen con cada fase.</li>
+      <li>⏰ Cada partido <strong>se bloquea 5 minutos antes del kickoff</strong> (hora Argentina). Un cronómetro en pantalla te mostrará el tiempo restante.</li>
+      <li>🏆 El pronóstico del campeón se puede hacer hasta 5 minutos antes de la Final, pero los puntos disminuyen con cada fase.</li>
       <li>0️⃣ Si no cargás pronóstico para un partido = <strong>0 puntos</strong> (sin penalización extra).</li>
       <li>⚽ <strong>Errás el signo pero acertás un gol</strong> → ¡igual sumás ese punto!</li>
+      <li>🔄 Los partidos de fases eliminatorias se actualizarán automáticamente con los equipos clasificados a medida que avance el torneo.</li>
     </ul>
   </section>
 
@@ -279,6 +330,9 @@
     <p>Para premiar a los participantes más comprometidos, se otorga un <strong>bonus de +100 puntos</strong> a quienes completen todos los pronósticos.</p>
     <div class="destacado">
       🎯 <strong>Requisito:</strong> Haber pronosticado los <strong>104 partidos</strong> del torneo (los 72 de fase de grupos + los 32 eliminatorios).
+    </div>
+    <div class="destacado info">
+      💡 <strong>Consejo:</strong> Aunque no conozcas a los equipos de las fases eliminatorias, <strong>cargá igual un pronóstico</strong>. Podés modificarlo cuando se conozcan los clasificados (antes del bloqueo de 5 minutos).
     </div>
   </section>
 
@@ -295,14 +349,14 @@
   </section>
 
   <section class="seccion" id="s9">
-    <h2> 9. Cronograma y fechas clave</h2>
+    <h2>📅 9. Cronograma y fechas clave</h2>
     <div class="tabla-puntos-wrap">
       <table>
         <thead>
           <tr><th>Fecha</th><th>Evento</th></tr>
         </thead>
         <tbody>
-          <tr><td><strong>Antes del 11/06/2026</strong></td><td>Cierre de inscripción y pronósticos del campeón</td></tr>
+          <tr><td><strong>Antes del 11/06/2026</strong></td><td>Cierre de inscripción y pronósticos del campeón (primer tramo)</td></tr>
           <tr><td><strong>11/06/2026</strong></td><td>🏁 Partido inaugural · Inicio fase de grupos</td></tr>
           <tr><td><strong>11/06 al 27/06</strong></td><td>Fase de grupos (3 fechas)</td></tr>
           <tr><td><strong>28/06 al 03/07</strong></td><td>Dieciseisavos de Final</td></tr>
@@ -330,13 +384,13 @@
     </details>
 
     <details class="faq-item">
-      <summary>¿Los penales de la definición se suman al marcador?</summary>
-      <p><strong>No.</strong> Solo se considera el resultado del tiempo reglamentario (90' + adicionales) para los goles. Los penales solo se usan para determinar el ganador en fases eliminatorias cuando hay empate.</p>
+      <summary>¿Los goles de penales se suman al marcador?</summary>
+      <p><strong>No.</strong> Los goles de penales NO se suman al marcador de goles. Solo se usa el resultado de penales para determinar el ganador del partido en fases eliminatorias cuando hay empate en alargue.</p>
     </details>
 
     <details class="faq-item">
       <summary>¿Cómo se cargan los resultados oficiales?</summary>
-      <p>El administrador carga los resultados oficiales una vez finalizados los partidos, basándose en las planillas oficiales de FIFA. Los puntos se recalculan automáticamente.</p>
+      <p>El administrador carga los resultados oficiales (90', alargue y penales) una vez finalizados los partidos, basándose en las planillas oficiales de FIFA. Los puntos se recalculan automáticamente.</p>
     </details>
 
     <details class="faq-item">
@@ -348,12 +402,22 @@
       <summary>¿Qué pasa si un partido se suspende o posterga?</summary>
       <p>El pronóstico sigue vigente y se computará cuando el partido se juegue. Si el partido finalmente no se disputa, se considerará como no pronosticado (0 puntos).</p>
     </details>
+
+    <details class="faq-item">
+      <summary>¿Cómo pronostico si no sé qué equipos juegan en fases eliminatorias?</summary>
+      <p>Podés cargar un pronóstico provisorio (ej: 1-0) y el sistema lo guardará. Cuando se conozcan los equipos clasificados, el administrador actualizará los cruces. <strong>IMPORTANTE:</strong> Si el partido ya fue bloqueado (5 minutos antes del kickoff), no podrás modificarlo. Planificá con tiempo.</p>
+    </details>
+
+    <details class="faq-item">
+      <summary>¿Qué pasa si hay empate en los penales?</summary>
+      <p><strong>Es imposible.</strong> El sistema no permite guardar un resultado de penales con empate. Siempre debe haber un ganador.</p>
+    </details>
   </section>
 
   <section class="seccion" style="text-align:center; background:linear-gradient(135deg, #1a2a6c, #0a0d14); border-color:var(--gold)">
     <h2 style="border:none; justify-content:center">🏆 ¡Que comience el Mundial!</h2>
     <p style="font-size:16px; margin-bottom:20px">Ya conocés todas las reglas. Ahora solo falta una cosa...</p>
-    <a href="/login" class="btn" style="display:inline-block; width:auto; padding:14px 40px; text-decoration:none">¡Empezar a jugar!</a>
+    <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:14px 40px; text-decoration:none">¡Empezar a jugar!</a>
   </section>
 
 </main>
