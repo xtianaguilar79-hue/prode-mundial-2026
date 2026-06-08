@@ -8,10 +8,6 @@ import {
 let todosLosUsuarios = {};
 let filtroGrupoActual = "";
 
-// ═══════════════════════════════════════════════════════
-// AUXILIARES
-// ═══════════════════════════════════════════════════════
-
 function partidoEnJuego(partido) {
   const kickoff = getKickoffTimestamp(partido);
   const ahora = Date.now();
@@ -19,18 +15,6 @@ function partidoEnJuego(partido) {
   const fin = kickoff + (110 * 60 * 1000);
   return ahora >= inicio && ahora <= fin;
 }
-
-function partidoFinalizado(partido, resultados) {
-  return !!resultados[partido.id];
-}
-
-function partidoProximo(partido, resultados) {
-  return !partidoFinalizado(partido, resultados) && !partidoEnJuego(partido);
-}
-
-// ═══════════════════════════════════════════════════════
-// CARGAR DATOS COMPLETOS
-// ═══════════════════════════════════════════════════════
 
 async function cargarDatosCompletos() {
   try {
@@ -145,13 +129,11 @@ async function cargarDatosCompletos() {
       }
     });
 
-    // Calcular totales
     const lista = Object.values(ranking).map(u => {
       const bonus = u.partidosPronosticados >= 104 ? 100 : 0;
       return { ...u, bonus, total: u.puntos + u.puntosCampeon + bonus };
     });
 
-    // Aplicar filtro de grupo
     let listaFiltrada = lista;
     if (filtroGrupoActual) {
       listaFiltrada = lista.filter(u => 
@@ -159,7 +141,6 @@ async function cargarDatosCompletos() {
       );
     }
 
-    // Ordenar
     listaFiltrada.sort((a, b) => {
       if (b.total !== a.total) return b.total - a.total;
       if (b.partidosAcertados !== a.partidosAcertados) return b.partidosAcertados - a.partidosAcertados;
@@ -168,16 +149,12 @@ async function cargarDatosCompletos() {
 
     listaFiltrada.forEach((u, i) => u.pos = i + 1);
 
-    return { lista: listaFiltrada, resultados, todosLosUsuarios: usuarios };
+    return { lista: listaFiltrada, resultados, todosLosUsuarios: usuarios, totalUsuarios: usuariosData.length };
   } catch (err) {
     console.error("Error al cargar datos:", err);
     throw err;
   }
 }
-
-// ═══════════════════════════════════════════════════════
-// ACTUALIZAR SELECTOR DE GRUPOS
-// ═══════════════════════════════════════════════════════
 
 function actualizarSelectorGrupos(usuarios) {
   const gruposSet = new Set();
@@ -207,28 +184,26 @@ function actualizarSelectorGrupos(usuarios) {
   };
 }
 
-// ═══════════════════════════════════════════════════════
-// RENDERIZAR RANKING
-// ═══════════════════════════════════════════════════════
-
-function renderRanking(lista) {
+function renderRanking(lista, totalUsuarios) {
   document.getElementById("rankingLoader").style.display = "none";
   document.getElementById("actualizado").textContent = "Actualizado: " + new Date().toLocaleTimeString();
 
-  const hayJugadoresActivos = lista.some(u => u.partidosPronosticados > 0);
+  // Verificar si hay jugadores con pronósticos
+  const jugadoresActivos = lista.filter(u => u.partidosPronosticados > 0);
+  const hayActivos = jugadoresActivos.length > 0;
 
-  if (!hayJugadoresActivos || lista.length === 0) {
+  if (!hayActivos) {
     document.getElementById("rankingTabla").style.display = "none";
     document.getElementById("top3").innerHTML = `
       <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1.5px solid var(--gold); box-shadow: 0 4px 24px rgba(255, 201, 60, 0.08);">
         <div style="font-size:70px; margin-bottom:16px;">🏆</div>
-        <h3 style="color:var(--gold); font-family:'Anton'; font-size:clamp(24px, 4vw, 36px); margin-bottom:12px; letter-spacing:1px;">MUY PRONTO ARRANCA EL TORNEO</h3>
+        <h3 style="color:var(--gold); font-family:'Anton'; font-size:clamp(24px, 4vw, 36px); margin-bottom:12px; letter-spacing:1px;">¡MUY PRONTO ARRANCA EL TORNEO!</h3>
         <p style="color:var(--text2); font-size:15px; max-width:450px; margin:0 auto 20px; line-height:1.6;">
-          ${filtroGrupoActual 
-            ? `Aún no hay jugadores en el grupo <strong style="color:var(--gold)">${filtroGrupoActual}</strong>.`
+          ${totalUsuarios > 0 
+            ? `Ya hay <strong style="color:var(--gold)">${totalUsuarios}</strong> jugador${totalUsuarios === 1 ? '' : 'es'} registrado${totalUsuarios === 1 ? '' : 's'}. El ranking se activará cuando comience el Mundial.`
             : `El ranking se activará una vez que comience el Mundial y los jugadores carguen sus pronósticos.`}
         </p>
-        <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none; font-size:14px;">🔐 Registrarme y pronosticar</a>
+        <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none; font-size:14px;"> Registrarme y pronosticar</a>
       </div>
     `;
     return;
@@ -241,7 +216,7 @@ function renderRanking(lista) {
   if (lista.length >= 3) {
     const orden = [1, 0, 2];
     const colores = ["p2", "p1", "p3"];
-    const emojis = ["🥈", "🥇", ""];
+    const emojis = ["", "🥇", ""];
     
     top3Div.innerHTML = orden.map((idx, i) => {
       const u = lista[idx];
@@ -287,12 +262,8 @@ function renderRanking(lista) {
   }).join("");
 }
 
-// ═══════════════════════════════════════════════════════
-// RENDERIZAR RESULTADOS EN CARDS
-// ═══════════════════════════════════════════════════════
-
 function renderCardPartido(p, resultado, estado) {
-  const flagL = FLAGS[p.local] || "🏳️";
+  const flagL = FLAGS[p.local] || "️";
   const flagV = FLAGS[p.visit] || "🏳️";
   
   let claseCard = "resultado-card";
@@ -350,6 +321,22 @@ function renderCardPartido(p, resultado, estado) {
 
 function renderResultados(resultados) {
   const cont = document.getElementById("resultadosContenido");
+  document.getElementById("resultadosLoader").style.display = "none";
+
+  // Si no hay ningún resultado cargado
+  if (Object.keys(resultados).length === 0) {
+    cont.innerHTML = `
+      <div style="text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1px solid var(--border);">
+        <div style="font-size:60px; margin-bottom:16px;">⏳</div>
+        <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>
+        <p style="color:var(--text2); font-size:14px; max-width:450px; margin:0 auto;">
+          Los resultados oficiales se cargarán en tiempo real a medida que se disputen los partidos.
+        </p>
+      </div>
+    `;
+    return;
+  }
+
   const secciones = [
     { label: "Fase de Grupos · Fecha 1", partidos: PARTIDOS_GRUPOS.filter(p => p.j === 1) },
     { label: "Fase de Grupos · Fecha 2", partidos: PARTIDOS_GRUPOS.filter(p => p.j === 2) },
@@ -371,16 +358,18 @@ function renderResultados(resultados) {
     const finalizados = sec.partidos.filter(p => resultados[p.id]);
     const proximos = sec.partidos.filter(p => !resultados[p.id] && !partidoEnJuego(p));
 
-    const ordenados = [...vivos, ...finalizados, ...proximos];
+    // Solo mostrar secciones que tengan al menos un partido finalizado o en vivo
+    if (finalizados.length === 0 && vivos.length === 0) return;
 
-    html += `<h3 class="seccion-titulo">${sec.label} <span style="font-size:12px; color:var(--text2); font-family:'DM Sans'; font-weight:400;">(${sec.partidos.length} partidos)</span></h3>`;
+    const ordenados = [...vivos, ...finalizados];
+
+    html += `<h3 class="seccion-titulo">${sec.label} <span style="font-size:12px; color:var(--text2); font-family:'DM Sans'; font-weight:400;">(${finalizados.length} finalizado${finalizados.length === 1 ? '' : 's'})</span></h3>`;
     html += `<div class="resultados-grid">`;
     
     ordenados.forEach(p => {
       const resultado = resultados[p.id];
-      let estado = "proximo";
-      if (resultado) estado = "finalizado";
-      else if (partidoEnJuego(p)) estado = "vivo";
+      let estado = "finalizado";
+      if (partidoEnJuego(p) && !resultado) estado = "vivo";
       
       html += renderCardPartido(p, resultado, estado);
     });
@@ -388,28 +377,34 @@ function renderResultados(resultados) {
     html += `</div>`;
   });
 
-  cont.innerHTML = html;
+  if (html === "") {
+    cont.innerHTML = `
+      <div style="text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1px solid var(--border);">
+        <div style="font-size:60px; margin-bottom:16px;">⏳</div>
+        <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>
+        <p style="color:var(--text2); font-size:14px; max-width:450px; margin:0 auto;">
+          Los resultados oficiales se cargarán en tiempo real a medida que se disputen los partidos.
+        </p>
+      </div>
+    `;
+  } else {
+    cont.innerHTML = html;
+  }
 }
-
-// ═══════════════════════════════════════════════════════
-// CARGAR Y RENDERIZAR TODO
-// ═══════════════════════════════════════════════════════
 
 async function cargarYRenderizar() {
   try {
-    const { lista, resultados, todosLosUsuarios: usuarios } = await cargarDatosCompletos();
+    const { lista, resultados, todosLosUsuarios: usuarios, totalUsuarios } = await cargarDatosCompletos();
     actualizarSelectorGrupos(usuarios);
-    renderRanking(lista);
+    renderRanking(lista, totalUsuarios);
     renderResultados(resultados);
   } catch (err) {
     console.error(err);
     document.getElementById("rankingLoader").innerHTML = "<p style='color:var(--red)'>Error al cargar los datos</p>";
-    document.getElementById("resultadosLoader").innerHTML = "<p style='color:var(--red)'>Error al cargar resultados</p>";
+    document.getElementById("resultadosLoader").style.display = "none";
+    document.getElementById("resultadosContenido").innerHTML = "<p style='color:var(--red); text-align:center; padding:30px;'>Error al cargar resultados</p>";
   }
 }
 
-// Iniciar
 cargarYRenderizar();
-
-// Actualizar cada 60 segundos
 setInterval(cargarYRenderizar, 60000);
