@@ -1,4 +1,4 @@
-import { supabase } from "./supabase-config.js";
+import { supabase, obtenerUsuario } from "./auth-guard.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, SELECCIONES
 } from "../datos-partidos.js";
@@ -18,6 +18,7 @@ async function cargarResultados() {
 
     resultados = {};
     data.forEach(r => { resultados[r.partido_id] = r; });
+    console.log("✅ Resultados cargados:", Object.keys(resultados).length);
   } catch (err) {
     console.error("Error al cargar resultados:", err);
   }
@@ -43,7 +44,7 @@ function renderTabs() {
     { id: "cuartos", label: "Cuartos" },
     { id: "semis", label: "Semis" },
     { id: "3er", label: "3er Puesto" },
-    { id: "final", label: "Final 🏆" },
+    { id: "final", label: "Final " },
   ];
 
   document.getElementById("faseTabs").innerHTML = tabs.map(t => `
@@ -73,11 +74,12 @@ function renderPartidos() {
   const cont = document.getElementById("partidosAdmin");
   const partidos = getPartidosFase();
   
+  console.log(`📋 Renderizando fase ${faseActiva}: ${partidos.length} partidos`);
+  
   cont.innerHTML = partidos.map(p => {
-    // Buscar partido con equipos reales
     const partidoReal = partidosConEquiposReales.find(x => x.id === p.id) || p;
     const flagL = FLAGS[partidoReal.local] || "🏳️";
-    const flagV = FLAGS[partidoReal.visit] || "🏳️";
+    const flagV = FLAGS[partidoReal.visit] || "️";
     const res = resultados[p.id];
     const esElim = !p.j || p.fase;
     
@@ -139,7 +141,7 @@ function renderPartidos() {
 
         <div class="partido-footer">
           <button class="btn-guardar btn-res" data-id="${p.id}" style="padding:8px 16px;">
-            ${res ? "✓ Actualizar" : "💾 Cargar resultado"}
+            ${res ? "✓ Actualizar" : " Cargar resultado"}
           </button>
           ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px; margin-left:8px;">🗑️ Borrar</button>` : ""}
         </div>
@@ -199,7 +201,7 @@ async function guardarResultado(id) {
   const gV = document.getElementById("gV-" + id).value;
 
   if (gL === "" || gV === "") {
-    mostrarMensaje("️ Completá ambos marcadores", "error");
+    mostrarMensaje("⚠️ Completá ambos marcadores", "error");
     return;
   }
 
@@ -339,7 +341,7 @@ window.limpiarPrueba = async () => {
     renderPartidos();
   } catch (err) {
     console.error(err);
-    mostrarMensaje(" Error: " + err.message, "error");
+    mostrarMensaje("❌ Error: " + err.message, "error");
   }
 };
 
@@ -435,6 +437,7 @@ function mostrarMensaje(msg, tipo) {
 }
 
 async function init() {
+  console.log(" Iniciando admin...");
   await cargarResultados();
   await cargarEquiposReales();
   await cargarCampeonReal();
@@ -442,10 +445,20 @@ async function init() {
   renderPartidos();
 
   const select = document.getElementById("realCampeon");
-  select.innerHTML = '<option value="">-- Seleccionar campeón --</option>' +
-    SELECCIONES.sort((a, b) => a.localeCompare(b))
-      .map(s => `<option value="${s}">${FLAGS[s] || "️"} ${s}</option>`)
-      .join("");
+  if (select) {
+    select.innerHTML = '<option value="">-- Seleccionar campeón --</option>' +
+      SELECCIONES.sort((a, b) => a.localeCompare(b))
+        .map(s => `<option value="${s}">${FLAGS[s] || "🏳️"} ${s}</option>`)
+        .join("");
+  }
 }
 
-window.addEventListener("usuarioListo", init);
+// INICIALIZACIÓN DIRECTA - sin esperar eventos
+(async () => {
+  try {
+    await protegerPagina(true);
+    await init();
+  } catch (err) {
+    console.error("Error en init:", err);
+  }
+})();
