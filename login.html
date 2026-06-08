@@ -87,14 +87,11 @@
     <div id="error" class="error" style="display:none"></div>
     <div id="ok" class="ok" style="display:none"></div>
 
-    <!-- FORMULARIO NORMAL -->
     <form id="form">
-      <!-- CAMPOS SIN required (se agregan dinámicamente) -->
       <input type="text" id="nombre" class="input" placeholder="Nombre" style="display:none">
       <input type="text" id="apellido" class="input" placeholder="Apellido" style="display:none">
       <input type="text" id="apodo" class="input" placeholder="Apodo (opcional)" style="display:none">
       
-      <!-- CAMPO DE GRUPOS (Empresa/Colegio/Amigos) -->
       <div id="gruposContainer" class="grupos-container" style="display:none">
         <label style="display:block; font-size:12px; color:var(--text2); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
           🏢 Empresa, Colegio o Grupo (opcional)
@@ -114,7 +111,6 @@
       <button type="submit" class="btn" id="btnSubmit">Ingresar</button>
     </form>
 
-    <!-- FORMULARIO RECUPERAR CONTRASEÑA -->
     <form id="formRecuperar" style="display:none">
       <p style="color:var(--text2); font-size:13px; margin-bottom:16px;">
         Ingresá tu email y te enviaremos un link para crear una nueva contraseña.
@@ -168,10 +164,6 @@
     if (user) window.location.href = "prode.html";
   });
 
-  // ═══════════════════════════════════════════════════════
-  // GESTIÓN DE GRUPOS (chips)
-  // ═══════════════════════════════════════════════════════
-
   function renderGrupos() {
     const list = $("gruposList");
     if (gruposAgregados.length === 0) {
@@ -216,33 +208,25 @@
     }
   });
 
-  // ═══════════════════════════════════════════════════════
-  // CAMBIAR ENTRE LOGIN Y REGISTRO (CORREGIDO)
-  // ═══════════════════════════════════════════════════════
-
   $("btnCambiar").onclick = () => {
     modo = modo === "login" ? "registro" : "login";
     
-    // Actualizar textos
     $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
     $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
     $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";
     $("btnSubmit").textContent = modo === "login" ? "Ingresar" : "Registrarme";
     
-    // Mostrar/ocultar campos de registro
     const camposRegistro = ["nombre", "apellido", "apodo", "gruposContainer"];
     camposRegistro.forEach(id => {
       $(id).style.display = modo === "registro" ? "block" : "none";
     });
     
-    // CORRECCIÓN: Agregar/quitar required dinámicamente
     if (modo === "registro") {
       $("nombre").setAttribute("required", "");
       $("apellido").setAttribute("required", "");
     } else {
       $("nombre").removeAttribute("required");
       $("apellido").removeAttribute("required");
-      // Limpiar valores de campos de registro
       $("nombre").value = "";
       $("apellido").value = "";
       $("apodo").value = "";
@@ -256,10 +240,6 @@
       renderGrupos();
     }
   };
-
-  // ═══════════════════════════════════════════════════════
-  // RECUPERAR CONTRASEÑA
-  // ═══════════════════════════════════════════════════════
 
   $("btnOlvide").onclick = () => {
     $("form").style.display = "none";
@@ -296,10 +276,6 @@
     }
   };
 
-  // ═══════════════════════════════════════════════════════
-  // LOGIN / REGISTRO
-  // ═══════════════════════════════════════════════════════
-
   $("form").onsubmit = async (e) => {
     e.preventDefault();
     ocultarMensajes();
@@ -308,7 +284,6 @@
     const password = $("password").value;
     const btn = $("btnSubmit");
 
-    // CORRECCIÓN: Solo validar campos de registro si estamos en modo registro
     if (modo === "registro") {
       const nombre = $("nombre").value.trim();
       const apellido = $("apellido").value.trim();
@@ -322,43 +297,56 @@
         mostrarError("Ingresá tu apellido");
         return;
       }
-    }
 
-    btn.disabled = true;
-    btn.textContent = "Procesando...";
+      btn.disabled = true;
+      btn.textContent = "Procesando...";
 
-    try {
-      let user;
-      if (modo === "login") {
-        // LOGIN: solo necesita email y contraseña
-        const cred = await signInWithEmailAndPassword(auth, email, password);
-        user = cred.user;
-      } else {
-        // REGISTRO: necesita todos los campos
-        const nombre = $("nombre").value.trim();
-        const apellido = $("apellido").value.trim();
-        const apodo = $("apodo").value.trim();
-        
+      try {
         const cred = await createUserWithEmailAndPassword(auth, email, password);
-        user = cred.user;
+        const user = cred.user;
+        
+        // GUARDAR EN FIRESTORE CON TODOS LOS CAMPOS
         await setDoc(doc(db, "usuarios", user.uid), {
           uid: user.uid,
           email: email,
           nombre: nombre,
           apellido: apellido,
-          apodo: apodo || null,
+          apodo: apodo || "",
           grupos: gruposAgregados,
           esAdmin: email === ADMIN_EMAIL.toLowerCase(),
           fechaRegistro: serverTimestamp(),
           puntosTotales: 0
         });
+        
+        console.log("✅ Usuario creado en Firestore:", {
+          uid: user.uid,
+          nombre: nombre,
+          apellido: apellido,
+          email: email
+        });
+        
+        mostrarOk("¡Cuenta creada! Ingresando...");
+        setTimeout(() => window.location.href = "prode.html", 800);
+      } catch (err) {
+        console.error("Error al crear usuario:", err);
+        mostrarError(traducirError(err.code));
+        btn.disabled = false;
+        btn.textContent = "Registrarme";
       }
-      mostrarOk(modo === "login" ? "Ingresando..." : "¡Cuenta creada! Ingresando...");
-      setTimeout(() => window.location.href = "prode.html", 800);
-    } catch (err) {
-      mostrarError(traducirError(err.code));
-      btn.disabled = false;
-      btn.textContent = modo === "login" ? "Ingresar" : "Registrarme";
+    } else {
+      // LOGIN
+      btn.disabled = true;
+      btn.textContent = "Procesando...";
+
+      try {
+        await signInWithEmailAndPassword(auth, email, password);
+        mostrarOk("Ingresando...");
+      } catch (err) {
+        console.error("Error al iniciar sesión:", err);
+        mostrarError(traducirError(err.code));
+        btn.disabled = false;
+        btn.textContent = "Ingresar";
+      }
     }
   };
 
