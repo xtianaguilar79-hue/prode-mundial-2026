@@ -160,9 +160,14 @@
 
   const $ = id => document.getElementById(id);
 
-  console.log("🔥 Firebase configurado:", { auth, db, ADMIN_EMAIL });
+  console.log("🔥 INICIO - Firebase:", { 
+    auth: !!auth, 
+    db: !!db, 
+    ADMIN_EMAIL: ADMIN_EMAIL 
+  });
 
   onAuthStateChanged(auth, (user) => {
+    console.log("👤 onAuthStateChanged:", user ? user.email : "null");
     if (user) window.location.href = "prode.html";
   });
 
@@ -212,6 +217,7 @@
 
   $("btnCambiar").onclick = () => {
     modo = modo === "login" ? "registro" : "login";
+    console.log("🔄 Modo cambiado a:", modo);
     
     $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
     $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
@@ -272,6 +278,7 @@
       btn.disabled = false;
       btn.textContent = "Enviar link de recuperación";
     } catch (err) {
+      console.error("Error en recuperación:", err);
       mostrarError(traducirError(err.code));
       btn.disabled = false;
       btn.textContent = "Enviar link de recuperación";
@@ -286,20 +293,23 @@
     const password = $("password").value;
     const btn = $("btnSubmit");
 
-    console.log("📝 Formulario enviado, modo:", modo);
+    console.log("📝 FORMULARIO ENVIADO - Modo:", modo);
+    console.log("📧 Email:", email);
 
     if (modo === "registro") {
       const nombre = $("nombre").value.trim();
       const apellido = $("apellido").value.trim();
       const apodo = $("apodo").value.trim();
       
-      console.log("📋 Datos del registro:", { nombre, apellido, apodo, email });
+      console.log("📋 DATOS REGISTRO:", { nombre, apellido, apodo, email, grupos: gruposAgregados });
       
       if (!nombre) {
+        console.warn("⚠️ Falta nombre");
         mostrarError("Ingresá tu nombre");
         return;
       }
       if (!apellido) {
+        console.warn("⚠️ Falta apellido");
         mostrarError("Ingresá tu apellido");
         return;
       }
@@ -308,11 +318,12 @@
       btn.textContent = "Procesando...";
 
       try {
-        console.log("🔐 Creando usuario en Authentication...");
+        console.log("🔐 PASO 1: Creando usuario en Authentication...");
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         const user = cred.user;
         
-        console.log("✅ Usuario creado en Auth:", user.uid);
+        console.log("✅ PASO 1 COMPLETADO - UID:", user.uid);
+        console.log("🔐 PASO 2: Preparando datos para Firestore...");
         
         const userData = {
           uid: user.uid,
@@ -326,47 +337,48 @@
           puntosTotales: 0
         };
         
-        console.log("💾 Guardando en Firestore:", userData);
+        console.log("💾 DATOS A GUARDAR:", userData);
+        console.log("🔐 PASO 2: Guardando en Firestore...");
         
-        // Intentar guardar con retry
-        let intentos = 0;
-        const maxIntentos = 3;
-        
-        while (intentos < maxIntentos) {
-          try {
-            await setDoc(doc(db, "usuarios", user.uid), userData);
-            console.log("✅ Usuario guardado en Firestore correctamente");
-            break;
-          } catch (retryErr) {
-            intentos++;
-            console.warn(`⚠️ Intento ${intentos} falló:`, retryErr);
-            if (intentos >= maxIntentos) {
-              throw retryErr;
-            }
-            await new Promise(resolve => setTimeout(resolve, 1000));
-          }
+        try {
+          await setDoc(doc(db, "usuarios", user.uid), userData);
+          console.log("✅✅✅ PASO 3 COMPLETADO - Usuario guardado en Firestore ✅✅✅");
+          
+          mostrarOk("¡Cuenta creada! Ingresando...");
+          setTimeout(() => window.location.href = "prode.html", 1000);
+        } catch (firestoreErr) {
+          console.error("❌❌❌ ERROR EN FIRESTORE:", firestoreErr);
+          console.error("❌ Código:", firestoreErr.code);
+          console.error("❌ Mensaje:", firestoreErr.message);
+          console.error("❌ Stack:", firestoreErr.stack);
+          
+          mostrarError("Error al guardar en Firestore: " + firestoreErr.message);
+          btn.disabled = false;
+          btn.textContent = "Registrarme";
         }
         
-        mostrarOk("¡Cuenta creada! Ingresando...");
-        setTimeout(() => window.location.href = "prode.html", 1000);
       } catch (err) {
-        console.error("❌ Error completo:", err);
-        console.error("❌ Código de error:", err.code);
+        console.error("❌❌❌ ERROR GENERAL:", err);
+        console.error("❌ Código:", err.code);
         console.error("❌ Mensaje:", err.message);
-        mostrarError(traducirError(err.code) + " - " + err.message);
+        console.error("❌ Stack:", err.stack);
+        
+        mostrarError(traducirError(err.code));
         btn.disabled = false;
         btn.textContent = "Registrarme";
       }
     } else {
       // LOGIN
+      console.log("🔐 LOGIN - Intentando iniciar sesión...");
       btn.disabled = true;
       btn.textContent = "Procesando...";
 
       try {
         await signInWithEmailAndPassword(auth, email, password);
+        console.log("✅ LOGIN EXITOSO");
         mostrarOk("Ingresando...");
       } catch (err) {
-        console.error("Error al iniciar sesión:", err);
+        console.error("❌ ERROR LOGIN:", err);
         mostrarError(traducirError(err.code));
         btn.disabled = false;
         btn.textContent = "Ingresar";
