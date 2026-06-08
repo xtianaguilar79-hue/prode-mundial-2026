@@ -111,27 +111,10 @@
       <button type="submit" class="btn" id="btnSubmit">Ingresar</button>
     </form>
 
-    <form id="formRecuperar" style="display:none">
-      <p style="color:var(--text2); font-size:13px; margin-bottom:16px;">
-        Ingresá tu email y te enviaremos un link para crear una nueva contraseña.
-      </p>
-      <input type="email" id="emailRecuperar" class="input" placeholder="Email" required autocomplete="email">
-      <button type="submit" class="btn" id="btnRecuperar">Enviar link de recuperación</button>
-      <button type="button" class="btn btn-secundario" id="btnVolverLogin" style="margin-top:8px;">
-        ← Volver al login
-      </button>
-    </form>
-
     <p style="margin-top:16px; font-size:13px; color:var(--text2)">
       <span id="textoCambio">¿No tenés cuenta?</span>
       <button id="btnCambiar" style="background:none;border:none;color:var(--gold);cursor:pointer;font-weight:700;margin-left:4px;font-family:inherit;font-size:13px">
         Registrate
-      </button>
-    </p>
-
-    <p style="margin-top:8px; font-size:12px">
-      <button id="btnOlvide" style="background:none;border:none;color:var(--text2);cursor:pointer;font-family:inherit;font-size:12px;text-decoration:underline;">
-        Olvidé mi contraseña
       </button>
     </p>
 
@@ -146,30 +129,20 @@
 </div>
 
 <script type="module">
-  import { auth, db, ADMIN_EMAIL } from "./js/firebase-config.js";
-  import { 
-    createUserWithEmailAndPassword, 
-    signInWithEmailAndPassword,
-    sendPasswordResetEmail,
-    onAuthStateChanged
-  } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-  import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+  import { supabase, ADMIN_EMAIL } from "./js/supabase-config.js";
 
   let modo = "login";
   let gruposAgregados = [];
 
   const $ = id => document.getElementById(id);
 
-  console.log("🔥 INICIO - Firebase:", { 
-    auth: !!auth, 
-    db: !!db, 
-    ADMIN_EMAIL: ADMIN_EMAIL 
-  });
+  console.log("🔥 Supabase inicializado");
 
-  onAuthStateChanged(auth, (user) => {
-    console.log("👤 onAuthStateChanged:", user ? user.email : "null");
-    if (user) window.location.href = "prode.html";
-  });
+  // Verificar si ya está logueado
+  const { data: { session } } = await supabase.auth.getSession();
+  if (session) {
+    window.location.href = "prode.html";
+  }
 
   function renderGrupos() {
     const list = $("gruposList");
@@ -217,8 +190,6 @@
 
   $("btnCambiar").onclick = () => {
     modo = modo === "login" ? "registro" : "login";
-    console.log("🔄 Modo cambiado a:", modo);
-    
     $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
     $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
     $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";
@@ -227,62 +198,22 @@
     const camposRegistro = ["nombre", "apellido", "apodo", "gruposContainer"];
     camposRegistro.forEach(id => {
       $(id).style.display = modo === "registro" ? "block" : "none";
+      if (modo === "registro") {
+        $("nombre").setAttribute("required", "");
+        $("apellido").setAttribute("required", "");
+      } else {
+        $("nombre").removeAttribute("required");
+        $("apellido").removeAttribute("required");
+        $("nombre").value = "";
+        $("apellido").value = "";
+        $("apodo").value = "";
+        gruposAgregados = [];
+        renderGrupos();
+      }
     });
     
-    if (modo === "registro") {
-      $("nombre").setAttribute("required", "");
-      $("apellido").setAttribute("required", "");
-    } else {
-      $("nombre").removeAttribute("required");
-      $("apellido").removeAttribute("required");
-      $("nombre").value = "";
-      $("apellido").value = "";
-      $("apodo").value = "";
-      gruposAgregados = [];
-      renderGrupos();
-    }
-    
     ocultarMensajes();
-    
-    if (modo === "registro") {
-      renderGrupos();
-    }
-  };
-
-  $("btnOlvide").onclick = () => {
-    $("form").style.display = "none";
-    $("formRecuperar").style.display = "block";
-    $("btnCambiar").parentElement.style.display = "none";
-    $("btnOlvide").parentElement.style.display = "none";
-    ocultarMensajes();
-  };
-
-  $("btnVolverLogin").onclick = () => {
-    $("form").style.display = "block";
-    $("formRecuperar").style.display = "none";
-    $("btnCambiar").parentElement.style.display = "block";
-    $("btnOlvide").parentElement.style.display = "block";
-    ocultarMensajes();
-  };
-
-  $("formRecuperar").onsubmit = async (e) => {
-    e.preventDefault();
-    ocultarMensajes();
-    const email = $("emailRecuperar").value.trim().toLowerCase();
-    const btn = $("btnRecuperar");
-    btn.disabled = true;
-    btn.textContent = "Enviando...";
-    try {
-      await sendPasswordResetEmail(auth, email);
-      mostrarOk(`✅ Email enviado a ${email}. Revisá tu bandeja de entrada (y spam).`);
-      btn.disabled = false;
-      btn.textContent = "Enviar link de recuperación";
-    } catch (err) {
-      console.error("Error en recuperación:", err);
-      mostrarError(traducirError(err.code));
-      btn.disabled = false;
-      btn.textContent = "Enviar link de recuperación";
-    }
+    if (modo === "registro") renderGrupos();
   };
 
   $("form").onsubmit = async (e) => {
@@ -293,114 +224,91 @@
     const password = $("password").value;
     const btn = $("btnSubmit");
 
-    console.log("📝 FORMULARIO ENVIADO - Modo:", modo);
-    console.log("📧 Email:", email);
-
     if (modo === "registro") {
       const nombre = $("nombre").value.trim();
       const apellido = $("apellido").value.trim();
       const apodo = $("apodo").value.trim();
-      
-      console.log("📋 DATOS REGISTRO:", { nombre, apellido, apodo, email, grupos: gruposAgregados });
-      
-      if (!nombre) {
-        console.warn("⚠️ Falta nombre");
-        mostrarError("Ingresá tu nombre");
-        return;
-      }
-      if (!apellido) {
-        console.warn("⚠️ Falta apellido");
-        mostrarError("Ingresá tu apellido");
-        return;
-      }
+
+      if (!nombre) { mostrarError("Ingresá tu nombre"); return; }
+      if (!apellido) { mostrarError("Ingresá tu apellido"); return; }
 
       btn.disabled = true;
       btn.textContent = "Procesando...";
 
       try {
-        console.log("🔐 PASO 1: Creando usuario en Authentication...");
-        const cred = await createUserWithEmailAndPassword(auth, email, password);
-        const user = cred.user;
+        console.log("🔐 Creando usuario en Supabase...");
         
-        console.log("✅ PASO 1 COMPLETADO - UID:", user.uid);
-        console.log("🔐 PASO 2: Preparando datos para Firestore...");
-        
-        const userData = {
-          uid: user.uid,
-          email: email,
-          nombre: nombre,
-          apellido: apellido,
-          apodo: apodo || "",
-          grupos: gruposAgregados,
-          esAdmin: email === ADMIN_EMAIL.toLowerCase(),
-          fechaRegistro: serverTimestamp(),
-          puntosTotales: 0
-        };
-        
-        console.log("💾 DATOS A GUARDAR:", userData);
-        console.log("🔐 PASO 2: Guardando en Firestore...");
-        
-        try {
-          await setDoc(doc(db, "usuarios", user.uid), userData);
-          console.log("✅✅✅ PASO 3 COMPLETADO - Usuario guardado en Firestore ✅✅✅");
-          
-          mostrarOk("¡Cuenta creada! Ingresando...");
-          setTimeout(() => window.location.href = "prode.html", 1000);
-        } catch (firestoreErr) {
-          console.error("❌❌❌ ERROR EN FIRESTORE:", firestoreErr);
-          console.error("❌ Código:", firestoreErr.code);
-          console.error("❌ Mensaje:", firestoreErr.message);
-          console.error("❌ Stack:", firestoreErr.stack);
-          
-          mostrarError("Error al guardar en Firestore: " + firestoreErr.message);
-          btn.disabled = false;
-          btn.textContent = "Registrarme";
-        }
-        
+        // 1. Crear usuario en Authentication
+        const { data: authData, error: authError } = await supabase.auth.signUp({
+          email,
+          password,
+        });
+
+        if (authError) throw authError;
+        if (!authData.user) throw new Error("No se creó el usuario");
+
+        console.log("✅ Usuario creado:", authData.user.id);
+
+        // 2. Crear perfil en tabla usuarios
+        const { error: profileError } = await supabase
+          .from('usuarios')
+          .insert({
+            id: authData.user.id,
+            email: email,
+            nombre: nombre,
+            apellido: apellido,
+            apodo: apodo || null,
+            grupos: gruposAgregados,
+            es_admin: email === ADMIN_EMAIL.toLowerCase(),
+            puntos_totales: 0
+          });
+
+        if (profileError) throw profileError;
+
+        console.log("✅ Perfil creado en Supabase");
+
+        // 3. Iniciar sesión automáticamente
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (signInError) throw signInError;
+
+        mostrarOk("¡Cuenta creada! Redirigiendo...");
+        setTimeout(() => window.location.href = "prode.html", 1000);
+
       } catch (err) {
-        console.error("❌❌❌ ERROR GENERAL:", err);
-        console.error("❌ Código:", err.code);
-        console.error("❌ Mensaje:", err.message);
-        console.error("❌ Stack:", err.stack);
-        
-        mostrarError(traducirError(err.code));
+        console.error("❌ Error:", err);
+        mostrarError(err.message || "Error al registrar");
         btn.disabled = false;
         btn.textContent = "Registrarme";
       }
+
     } else {
       // LOGIN
-      console.log("🔐 LOGIN - Intentando iniciar sesión...");
       btn.disabled = true;
       btn.textContent = "Procesando...";
 
       try {
-        await signInWithEmailAndPassword(auth, email, password);
-        console.log("✅ LOGIN EXITOSO");
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email,
+          password
+        });
+
+        if (error) throw error;
+
         mostrarOk("Ingresando...");
+        setTimeout(() => window.location.href = "prode.html", 800);
+
       } catch (err) {
-        console.error("❌ ERROR LOGIN:", err);
-        mostrarError(traducirError(err.code));
+        console.error("❌ Error login:", err);
+        mostrarError(err.message || "Email o contraseña incorrectos");
         btn.disabled = false;
         btn.textContent = "Ingresar";
       }
     }
   };
-
-  function traducirError(code) {
-    const errores = {
-      "auth/invalid-email": "Email inválido",
-      "auth/user-not-found": "Usuario no registrado",
-      "auth/wrong-password": "Contraseña incorrecta",
-      "auth/invalid-credential": "Email o contraseña incorrectos",
-      "auth/email-already-in-use": "Ese email ya está registrado",
-      "auth/weak-password": "La contraseña debe tener al menos 6 caracteres",
-      "auth/too-many-requests": "Demasiados intentos. Probá más tarde",
-      "auth/network-request-failed": "Error de conexión. Verificá tu internet",
-      "auth/api-key-not-valid": "Error de configuración. Contactá al administrador",
-      "permission-denied": "Permiso denegado. Contactá al administrador",
-    };
-    return errores[code] || "Error: " + code;
-  }
 
   function mostrarError(msg) {
     $("error").textContent = msg;
