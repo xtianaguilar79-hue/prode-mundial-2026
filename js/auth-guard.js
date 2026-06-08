@@ -1,33 +1,71 @@
-import { auth, db, ADMIN_EMAIL } from "./firebase-config.js";
-import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase, ADMIN_EMAIL } from "./supabase-config.js";
 
-export function protegerPagina(requiereAdmin = false) {
-  onAuthStateChanged(auth, async (user) => {
-    if (!user) {
-      window.location.href = "/login.html";
+export async function protegerPagina(requiereAdmin = false) {
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error || !session) {
+      console.log("️ No hay sesión, redirigiendo a login");
+      window.location.href = "login.html";
       return;
     }
-    
-    const perfilSnap = await getDoc(doc(db, "usuarios", user.uid));
-    const perfil = perfilSnap.exists() ? perfilSnap.data() : {};
-    
-    if (requiereAdmin && !perfil.esAdmin) {
-      alert("⛔ Acceso solo para administradores");
-      window.location.href = "/prode.html";
+
+    // Obtener perfil del usuario
+    const { data: usuario, error: userError } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id', session.user.id)
+      .single();
+
+    if (userError || !usuario) {
+      console.error("❌ No se encontró el perfil del usuario:", userError);
+      window.location.href = "login.html";
       return;
     }
-    
-    window.__USER__ = user;
-    window.__PERFIL__ = perfil;
+
+    console.log("✅ Usuario autenticado:", usuario.nombre, usuario.apellido);
+
+    // Mostrar nombre en el header
+    const userNameEl = document.getElementById("userName");
+    if (userNameEl) {
+      userNameEl.textContent = usuario.nombre;
+    }
+
+    // Mostrar tag ADMIN si corresponde
+    if (usuario.es_admin) {
+      const adminTag = document.getElementById("adminTag");
+      if (adminTag) adminTag.style.display = "inline";
+      const linkAdmin = document.getElementById("linkAdmin");
+      if (linkAdmin) linkAdmin.style.display = "inline-block";
+    }
+
+    // Si requiere admin y no lo es
+    if (requiereAdmin && !usuario.es_admin) {
+      alert("No tenés permisos de administrador");
+      window.location.href = "prode.html";
+      return;
+    }
+
+    // Guardar usuario en window para usar en otros scripts
+    window.usuarioActual = usuario;
+    window.session = session;
+
+    // Disparar evento para que app-prode.js sepa que está listo
     window.dispatchEvent(new CustomEvent("usuarioListo", { 
-      detail: { user, perfil } 
+      detail: { user: session.user, perfil: usuario } 
     }));
-  });
+
+  } catch (err) {
+    console.error("❌ Error en auth-guard:", err);
+    window.location.href = "login.html";
+  }
 }
 
-export function cerrarSesion() {
-  import("https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js")
-    .then(mod => mod.signOut(auth))
-    .then(() => window.location.href = "/login.html");
+export async function cerrarSesion() {
+  try {
+    await supabase.auth.signOut();
+    window.location.href = "login.html";
+  } catch (err) {
+    console.error("Error al cerrar sesión:", err);
+  }
 }

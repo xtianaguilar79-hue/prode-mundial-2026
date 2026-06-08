@@ -1,7 +1,4 @@
-import { db } from "./firebase-config.js";
-import { 
-  collection, query, where, getDocs, doc, setDoc, getDoc, serverTimestamp 
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from "./supabase-config.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, PUNTOS, 
   calcularPuntos, SELECCIONES, obtenerPuntosCampeonDisponibles,
@@ -21,11 +18,7 @@ window.addEventListener("usuarioListo", async (e) => {
   usuario = e.detail.user;
   perfil = e.detail.perfil;
 
-  document.getElementById("userName").textContent = perfil.nombre;
-  if (perfil.esAdmin) {
-    document.getElementById("adminTag").style.display = "inline";
-    document.getElementById("linkAdmin").style.display = "inline-block";
-  }
+  console.log(" app-prode.js iniciado para:", perfil.nombre, perfil.apellido);
 
   await cargarDatos();
   await cargarCampeon();
@@ -35,38 +28,69 @@ window.addEventListener("usuarioListo", async (e) => {
 });
 
 async function cargarDatos() {
-  const q = query(collection(db, "predicciones"), where("uid", "==", usuario.uid));
-  const snap = await getDocs(q);
-  predicciones = {};
-  snap.forEach(d => {
-    const data = d.data();
-    predicciones[data.partidoId] = data;
-  });
+  try {
+    // Cargar predicciones del usuario
+    const { data: predsData, error: predsError } = await supabase
+      .from('predicciones')
+      .select('*')
+      .eq('user_id', usuario.uid);
 
-  const resSnap = await getDocs(collection(db, "resultados"));
-  resultados = {};
-  resSnap.forEach(d => { resultados[d.id] = d.data(); });
+    if (predsError) throw predsError;
 
-  actualizarStats();
+    predicciones = {};
+    predsData.forEach(p => {
+      predicciones[p.partido_id] = p;
+    });
+
+    // Cargar todos los resultados
+    const { data: resData, error: resError } = await supabase
+      .from('resultados')
+      .select('*');
+
+    if (resError) throw resError;
+
+    resultados = {};
+    resData.forEach(r => {
+      resultados[r.partido_id] = r;
+    });
+
+    actualizarStats();
+  } catch (err) {
+    console.error(" Error al cargar datos:", err);
+  }
 }
 
 async function cargarCampeon() {
-  const ref = doc(db, "campeones", usuario.uid);
-  const snap = await getDoc(ref);
-  if (snap.exists()) {
-    prediccionCampeon = snap.data();
-  }
+  try {
+    // Cargar pronóstico del campeón del usuario
+    const { data: campData, error: campError } = await supabase
+      .from('campeones')
+      .select('*')
+      .eq('user_id', usuario.uid)
+      .single();
 
-  const refFinal = doc(db, "config", "final");
-  const snapFinal = await getDoc(refFinal);
-  if (snapFinal.exists()) {
-    resultadoFinal = snapFinal.data();
+    if (!campError && campData) {
+      prediccionCampeon = campData;
+    }
+
+    // Cargar campeón real
+    const { data: finalData, error: finalError } = await supabase
+      .from('config')
+      .select('*')
+      .eq('id', 'final')
+      .single();
+
+    if (!finalError && finalData) {
+      resultadoFinal = finalData;
+    }
+  } catch (err) {
+    console.error(" Error al cargar campeón:", err);
   }
 }
 
 function actualizarStats() {
   let totalPartidos = Object.values(predicciones).reduce((acc, pred) => {
-    const res = resultados[pred.partidoId];
+    const res = resultados[pred.partido_id];
     return acc + (res ? calcularPuntos(pred, res) : 0);
   }, 0);
 
@@ -94,7 +118,7 @@ function renderTabs() {
     { id: "cuartos", label: "Cuartos" },
     { id: "semis", label: "Semis" },
     { id: "3er", label: "3er Puesto" },
-    { id: "final", label: "Final 🏆" },
+    { id: "final", label: "Final " },
   ];
 
   document.getElementById("faseTabs").innerHTML = tabs.map(t => `
@@ -149,7 +173,7 @@ function iniciarCronometro(partido) {
   function actualizar() {
     const ms = msHastaBloqueo(partido);
     if (ms <= 0) {
-      el.textContent = "🔒 BLOQUEADO";
+      el.textContent = " BLOQUEADO";
       el.style.color = "var(--red)";
       el.style.fontWeight = "700";
       const gL = document.getElementById("gL-" + partido.id);
@@ -159,12 +183,12 @@ function iniciarCronometro(partido) {
       if (gV) gV.disabled = true;
       if (btn) {
         btn.disabled = true;
-        btn.textContent = "🔒 Bloqueado";
+        btn.textContent = " Bloqueado";
       }
       return;
     }
 
-    el.textContent = "⏱️ " + formatearTiempo(ms);
+    el.textContent = "️ " + formatearTiempo(ms);
     
     if (ms < 5 * 60 * 1000) {
       el.style.color = "var(--red)";
@@ -187,12 +211,10 @@ function renderTarjeta(p) {
   const pred = predicciones[p.id];
   const res = resultados[p.id];
   const guardado = !!pred;
-  
-  // CORRECCIÓN: Detectar si es fase eliminatoria
-  const esElim = !p.j || p.fase; // Si no tiene "j" (jornada) O tiene "fase", es eliminatoria
+  const esElim = !p.j || p.fase;
   
   const flagL = FLAGS[p.local] || "🏳️";
-  const flagV = FLAGS[p.visit] || "🏳️";
+  const flagV = FLAGS[p.visit] || "️";
   const pts = guardado && res ? calcularPuntos(pred, res) : null;
   const bloqueado = partidoBloqueado(p);
 
@@ -288,7 +310,6 @@ function renderTarjeta(p) {
   `;
 }
 
-// Event listener para mostrar/ocultar selects de alargue/penales
 document.addEventListener("input", (e) => {
   if (!e.target.classList.contains("score-in")) return;
   const id = e.target.id.replace("gL-", "").replace("gV-", "");
@@ -313,7 +334,7 @@ async function guardarPrediccion(id) {
   if (!p) return;
 
   if (partidoBloqueado(p)) {
-    alert("🔒 Este partido ya está bloqueado. No se puede pronosticar.");
+    alert("🔒 Este partido ya está bloqueado.");
     return;
   }
 
@@ -332,13 +353,12 @@ async function guardarPrediccion(id) {
   let alargue = "";
   let penales = "";
   
-  // CORRECCIÓN: Verificar si es eliminatoria
   const esElim = !p.j || p.fase;
   
   if (esElim && parseInt(gL) === parseInt(gV)) {
     alargue = document.getElementById("al-" + id)?.value || "";
     if (!alargue) {
-      alert("Elegí qué pasa en el alargue (empate al 90')");
+      alert("Elegí qué pasa en el alargue");
       return;
     }
     if (alargue === "E") {
@@ -351,30 +371,30 @@ async function guardarPrediccion(id) {
   }
 
   const datos = {
-    uid: usuario.uid,
-    partidoId: id,
-    local: gL,
-    visit: gV,
+    user_id: usuario.uid,
+    partido_id: id,
+    local: parseInt(gL),
+    visit: parseInt(gV),
     alargue: alargue,
     penales: penales,
     fase: p.j ? "grupos" : p.fase,
-    fechaGuardado: serverTimestamp(),
     bloqueado: true
   };
 
   try {
-    await setDoc(doc(db, "predicciones", `${usuario.uid}_${id}`), datos);
+    const { error } = await supabase
+      .from('predicciones')
+      .upsert(datos, { onConflict: 'user_id,partido_id' });
+
+    if (error) throw error;
+
     predicciones[id] = datos;
     alert("✅ Pronóstico guardado. ¡No se puede modificar!");
     await cargarDatos();
     renderPartidos();
   } catch (err) {
     console.error(err);
-    if (err.code === "permission-denied" || err.message.includes("permission")) {
-      alert("🔒 Este pronóstico ya fue guardado y no se puede modificar");
-    } else {
-      alert("Error al guardar: " + err.message);
-    }
+    alert("Error al guardar: " + err.message);
   }
 }
 
@@ -413,7 +433,7 @@ function renderCampeon() {
     document.getElementById("verCamp3").textContent = 
       `${FLAGS[prediccionCampeon.opcion3] || "🏳️"} ${prediccionCampeon.opcion3}`;
 
-    const pts = prediccionCampeon.puntosOtorgados;
+    const pts = prediccionCampeon.puntos_otorgados || [100, 80, 60];
     document.getElementById("verCamp1Pts").textContent = `+${pts[0]} pts si es campeón`;
     document.getElementById("verCamp2Pts").textContent = `+${pts[1]} pts si es campeón`;
     document.getElementById("verCamp3Pts").textContent = `+${pts[2]} pts si es campeón`;
@@ -523,25 +543,28 @@ async function guardarCampeon() {
     `¿Confirmás tu pronóstico del campeón?\n\n` +
     `🥇 Opción 1: ${v1} (+${pts[0]} pts si es campeón)\n` +
     `🥈 Opción 2: ${v2} (+${pts[1]} pts si es campeón)\n` +
-    `🥉 Opción 3: ${v3} (+${pts[2]} pts si es campeón)\n\n` +
+    ` Opción 3: ${v3} (+${pts[2]} pts si es campeón)\n\n` +
     `⚠️ NO PODRÁS MODIFICARLO`
   )) return;
 
   try {
-    await setDoc(doc(db, "campeones", usuario.uid), {
-      uid: usuario.uid,
-      opcion1: v1,
-      opcion2: v2,
-      opcion3: v3,
-      faseAlPronunciar: info.fase,
-      puntosOtorgados: pts,
-      bloqueado: true,
-      fechaGuardado: serverTimestamp()
-    });
+    const { error } = await supabase
+      .from('campeones')
+      .upsert({
+        user_id: usuario.uid,
+        opcion1: v1,
+        opcion2: v2,
+        opcion3: v3,
+        fase_al_pronunciar: info.fase,
+        puntos_otorgados: pts,
+        bloqueado: true
+      }, { onConflict: 'user_id' });
+
+    if (error) throw error;
 
     prediccionCampeon = { 
       opcion1: v1, opcion2: v2, opcion3: v3, 
-      bloqueado: true, puntosOtorgados: pts, faseAlPronunciar: info.fase
+      bloqueado: true, puntos_otorgados: pts, fase_al_pronunciar: info.fase
     };
     alert("✅ Pronóstico del campeón guardado");
     renderCampeon();
