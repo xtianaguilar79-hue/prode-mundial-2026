@@ -5,6 +5,76 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Ingresar · Prode Mundial 2026</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .grupos-container {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .grupos-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 8px;
+      min-height: 20px;
+    }
+    .grupo-chip {
+      background: var(--gold-soft);
+      border: 1px solid var(--gold);
+      color: var(--gold);
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .grupo-chip button {
+      background: none;
+      border: none;
+      color: var(--gold);
+      cursor: pointer;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 0;
+      line-height: 1;
+    }
+    .grupo-chip button:hover { color: var(--red); }
+    .grupo-input-row {
+      display: flex;
+      gap: 6px;
+    }
+    .grupo-input-row input {
+      flex: 1;
+      padding: 8px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+    }
+    .grupo-input-row input:focus { border-color: var(--gold); }
+    .grupo-input-row button {
+      padding: 8px 14px;
+      background: var(--gold);
+      color: #000;
+      border: none;
+      border-radius: 6px;
+      font-weight: 700;
+      cursor: pointer;
+      font-family: inherit;
+    }
+    .grupo-hint {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 6px;
+    }
+  </style>
 </head>
 <body>
 
@@ -19,9 +89,26 @@
 
     <!-- FORMULARIO NORMAL -->
     <form id="form">
-      <input type="text" id="nombre" class="input" placeholder="Nombre" required style="display:none">
-      <input type="text" id="apellido" class="input" placeholder="Apellido" required style="display:none">
+      <!-- CAMPOS SIN required (se agregan dinámicamente) -->
+      <input type="text" id="nombre" class="input" placeholder="Nombre" style="display:none">
+      <input type="text" id="apellido" class="input" placeholder="Apellido" style="display:none">
       <input type="text" id="apodo" class="input" placeholder="Apodo (opcional)" style="display:none">
+      
+      <!-- CAMPO DE GRUPOS (Empresa/Colegio/Amigos) -->
+      <div id="gruposContainer" class="grupos-container" style="display:none">
+        <label style="display:block; font-size:12px; color:var(--text2); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
+          🏢 Empresa, Colegio o Grupo (opcional)
+        </label>
+        <div id="gruposList" class="grupos-list"></div>
+        <div class="grupo-input-row">
+          <input type="text" id="grupoInput" placeholder="Ej: Empresa X, Colegio Y, Amigos del barrio">
+          <button type="button" id="btnAgregarGrupo">+ Agregar</button>
+        </div>
+        <div class="grupo-hint">
+          💡 Podés agregar varios grupos. Competirás en el ranking general y también contra los miembros de cada grupo.
+        </div>
+      </div>
+
       <input type="email" id="email" class="input" placeholder="Email" required autocomplete="email">
       <input type="password" id="password" class="input" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6" autocomplete="current-password">
       <button type="submit" class="btn" id="btnSubmit">Ingresar</button>
@@ -73,30 +160,107 @@
   import { doc, setDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
   let modo = "login";
+  let gruposAgregados = [];
 
   const $ = id => document.getElementById(id);
 
-  // Si ya está logueado, mandar al prode
   onAuthStateChanged(auth, (user) => {
     if (user) window.location.href = "prode.html";
   });
 
-  // Cambiar entre login y registro
+  // ═══════════════════════════════════════════════════════
+  // GESTIÓN DE GRUPOS (chips)
+  // ═══════════════════════════════════════════════════════
+
+  function renderGrupos() {
+    const list = $("gruposList");
+    if (gruposAgregados.length === 0) {
+      list.innerHTML = '<span style="color:var(--text3); font-size:12px;">Sin grupos agregados</span>';
+      return;
+    }
+    list.innerHTML = gruposAgregados.map((g, i) => `
+      <span class="grupo-chip">
+        ${g}
+        <button type="button" onclick="window.__quitarGrupo(${i})">×</button>
+      </span>
+    `).join("");
+  }
+
+  window.__agregarGrupo = () => {
+    const input = $("grupoInput");
+    const valor = input.value.trim();
+    if (!valor) return;
+    if (gruposAgregados.includes(valor)) {
+      input.value = "";
+      return;
+    }
+    if (gruposAgregados.length >= 10) {
+      alert("Máximo 10 grupos por usuario");
+      return;
+    }
+    gruposAgregados.push(valor);
+    input.value = "";
+    renderGrupos();
+  };
+
+  window.__quitarGrupo = (index) => {
+    gruposAgregados.splice(index, 1);
+    renderGrupos();
+  };
+
+  $("btnAgregarGrupo").onclick = window.__agregarGrupo;
+  $("grupoInput").addEventListener("keypress", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      window.__agregarGrupo();
+    }
+  });
+
+  // ═══════════════════════════════════════════════════════
+  // CAMBIAR ENTRE LOGIN Y REGISTRO (CORREGIDO)
+  // ═══════════════════════════════════════════════════════
+
   $("btnCambiar").onclick = () => {
     modo = modo === "login" ? "registro" : "login";
+    
+    // Actualizar textos
     $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
     $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
     $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";
-    $("nombre").style.display = modo === "registro" ? "block" : "none";
-    $("apellido").style.display = modo === "registro" ? "block" : "none";
-    $("apodo").style.display = modo === "registro" ? "block" : "none";
     $("btnSubmit").textContent = modo === "login" ? "Ingresar" : "Registrarme";
-    $("nombre").required = modo === "registro";
-    $("apellido").required = modo === "registro";
+    
+    // Mostrar/ocultar campos de registro
+    const camposRegistro = ["nombre", "apellido", "apodo", "gruposContainer"];
+    camposRegistro.forEach(id => {
+      $(id).style.display = modo === "registro" ? "block" : "none";
+    });
+    
+    // CORRECCIÓN: Agregar/quitar required dinámicamente
+    if (modo === "registro") {
+      $("nombre").setAttribute("required", "");
+      $("apellido").setAttribute("required", "");
+    } else {
+      $("nombre").removeAttribute("required");
+      $("apellido").removeAttribute("required");
+      // Limpiar valores de campos de registro
+      $("nombre").value = "";
+      $("apellido").value = "";
+      $("apodo").value = "";
+      gruposAgregados = [];
+      renderGrupos();
+    }
+    
     ocultarMensajes();
+    
+    if (modo === "registro") {
+      renderGrupos();
+    }
   };
 
-  // Mostrar formulario de recuperar contraseña
+  // ═══════════════════════════════════════════════════════
+  // RECUPERAR CONTRASEÑA
+  // ═══════════════════════════════════════════════════════
+
   $("btnOlvide").onclick = () => {
     $("form").style.display = "none";
     $("formRecuperar").style.display = "block";
@@ -105,7 +269,6 @@
     ocultarMensajes();
   };
 
-  // Volver al login desde recuperar
   $("btnVolverLogin").onclick = () => {
     $("form").style.display = "block";
     $("formRecuperar").style.display = "none";
@@ -114,17 +277,13 @@
     ocultarMensajes();
   };
 
-  // Enviar email de recuperación
   $("formRecuperar").onsubmit = async (e) => {
     e.preventDefault();
     ocultarMensajes();
-
     const email = $("emailRecuperar").value.trim().toLowerCase();
     const btn = $("btnRecuperar");
-
     btn.disabled = true;
     btn.textContent = "Enviando...";
-
     try {
       await sendPasswordResetEmail(auth, email);
       mostrarOk(`✅ Email enviado a ${email}. Revisá tu bandeja de entrada (y spam).`);
@@ -137,19 +296,24 @@
     }
   };
 
-  // Login o Registro
+  // ═══════════════════════════════════════════════════════
+  // LOGIN / REGISTRO
+  // ═══════════════════════════════════════════════════════
+
   $("form").onsubmit = async (e) => {
     e.preventDefault();
     ocultarMensajes();
 
     const email = $("email").value.trim().toLowerCase();
     const password = $("password").value;
-    const nombre = $("nombre").value.trim();
-    const apellido = $("apellido").value.trim();
-    const apodo = $("apodo").value.trim();
     const btn = $("btnSubmit");
 
+    // CORRECCIÓN: Solo validar campos de registro si estamos en modo registro
     if (modo === "registro") {
+      const nombre = $("nombre").value.trim();
+      const apellido = $("apellido").value.trim();
+      const apodo = $("apodo").value.trim();
+      
       if (!nombre) {
         mostrarError("Ingresá tu nombre");
         return;
@@ -166,9 +330,15 @@
     try {
       let user;
       if (modo === "login") {
+        // LOGIN: solo necesita email y contraseña
         const cred = await signInWithEmailAndPassword(auth, email, password);
         user = cred.user;
       } else {
+        // REGISTRO: necesita todos los campos
+        const nombre = $("nombre").value.trim();
+        const apellido = $("apellido").value.trim();
+        const apodo = $("apodo").value.trim();
+        
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         user = cred.user;
         await setDoc(doc(db, "usuarios", user.uid), {
@@ -177,6 +347,7 @@
           nombre: nombre,
           apellido: apellido,
           apodo: apodo || null,
+          grupos: gruposAgregados,
           esAdmin: email === ADMIN_EMAIL.toLowerCase(),
           fechaRegistro: serverTimestamp(),
           puntosTotales: 0

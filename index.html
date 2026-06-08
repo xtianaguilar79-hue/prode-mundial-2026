@@ -5,6 +5,138 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Prode Mundial 2026 · Ranking y Resultados</title>
   <link rel="stylesheet" href="style.css">
+  <style>
+    .filtro-grupo {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 16px;
+      margin-bottom: 20px;
+      display: flex;
+      gap: 12px;
+      align-items: center;
+      flex-wrap: wrap;
+    }
+    .filtro-grupo label {
+      font-size: 13px;
+      color: var(--text2);
+      font-weight: 600;
+    }
+    .filtro-grupo select {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 12px;
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      color: var(--text);
+      font-size: 14px;
+      font-family: inherit;
+      outline: none;
+      cursor: pointer;
+    }
+    .filtro-grupo select:focus { border-color: var(--gold); }
+
+    .resultados-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 14px;
+      margin-bottom: 24px;
+    }
+    .resultado-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--r);
+      padding: 14px;
+      box-shadow: var(--shadow-sm);
+      transition: all .2s;
+    }
+    .resultado-card:hover {
+      border-color: var(--border-light);
+      transform: translateY(-2px);
+    }
+    .resultado-card.en-vivo {
+      border-color: var(--gold);
+      background: linear-gradient(135deg, var(--card) 0%, var(--gold-soft) 100%);
+      box-shadow: 0 0 20px rgba(255, 201, 60, 0.15);
+    }
+    .resultado-card.proximo { opacity: 0.7; }
+    .resultado-meta {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      align-items: center;
+    }
+    .live-badge {
+      background: var(--red);
+      color: #fff;
+      padding: 3px 10px;
+      border-radius: 10px;
+      font-weight: 700;
+      font-size: 10px;
+      animation: pulse 1.5s infinite;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .resultado-equipos {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .resultado-equipo {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 13px;
+      font-weight: 600;
+    }
+    .resultado-equipo.visitante {
+      flex-direction: row-reverse;
+      text-align: right;
+    }
+    .resultado-marcador {
+      flex-shrink: 0;
+      text-align: center;
+      min-width: 80px;
+    }
+    .marcador-final {
+      font-family: 'Anton', sans-serif;
+      font-size: 28px;
+      color: var(--gold);
+      letter-spacing: 2px;
+    }
+    .marcador-vs {
+      font-size: 12px;
+      color: var(--text3);
+      font-weight: 600;
+    }
+    .marcador-hora {
+      font-size: 10px;
+      color: var(--text2);
+      margin-top: 2px;
+    }
+    .seccion-titulo {
+      font-family: 'Anton', sans-serif;
+      font-size: 18px;
+      color: var(--gold);
+      margin: 24px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      letter-spacing: 1px;
+    }
+    @media (max-width: 700px) {
+      .resultados-grid { grid-template-columns: 1fr; }
+      .filtro-grupo { flex-direction: column; align-items: stretch; }
+    }
+  </style>
 </head>
 <body>
 
@@ -13,7 +145,7 @@
       <span class="copa">🏆</span>
       <div>
         <h1>PRODE MUNDIAL 2026</h1>
-        <p>🇲🇽 🇺 🇨🇦 · 104 partidos</p>
+        <p>🇲🇽 🇺🇸 🇨🇦 · 104 partidos</p>
       </div>
     </div>
     <nav class="nav">
@@ -26,7 +158,6 @@
   </header>
 
   <main class="container">
-    <!-- HERO -->
     <section style="text-align:center; padding:40px 0 30px;">
       <h2 style="font-size:clamp(28px, 5vw, 42px); margin-bottom:8px">🏆 PRODE MUNDIAL 2026</h2>
       <p style="color:var(--text2); font-size:16px; max-width:650px; margin:0 auto 20px">
@@ -38,10 +169,19 @@
       </div>
     </section>
 
-    <!-- RANKING -->
     <section id="ranking" style="margin-top:40px">
       <h2>🏅 Ranking General</h2>
-      <p style="color:var(--text2); margin-bottom:20px; font-size:14px">Actualizado automáticamente · <span id="actualizado"></span></p>
+      
+      <div class="filtro-grupo">
+        <label for="filtroGrupo">👥 Ver ranking de:</label>
+        <select id="filtroGrupo">
+          <option value="">🌍 Ranking General (todos los jugadores)</option>
+        </select>
+      </div>
+
+      <p style="color:var(--text2); margin-bottom:20px; font-size:14px">
+        Actualizado automáticamente · <span id="actualizado"></span>
+      </p>
       
       <div id="top3" class="top3-grid"></div>
       
@@ -56,6 +196,7 @@
             <tr>
               <th style="width:60px">#</th>
               <th class="left">Jugador</th>
+              <th>Grupos</th>
               <th>Pronosticados</th>
               <th>Acertados</th>
               <th>Campeón</th>
@@ -68,7 +209,6 @@
       </div>
     </section>
 
-    <!-- RESULTADOS -->
     <section id="resultados" style="margin-top:50px">
       <h2>📊 Resultados Oficiales</h2>
       <div id="resultadosLoader" class="loader">
@@ -78,7 +218,6 @@
       <div id="resultadosContenido"></div>
     </section>
 
-    <!-- WHATSAPP -->
     <section style="margin-top:50px">
       <div style="background: linear-gradient(135deg, var(--whatsapp-dark) 0%, #075E54 100%); border-radius: var(--r-lg); padding: 40px 24px; text-align: center; box-shadow: var(--shadow-md); position: relative; overflow: hidden;">
         <div style="position: relative; z-index: 1;">
@@ -95,11 +234,164 @@
     </section>
   </main>
 
-  <!-- BOTÓN FLOTANTE WHATSAPP -->
   <a href="https://whatsapp.com/channel/0029Vb7wOQQ72WTrQ33DrJ1l" target="_blank" rel="noopener" id="whatsappFloat" style="position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; background: var(--whatsapp); border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(37, 211, 102, 0.4); z-index: 999; transition: all .3s; text-decoration: none;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
     <svg width="32" height="32" viewBox="0 0 24 24" fill="white"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413z"/></svg>
   </a>
 
   <script type="module" src="./js/app-publica.js"></script>
+  
+  <!-- ══════════════════════════════════════════════════════
+       NOTIFICADOR WHATSAPP (INTEGRADO)
+       ═══════════════════════════════════════════════════════ -->
+  <script type="module">
+    import { TODOS_PARTIDOS, FLAGS } from "./datos-partidos.js";
+    import { db } from "./js/firebase-config.js";
+    import { collection, getDocs } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+    let partidosNotificados = new Set();
+
+    function getKickoffTimestamp(partido) {
+      const [dia, mes] = partido.fecha.split("/");
+      const [hora, min] = partido.hora.split(":");
+      return new Date(`2026-${mes}-${dia}T${hora}:${min}:00-03:00`).getTime();
+    }
+
+    function generarMensaje(partido, flagL, flagV, minutos) {
+      const fase = partido.grupo ? `Grupo ${partido.grupo}` : partido.fase.toUpperCase();
+      return `⚽ *PRODE MUNDIAL 2026* ⚽
+
+🏟️ *${fase}*
+${flagL} *${partido.local}* vs *${partido.visit}* ${flagV}
+
+ Arranca en ${Math.round(minutos)} minutos
+📍 ${partido.sede}
+ ${partido.hora} ARG
+
+🔗 Seguí el ranking: ${window.location.origin}
+
+#ProdeMundial2026`;
+    }
+
+    function crearNotificacionUI(partido, mensaje, minutos) {
+      const notif = document.createElement("div");
+      notif.style.cssText = `
+        position: fixed;
+        top: 20px;
+        right: 20px;
+        max-width: 400px;
+        background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);
+        color: white;
+        padding: 20px;
+        border-radius: 12px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        z-index: 9999;
+        animation: slideIn 0.3s ease;
+        font-family: 'DM Sans', sans-serif;
+      `;
+      
+      const flagL = FLAGS[partido.local] || "🏳️";
+      const flagV = FLAGS[partido.visit] || "🏳️";
+      
+      notif.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 12px;">
+          <div style="font-size: 32px;">🔔</div>
+          <div style="flex:1;">
+            <div style="font-weight: 700; font-size: 16px;">Partido por comenzar</div>
+            <div style="font-size: 13px; opacity: 0.9;">${flagL} ${partido.local} vs ${partido.visit} ${flagV}</div>
+          </div>
+          <button onclick="this.closest('div[style*=fixed]').remove()" style="
+            background: rgba(255,255,255,0.2);
+            border: none;
+            color: white;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+          ">×</button>
+        </div>
+        
+        <div style="background: rgba(255,255,255,0.1); padding: 12px; border-radius: 8px; margin-bottom: 12px; font-size: 12px; white-space: pre-wrap;">${mensaje}</div>
+        
+        <div style="display: flex; gap: 8px;">
+          <button id="btnCopiar" style="
+            flex: 1;
+            background: white;
+            color: #128C7E;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 13px;
+          ">📋 Copiar mensaje</button>
+          
+          <button id="btnWhatsApp" style="
+            flex: 1;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: none;
+            padding: 10px 16px;
+            border-radius: 6px;
+            font-weight: 700;
+            cursor: pointer;
+            font-size: 13px;
+          "> Abrir WhatsApp</button>
+        </div>
+      `;
+      
+      document.body.appendChild(notif);
+      
+      notif.querySelector("#btnCopiar").onclick = () => {
+        navigator.clipboard.writeText(mensaje).then(() => {
+          const btn = notif.querySelector("#btnCopiar");
+          btn.textContent = "✅ ¡Copiado!";
+          setTimeout(() => btn.textContent = "📋 Copiar mensaje", 2000);
+        });
+      };
+      
+      notif.querySelector("#btnWhatsApp").onclick = () => {
+        window.open("https://web.whatsapp.com", "_blank");
+      };
+      
+      setTimeout(() => { if (notif.parentElement) notif.remove(); }, 45000);
+    }
+
+    async function verificarPartidosProximos() {
+      try {
+        const ahora = Date.now();
+        const resultadosSnap = await getDocs(collection(db, "resultados"));
+        const resultados = {};
+        resultadosSnap.forEach(d => { resultados[d.id] = d.data(); });
+
+        TODOS_PARTIDOS.forEach(partido => {
+          if (partidosNotificados.has(partido.id)) return;
+          if (resultados[partido.id]) return;
+
+          const kickoff = getKickoffTimestamp(partido);
+          const minutosParaInicio = (kickoff - ahora) / (1000 * 60);
+
+          if (minutosParaInicio > 0 && minutosParaInicio <= 10) {
+            const flagL = FLAGS[partido.local] || "🏳️";
+            const flagV = FLAGS[partido.visit] || "️";
+            const mensaje = generarMensaje(partido, flagL, flagV, minutosParaInicio);
+            crearNotificacionUI(partido, mensaje, minutosParaInicio);
+            partidosNotificados.add(partido.id);
+          }
+        });
+      } catch (err) {
+        console.error("Error en notificador:", err);
+      }
+    }
+
+    // Iniciar
+    verificarPartidosProximos();
+    setInterval(verificarPartidosProximos, 30000);
+
+    // Animación
+    const style = document.createElement("style");
+    style.textContent = `@keyframes slideIn { from { transform: translateX(400px); opacity: 0; } to { transform: translateX(0); opacity: 1; } }`;
+    document.head.appendChild(style);
+  </script>
 </body>
 </html>

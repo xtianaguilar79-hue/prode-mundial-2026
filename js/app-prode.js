@@ -187,7 +187,10 @@ function renderTarjeta(p) {
   const pred = predicciones[p.id];
   const res = resultados[p.id];
   const guardado = !!pred;
-  const esElim = !p.j;
+  
+  // CORRECCIÓN: Detectar si es fase eliminatoria
+  const esElim = !p.j || p.fase; // Si no tiene "j" (jornada) O tiene "fase", es eliminatoria
+  
   const flagL = FLAGS[p.local] || "🏳️";
   const flagV = FLAGS[p.visit] || "🏳️";
   const pts = guardado && res ? calcularPuntos(pred, res) : null;
@@ -213,23 +216,25 @@ function renderTarjeta(p) {
         <span class="sep">–</span>
         <input type="number" min="0" max="20" class="score-in" id="gV-${p.id}" placeholder="0" ${bloqueado ? "disabled" : ""}>
       </div>
-      ${esElim ? `<div class="ext-selects" id="ext-${p.id}" style="display:none;">
-        <label>Alargue:</label>
-        <select class="sel" id="al-${p.id}" ${bloqueado ? "disabled" : ""}>
-          <option value="">-- elegir --</option>
-          <option value="L">Gana Local</option>
-          <option value="E">Empate → Penales</option>
-          <option value="V">Gana Visitante</option>
-        </select>
-        <div id="pen-${p.id}" style="display:none;">
-          <label>Ganador Penales:</label>
-          <select class="sel" id="penSel-${p.id}" ${bloqueado ? "disabled" : ""}>
+      ${esElim ? `
+        <div class="ext-selects" id="ext-${p.id}" style="display:none;">
+          <label>Alargue:</label>
+          <select class="sel" id="al-${p.id}" ${bloqueado ? "disabled" : ""}>
             <option value="">-- elegir --</option>
-            <option value="L">${flagL} ${p.local}</option>
-            <option value="V">${flagV} ${p.visit}</option>
+            <option value="L">Gana Local</option>
+            <option value="E">Empate → Penales</option>
+            <option value="V">Gana Visitante</option>
           </select>
+          <div id="pen-${p.id}" style="display:none;">
+            <label>Ganador Penales:</label>
+            <select class="sel" id="penSel-${p.id}" ${bloqueado ? "disabled" : ""}>
+              <option value="">-- elegir --</option>
+              <option value="L">${flagL} ${p.local}</option>
+              <option value="V">${flagV} ${p.visit}</option>
+            </select>
+          </div>
         </div>
-      </div>` : ""}
+      ` : ""}
     `;
   }
 
@@ -283,6 +288,7 @@ function renderTarjeta(p) {
   `;
 }
 
+// Event listener para mostrar/ocultar selects de alargue/penales
 document.addEventListener("input", (e) => {
   if (!e.target.classList.contains("score-in")) return;
   const id = e.target.id.replace("gL-", "").replace("gV-", "");
@@ -325,7 +331,11 @@ async function guardarPrediccion(id) {
 
   let alargue = "";
   let penales = "";
-  if (!p.j && parseInt(gL) === parseInt(gV)) {
+  
+  // CORRECCIÓN: Verificar si es eliminatoria
+  const esElim = !p.j || p.fase;
+  
+  if (esElim && parseInt(gL) === parseInt(gV)) {
     alargue = document.getElementById("al-" + id)?.value || "";
     if (!alargue) {
       alert("Elegí qué pasa en el alargue (empate al 90')");
