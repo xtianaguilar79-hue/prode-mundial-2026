@@ -67,6 +67,19 @@ function renderPartidos() {
     const res = resultados[p.id];
     const esElim = !p.j || p.fase;
     
+    // Determinar si mostrar alargue/penales basado en resultado guardado
+    let showAlargue = false;
+    let showPenales = false;
+    
+    if (res) {
+      if (res.local !== undefined && res.visit !== undefined && parseInt(res.local) === parseInt(res.visit)) {
+        showAlargue = true;
+        if (res.alargue_local !== null && res.alargue_visit !== null && parseInt(res.alargue_local) === parseInt(res.alargue_visit)) {
+          showPenales = true;
+        }
+      }
+    }
+    
     return `
       <div class="partido-card admin">
         <div class="partido-meta">
@@ -88,14 +101,14 @@ function renderPartidos() {
               <input type="number" min="0" max="20" class="score-in" id="gV-${p.id}" value="${res?.visit ?? ''}" placeholder="0">
             </div>
             ${esElim ? `
-              <div class="ext-inputs" id="ext-${p.id}" style="display:${res?.local !== undefined && res?.visit !== undefined && parseInt(res.local) === parseInt(res.visit) ? 'flex' : 'none'}; flex-direction:column; gap:6px; margin-top:8px; width:100%;">
+              <div class="ext-inputs" id="ext-${p.id}" style="display:${showAlargue ? 'flex' : 'none'}; flex-direction:column; gap:6px; margin-top:8px; width:100%;">
                 <div style="display:flex; gap:6px; align-items:center;">
                   <label style="font-size:11px; color:var(--text2); min-width:80px;">Alargue:</label>
                   <input type="number" min="0" max="20" class="score-in" id="alL-${p.id}" value="${res?.alargue_local ?? ''}" placeholder="0" style="width:60px;">
                   <span>–</span>
                   <input type="number" min="0" max="20" class="score-in" id="alV-${p.id}" value="${res?.alargue_visit ?? ''}" placeholder="0" style="width:60px;">
                 </div>
-                <div id="pen-${p.id}" style="display:${res?.alargue_local !== undefined && parseInt(res.alargue_local) === parseInt(res.alargue_visit) ? 'flex' : 'none'}; gap:6px; align-items:center;">
+                <div id="pen-${p.id}" style="display:${showPenales ? 'flex' : 'none'}; gap:6px; align-items:center;">
                   <label style="font-size:11px; color:var(--text2); min-width:80px;">Penales:</label>
                   <input type="number" min="0" max="20" class="score-in" id="penL-${p.id}" value="${res?.penales_local ?? ''}" placeholder="0" style="width:60px;">
                   <span>–</span>
@@ -120,7 +133,10 @@ function renderPartidos() {
     `;
   }).join("");
 
-  // Event listeners
+  // Event listeners para TODOS los inputs
+  setupEventListeners();
+
+  // Event listeners para botones
   cont.querySelectorAll(".btn-res").forEach(btn => {
     btn.onclick = () => guardarResultado(btn.dataset.id);
   });
@@ -128,27 +144,34 @@ function renderPartidos() {
   cont.querySelectorAll("[data-borrar]").forEach(btn => {
     btn.onclick = () => borrarResultado(btn.dataset.borrar);
   });
+}
 
-  // Mostrar/ocultar alargue/penales al cambiar goles
-  cont.querySelectorAll(".score-in").forEach(input => {
+function setupEventListeners() {
+  // Escuchar cambios en TODOS los inputs (goles, alargue, penales)
+  document.querySelectorAll(".score-in").forEach(input => {
     input.addEventListener("input", (e) => {
-      const id = e.target.id.replace("gL-", "").replace("gV-", "");
+      const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "");
+      
       const gL = document.getElementById("gL-" + id)?.value;
       const gV = document.getElementById("gV-" + id)?.value;
+      const alL = document.getElementById("alL-" + id)?.value;
+      const alV = document.getElementById("alV-" + id)?.value;
+      
       const extDiv = document.getElementById("ext-" + id);
       const penDiv = document.getElementById("pen-" + id);
       
+      // Mostrar/ocultar alargue si hay empate en 90'
       if (extDiv) {
         if (gL !== "" && gV !== "" && parseInt(gL) === parseInt(gV)) {
           extDiv.style.display = "flex";
         } else {
           extDiv.style.display = "none";
+          if (penDiv) penDiv.style.display = "none";
         }
       }
       
-      if (penDiv) {
-        const alL = document.getElementById("alL-" + id)?.value;
-        const alV = document.getElementById("alV-" + id)?.value;
+      // Mostrar/ocultar penales si hay empate en alargue
+      if (penDiv && extDiv && extDiv.style.display === "flex") {
         if (alL !== "" && alV !== "" && parseInt(alL) === parseInt(alV)) {
           penDiv.style.display = "flex";
         } else {
@@ -206,10 +229,6 @@ async function guardarResultado(id) {
       
       penalesLocal = parseInt(penL);
       penalesVisit = parseInt(penV);
-    } else {
-      // Alargue definió, penales no se usan
-      penalesLocal = 0;
-      penalesVisit = 0;
     }
   }
 
@@ -270,6 +289,10 @@ window.generarPrueba = async () => {
       partido_id: p.id,
       local: Math.floor(Math.random() * 4),
       visit: Math.floor(Math.random() * 4),
+      alargue_local: null,
+      alargue_visit: null,
+      penales_local: null,
+      penales_visit: null,
       es_prueba: true
     }));
 
