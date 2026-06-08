@@ -20,15 +20,15 @@
     </div>
   </div>
   <nav class="nav">
-    <a href="/"> Inicio</a>
-    <a href="/prode">⚽ Mis Pronósticos</a>
+    <a href="index.html">🏠 Inicio</a>
+    <a href="prode.html">⚽ Mis Pronósticos</a>
     <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
   </nav>
 </header>
 
 <main class="container">
 
-  <h2> Panel de Administración</h2>
+  <h2>🔐 Panel de Administración</h2>
   <p style="color:var(--text2); margin-bottom:20px; font-size:14px;">
     Desde acá cargás los resultados oficiales. Los puntos de todos los usuarios se recalculan automáticamente.
   </p>
@@ -50,7 +50,7 @@
 
   <!-- CAMPEÓN REAL -->
   <section class="admin-section" style="margin-top:30px;">
-    <h3> Cargar Campeón del Mundial (solo al finalizar)</h3>
+    <h3>🏆 Cargar Campeón del Mundial (solo al finalizar)</h3>
     <div style="padding:16px;">
       <p style="color:var(--text2); font-size:13px; margin-bottom:16px;">
         Una vez finalizada la final, cargá el campeón real para calcular los puntos extra de todos los usuarios.
@@ -77,7 +77,7 @@
 <script type="module">
   import { protegerPagina, cerrarSesion } from "./js/auth-guard.js";
   window.cerrarSesion = cerrarSesion;
-  protegerPagina(true); // Requiere admin
+  protegerPagina(true);
 </script>
 <script type="module" src="./js/app-admin.js"></script>
 </body>
