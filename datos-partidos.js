@@ -156,7 +156,7 @@ export const PUNTOS = {
   final:     { signo: 30, golL: 15, golV: 15, exacto: 80, alargue: 30, penales: 15 },
 };
 
-// ─── CÁLCULO DE PUNTOS (3 capas: 90', alargue, penales) ───
+// ─── CÁLCULO DE PUNTOS (CORREGIDO para marcador real) ───
 export function calcularPuntos(pred, resultado) {
   if (!resultado || resultado.local === undefined || pred.local === undefined) return 0;
   
@@ -168,31 +168,61 @@ export function calcularPuntos(pred, resultado) {
   const pts = PUNTOS[fase];
   let total = 0;
 
-  // Signo (90')
+  // CAPA 1: Signo (90')
   const signoR = rL > rV ? "L" : rL < rV ? "V" : "E";
   const signoP = pL > pV ? "L" : pL < pV ? "V" : "E";
   if (signoP === signoR) total += pts.signo;
 
-  // Goles exactos
+  // CAPA 2: Goles exactos (90')
   if (pL === rL) total += pts.golL;
   if (pV === rV) total += pts.golV;
 
-  // Resultado exacto
+  // CAPA 3: Resultado exacto (90')
   if (pL === rL && pV === rV) total += pts.exacto;
 
-  // Eliminatorias: alargue y penales
-  if (fase !== "grupos" && signoP === "E" && resultado.alargue) {
-    if (pred.alargue && pred.alargue === resultado.alargue) {
-      total += pts.alargue;
-      if (pred.alargue === "E" && resultado.penales && pred.penales === resultado.penales) {
-        total += pts.penales;
+  // CAPA 4 y 5: Eliminatorias - Alargue y Penales (solo si hubo empate en 90')
+  if (fase !== "grupos" && signoP === "E" && signoR === "E") {
+    // Hubo empate en 90' - verificar alargue
+    const pAL = pred.alargue_local !== null && pred.alargue_local !== undefined ? parseInt(pred.alargue_local) : null;
+    const pAV = pred.alargue_visit !== null && pred.alargue_visit !== undefined ? parseInt(pred.alargue_visit) : null;
+    const rAL = resultado.alargue_local !== null && resultado.alargue_local !== undefined ? parseInt(resultado.alargue_local) : null;
+    const rAV = resultado.alargue_visit !== null && resultado.alargue_visit !== undefined ? parseInt(resultado.alargue_visit) : null;
+
+    // Verificar que ambos tengan datos de alargue
+    if (pAL !== null && pAV !== null && rAL !== null && rAV !== null) {
+      // CAPA 4: Signo del alargue
+      const signoAlR = rAL > rAV ? "L" : rAL < rAV ? "V" : "E";
+      const signoAlP = pAL > pAV ? "L" : pAL < pAV ? "V" : "E";
+      
+      if (signoAlP === signoAlR) {
+        total += pts.alargue;
+        
+        // CAPA 5: Marcador exacto del alargue (bonus adicional)
+        if (pAL === rAL && pAV === rAV) {
+          // Si el alargue también fue exacto, verificar penales si hubo
+          const pPL = pred.penales_local !== null && pred.penales_local !== undefined ? parseInt(pred.penales_local) : null;
+          const pPV = pred.penales_visit !== null && pred.penales_visit !== undefined ? parseInt(pred.penales_visit) : null;
+          const rPL = resultado.penales_local !== null && resultado.penales_local !== undefined ? parseInt(resultado.penales_local) : null;
+          const rPV = resultado.penales_visit !== null && resultado.penales_visit !== undefined ? parseInt(resultado.penales_visit) : null;
+
+          // Si hubo penales y el usuario los pronosticó correctamente
+          if (signoAlR === "E" && pPL !== null && pPV !== null && rPL !== null && rPV !== null) {
+            // Verificar que acertó el ganador de penales
+            const ganadorPenR = rPL > rPV ? "L" : "V";
+            const ganadorPenP = pPL > pPV ? "L" : "V";
+            if (ganadorPenP === ganadorPenR) {
+              total += pts.penales;
+            }
+          }
+        }
       }
     }
   }
+
   return total;
 }
 
-// ─── PRONÓSTICO DEL CAMPEÓN (puntos decrecientes) ───
+// ─── PRONÓSTICO DEL CAMPEÓN ───
 export const PUNTOS_CAMPEON_POR_FASE = {
   "pre-inicio":  [100, 80, 60],
   "pre-fecha2":  [90, 70, 50],
@@ -234,15 +264,15 @@ export function obtenerPuntosCampeonDisponibles() {
 }
 
 export function calcularPuntosCampeon(prediccion, campeonReal) {
-  if (!prediccion || !campeonReal || !prediccion.bloqueado || !prediccion.puntosOtorgados) return 0;
-  const pts = prediccion.puntosOtorgados;
+  if (!prediccion || !campeonReal || !prediccion.bloqueado || !prediccion.puntos_otorgados) return 0;
+  const pts = prediccion.puntos_otorgados;
   if (campeonReal === prediccion.opcion1) return pts[0];
   if (campeonReal === prediccion.opcion2) return pts[1];
   if (campeonReal === prediccion.opcion3) return pts[2];
   return 0;
 }
 
-// ─── CRONÓMETRO (bloqueo 5 min antes del kickoff) ───
+// ─── CRONÓMETRO ───
 export function getKickoffTimestamp(partido) {
   const [dia, mes] = partido.fecha.split("/");
   const [hora, min] = partido.hora.split(":");
@@ -268,4 +298,9 @@ export function formatearTiempo(ms) {
 
 export function partidoBloqueado(partido) {
   return msHastaBloqueo(partido) <= 0;
+}
+
+// ─── UTILIDAD PARA VERIFICAR SI ES ELIMINATORIA ───
+export function esEliminatoria(partido) {
+  return !partido.j || !!partido.fase;
 }
