@@ -1,21 +1,21 @@
 // ═══════════════════════════════════════════════════════
-// 🏆 PRODE MUNDIAL 2026 - BASE DE DATOS COMPLETA
+//  PRODE MUNDIAL 2026 - BASE DE DATOS COMPLETA
 // ═══════════════════════════════════════════════════════
 
 // ─── BANDERAS DE LAS 48 SELECCIONES ───
 export const FLAGS = {
-  "México":"🇲🇽","Sudáfrica":"🇿🇦","Corea del Sur":"🇰🇷","Rep. Checa":"🇨🇿",
-  "Canadá":"🇨🇦","Bosnia-Herzegovina":"🇧🇦","Qatar":"🇶🇦","Suiza":"🇨🇭",
-  "Brasil":"🇧🇷","Marruecos":"🇲🇦","Haití":"🇭🇹","Escocia":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "Estados Unidos":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇦🇺","Turquía":"🇹🇷",
-  "Alemania":"🇩🇪","Curazao":"🇨🇼","Costa de Marfil":"🇨🇮","Ecuador":"🇪🇨",
-  "Países Bajos":"🇳🇱","Japón":"🇯🇵","Suecia":"🇸🇪","Túnez":"🇹🇳",
+  "México":"🇽","Sudáfrica":"🇦","Corea del Sur":"🇷","Rep. Checa":"🇿",
+  "Canadá":"🇨🇦","Bosnia-Herzegovina":"🇧🇦","Qatar":"🇶","Suiza":"🇨🇭",
+  "Brasil":"🇧🇷","Marruecos":"🇲🇦","Haití":"🇭","Escocia":"🏴󠁢󠁳󠁴󠁿",
+  "Estados Unidos":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇦🇺","Turquía":"🇷",
+  "Alemania":"🇩🇪","Curazao":"🇼","Costa de Marfil":"🇨🇮","Ecuador":"🇨",
+  "Países Bajos":"🇳🇱","Japón":"🇯🇵","Suecia":"🇸🇪","Túnez":"🇳",
   "Bélgica":"🇧🇪","Egipto":"🇪🇬","Irán":"🇮🇷","Nueva Zelanda":"🇳🇿",
   "España":"🇪🇸","Cabo Verde":"🇨🇻","Arabia Saudita":"🇸🇦","Uruguay":"🇺🇾",
-  "Francia":"🇫🇷","Senegal":"🇸🇳","Irak":"🇮🇶","Noruega":"🇳🇴",
-  "Argentina":"🇦🇷","Argelia":"🇩🇿","Austria":"🇦🇹","Jordania":"🇯🇴",
+  "Francia":"🇫🇷","Senegal":"🇳","Irak":"🇮🇶","Noruega":"🇳",
+  "Argentina":"🇦","Argelia":"🇩🇿","Austria":"🇦🇹","Jordania":"🇯🇴",
   "Portugal":"🇵🇹","RD Congo":"🇨🇩","Uzbekistán":"🇺🇿","Colombia":"🇨🇴",
-  "Inglaterra":"🏴󠁧󠁢󠁥󠁮󠁧󠁿","Croacia":"🇭🇷","Ghana":"🇬🇭","Panamá":"🇵🇦",
+  "Inglaterra":"🏴󠁧󠁥󠁮󠁿","Croacia":"🇭🇷","Ghana":"🇬","Panamá":"🇵🇦",
 };
 
 export const SELECCIONES = Object.keys(FLAGS);
@@ -156,7 +156,7 @@ export const PUNTOS = {
   final:     { signo: 30, golL: 15, golV: 15, exacto: 80, alargue: 30, penales: 15 },
 };
 
-// ─── CÁLCULO DE PUNTOS (CORREGIDO para marcador real) ───
+// ── CÁLCULO DE PUNTOS (CORREGIDO para marcador real) ───
 export function calcularPuntos(pred, resultado) {
   if (!resultado || resultado.local === undefined || pred.local === undefined) return 0;
   
@@ -182,32 +182,25 @@ export function calcularPuntos(pred, resultado) {
 
   // CAPA 4 y 5: Eliminatorias - Alargue y Penales (solo si hubo empate en 90')
   if (fase !== "grupos" && signoP === "E" && signoR === "E") {
-    // Hubo empate en 90' - verificar alargue
     const pAL = pred.alargue_local !== null && pred.alargue_local !== undefined ? parseInt(pred.alargue_local) : null;
     const pAV = pred.alargue_visit !== null && pred.alargue_visit !== undefined ? parseInt(pred.alargue_visit) : null;
     const rAL = resultado.alargue_local !== null && resultado.alargue_local !== undefined ? parseInt(resultado.alargue_local) : null;
     const rAV = resultado.alargue_visit !== null && resultado.alargue_visit !== undefined ? parseInt(resultado.alargue_visit) : null;
 
-    // Verificar que ambos tengan datos de alargue
     if (pAL !== null && pAV !== null && rAL !== null && rAV !== null) {
-      // CAPA 4: Signo del alargue
       const signoAlR = rAL > rAV ? "L" : rAL < rAV ? "V" : "E";
       const signoAlP = pAL > pAV ? "L" : pAL < pAV ? "V" : "E";
       
       if (signoAlP === signoAlR) {
         total += pts.alargue;
         
-        // CAPA 5: Marcador exacto del alargue (bonus adicional)
         if (pAL === rAL && pAV === rAV) {
-          // Si el alargue también fue exacto, verificar penales si hubo
           const pPL = pred.penales_local !== null && pred.penales_local !== undefined ? parseInt(pred.penales_local) : null;
           const pPV = pred.penales_visit !== null && pred.penales_visit !== undefined ? parseInt(pred.penales_visit) : null;
           const rPL = resultado.penales_local !== null && resultado.penales_local !== undefined ? parseInt(resultado.penales_local) : null;
           const rPV = resultado.penales_visit !== null && resultado.penales_visit !== undefined ? parseInt(resultado.penales_visit) : null;
 
-          // Si hubo penales y el usuario los pronosticó correctamente
           if (signoAlR === "E" && pPL !== null && pPV !== null && rPL !== null && rPV !== null) {
-            // Verificar que acertó el ganador de penales
             const ganadorPenR = rPL > rPV ? "L" : "V";
             const ganadorPenP = pPL > pPV ? "L" : "V";
             if (ganadorPenP === ganadorPenR) {
@@ -300,7 +293,19 @@ export function partidoBloqueado(partido) {
   return msHastaBloqueo(partido) <= 0;
 }
 
-// ─── UTILIDAD PARA VERIFICAR SI ES ELIMINATORIA ───
-export function esEliminatoria(partido) {
-  return !partido.j || !!partido.fase;
+// ─── VERIFICAR SI UN PARTIDO TIENE EQUIPOS REALES ───
+export function partidoListoParaPronosticar(partido, equiposActualizados) {
+  if (partido.j) return true;
+  
+  const actualizado = equiposActualizados[partido.id];
+  if (!actualizado) return false;
+  
+  const local = actualizado.local || partido.local;
+  const visit = actualizado.visit || partido.visit;
+  
+  const esPlaceholder = (equipo) => {
+    return /°|G\d+|Camp\.|3er|mejor/.test(equipo);
+  };
+  
+  return !esPlaceholder(local) && !esPlaceholder(visit);
 }
