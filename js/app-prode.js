@@ -56,13 +56,12 @@ async function cargarDatos() {
 
     actualizarStats();
   } catch (err) {
-    console.error(" Error al cargar datos:", err);
+    console.error("❌ Error al cargar datos:", err);
   }
 }
 
 async function cargarCampeon() {
   try {
-    // Cargar pronóstico del campeón del usuario
     const { data: campData, error: campError } = await supabase
       .from('campeones')
       .select('*')
@@ -73,7 +72,6 @@ async function cargarCampeon() {
       prediccionCampeon = campData;
     }
 
-    // Cargar campeón real
     const { data: finalData, error: finalError } = await supabase
       .from('config')
       .select('*')
@@ -84,7 +82,7 @@ async function cargarCampeon() {
       resultadoFinal = finalData;
     }
   } catch (err) {
-    console.error(" Error al cargar campeón:", err);
+    console.error("❌ Error al cargar campeón:", err);
   }
 }
 
@@ -118,7 +116,7 @@ function renderTabs() {
     { id: "cuartos", label: "Cuartos" },
     { id: "semis", label: "Semis" },
     { id: "3er", label: "3er Puesto" },
-    { id: "final", label: "Final " },
+    { id: "final", label: "Final 🏆" },
   ];
 
   document.getElementById("faseTabs").innerHTML = tabs.map(t => `
@@ -173,7 +171,7 @@ function iniciarCronometro(partido) {
   function actualizar() {
     const ms = msHastaBloqueo(partido);
     if (ms <= 0) {
-      el.textContent = " BLOQUEADO";
+      el.textContent = "🔒 BLOQUEADO";
       el.style.color = "var(--red)";
       el.style.fontWeight = "700";
       const gL = document.getElementById("gL-" + partido.id);
@@ -183,12 +181,12 @@ function iniciarCronometro(partido) {
       if (gV) gV.disabled = true;
       if (btn) {
         btn.disabled = true;
-        btn.textContent = " Bloqueado";
+        btn.textContent = "🔒 Bloqueado";
       }
       return;
     }
 
-    el.textContent = "️ " + formatearTiempo(ms);
+    el.textContent = "⏱️ " + formatearTiempo(ms);
     
     if (ms < 5 * 60 * 1000) {
       el.style.color = "var(--red)";
@@ -214,24 +212,42 @@ function renderTarjeta(p) {
   const esElim = !p.j || p.fase;
   
   const flagL = FLAGS[p.local] || "🏳️";
-  const flagV = FLAGS[p.visit] || "️";
+  const flagV = FLAGS[p.visit] || "🏳️";
   const pts = guardado && res ? calcularPuntos(pred, res) : null;
   const bloqueado = partidoBloqueado(p);
 
   let marcadorHTML;
   if (guardado) {
-    marcadorHTML = `
+    // Mostrar pronóstico guardado con detalles de alargue/penales si existen
+    let detalleHTML = `
       <div class="score-saved">
         <span>${pred.local}</span>
         <span class="sep">–</span>
         <span>${pred.visit}</span>
       </div>
-      ${pred.alargue ? `<div style="font-size:10px; color:var(--text2); margin-top:4px; text-align:center;">
-        Alargue: <strong>${pred.alargue === "L" ? "Gana Local" : pred.alargue === "V" ? "Gana Visitante" : "Penales"}</strong>
-        ${pred.penales ? ` · Penales: <strong>${pred.penales}</strong>` : ""}
-      </div>` : ""}
     `;
+    
+    // Si es eliminatoria y hay alargue
+    if (esElim && (pred.alargue_local !== null || pred.alargue_visit !== null)) {
+      detalleHTML += `
+        <div style="font-size:10px; color:var(--text2); margin-top:4px; text-align:center;">
+          Alargue: <strong>${pred.alargue_local} - ${pred.alargue_visit}</strong>
+        </div>
+      `;
+      
+      // Si hay penales
+      if (pred.penales_local !== null || pred.penales_visit !== null) {
+        detalleHTML += `
+          <div style="font-size:10px; color:var(--text2); text-align:center;">
+            Penales: <strong>${pred.penales_local} - ${pred.penales_visit}</strong>
+          </div>
+        `;
+      }
+    }
+    
+    marcadorHTML = detalleHTML;
   } else {
+    // Formulario para ingresar pronóstico
     marcadorHTML = `
       <div class="marcador">
         <input type="number" min="0" max="20" class="score-in" id="gL-${p.id}" placeholder="0" ${bloqueado ? "disabled" : ""}>
@@ -239,21 +255,18 @@ function renderTarjeta(p) {
         <input type="number" min="0" max="20" class="score-in" id="gV-${p.id}" placeholder="0" ${bloqueado ? "disabled" : ""}>
       </div>
       ${esElim ? `
-        <div class="ext-selects" id="ext-${p.id}" style="display:none;">
-          <label>Alargue:</label>
-          <select class="sel" id="al-${p.id}" ${bloqueado ? "disabled" : ""}>
-            <option value="">-- elegir --</option>
-            <option value="L">Gana Local</option>
-            <option value="E">Empate → Penales</option>
-            <option value="V">Gana Visitante</option>
-          </select>
-          <div id="pen-${p.id}" style="display:none;">
-            <label>Ganador Penales:</label>
-            <select class="sel" id="penSel-${p.id}" ${bloqueado ? "disabled" : ""}>
-              <option value="">-- elegir --</option>
-              <option value="L">${flagL} ${p.local}</option>
-              <option value="V">${flagV} ${p.visit}</option>
-            </select>
+        <div class="ext-inputs" id="ext-${p.id}" style="display:none; flex-direction:column; gap:6px; margin-top:8px; width:100%;">
+          <div style="display:flex; gap:6px; align-items:center; justify-content:center;">
+            <label style="font-size:11px; color:var(--text2); min-width:80px;">Alargue:</label>
+            <input type="number" min="0" max="20" class="score-in" id="alL-${p.id}" placeholder="0" style="width:60px;">
+            <span>–</span>
+            <input type="number" min="0" max="20" class="score-in" id="alV-${p.id}" placeholder="0" style="width:60px;">
+          </div>
+          <div id="pen-${p.id}" style="display:none; gap:6px; align-items:center; justify-content:center;">
+            <label style="font-size:11px; color:var(--text2); min-width:80px;">Penales:</label>
+            <input type="number" min="0" max="20" class="score-in" id="penL-${p.id}" placeholder="0" style="width:60px;">
+            <span>–</span>
+            <input type="number" min="0" max="20" class="score-in" id="penV-${p.id}" placeholder="0" style="width:60px;">
           </div>
         </div>
       ` : ""}
@@ -310,23 +323,35 @@ function renderTarjeta(p) {
   `;
 }
 
+// Event listener para mostrar/ocultar inputs de alargue/penales
 document.addEventListener("input", (e) => {
   if (!e.target.classList.contains("score-in")) return;
   const id = e.target.id.replace("gL-", "").replace("gV-", "");
   const gL = document.getElementById("gL-" + id)?.value;
   const gV = document.getElementById("gV-" + id)?.value;
   const extDiv = document.getElementById("ext-" + id);
+  const penDiv = document.getElementById("pen-" + id);
+  
   if (!extDiv) return;
 
+  // Mostrar alargue si hay empate en 90'
   if (gL !== "" && gV !== "" && parseInt(gL) === parseInt(gV)) {
     extDiv.style.display = "flex";
   } else {
     extDiv.style.display = "none";
+    if (penDiv) penDiv.style.display = "none";
   }
 
-  const al = document.getElementById("al-" + id)?.value;
-  const penDiv = document.getElementById("pen-" + id);
-  if (penDiv) penDiv.style.display = al === "E" ? "block" : "none";
+  // Mostrar penales si hay empate en alargue
+  if (penDiv && extDiv.style.display === "flex") {
+    const alL = document.getElementById("alL-" + id)?.value;
+    const alV = document.getElementById("alV-" + id)?.value;
+    if (alL !== "" && alV !== "" && parseInt(alL) === parseInt(alV)) {
+      penDiv.style.display = "flex";
+    } else {
+      penDiv.style.display = "none";
+    }
+  }
 });
 
 async function guardarPrediccion(id) {
@@ -350,23 +375,41 @@ async function guardarPrediccion(id) {
     return;
   }
 
-  let alargue = "";
-  let penales = "";
-  
   const esElim = !p.j || p.fase;
-  
+  let alargueLocal = null;
+  let alargueVisit = null;
+  let penalesLocal = null;
+  let penalesVisit = null;
+
   if (esElim && parseInt(gL) === parseInt(gV)) {
-    alargue = document.getElementById("al-" + id)?.value || "";
-    if (!alargue) {
-      alert("Elegí qué pasa en el alargue");
+    const alL = document.getElementById("alL-" + id)?.value;
+    const alV = document.getElementById("alV-" + id)?.value;
+    
+    if (alL === "" || alV === "") {
+      alert("Elegí el marcador del alargue (empate en 90')");
       return;
     }
-    if (alargue === "E") {
-      penales = document.getElementById("penSel-" + id)?.value || "";
-      if (!penales) {
-        alert("Elegí el ganador por penales");
+    
+    alargueLocal = parseInt(alL);
+    alargueVisit = parseInt(alV);
+    
+    // Si el alargue también es empate, pedir penales
+    if (alargueLocal === alargueVisit) {
+      const penL = document.getElementById("penL-" + id)?.value;
+      const penV = document.getElementById("penV-" + id)?.value;
+      
+      if (penL === "" || penV === "") {
+        alert("Elegí el marcador de penales (empate en alargue)");
         return;
       }
+      
+      if (parseInt(penL) === parseInt(penV)) {
+        alert("⚠️ En penales NO puede haber empate");
+        return;
+      }
+      
+      penalesLocal = parseInt(penL);
+      penalesVisit = parseInt(penV);
     }
   }
 
@@ -375,8 +418,10 @@ async function guardarPrediccion(id) {
     partido_id: id,
     local: parseInt(gL),
     visit: parseInt(gV),
-    alargue: alargue,
-    penales: penales,
+    alargue_local: alargueLocal,
+    alargue_visit: alargueVisit,
+    penales_local: penalesLocal,
+    penales_visit: penalesVisit,
     fase: p.j ? "grupos" : p.fase,
     bloqueado: true
   };
@@ -543,7 +588,7 @@ async function guardarCampeon() {
     `¿Confirmás tu pronóstico del campeón?\n\n` +
     `🥇 Opción 1: ${v1} (+${pts[0]} pts si es campeón)\n` +
     `🥈 Opción 2: ${v2} (+${pts[1]} pts si es campeón)\n` +
-    ` Opción 3: ${v3} (+${pts[2]} pts si es campeón)\n\n` +
+    `🥉 Opción 3: ${v3} (+${pts[2]} pts si es campeón)\n\n` +
     `⚠️ NO PODRÁS MODIFICARLO`
   )) return;
 
