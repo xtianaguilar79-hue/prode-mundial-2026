@@ -1,5 +1,4 @@
-import { db } from "./firebase-config.js";
-import { collection, getDocs, doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { supabase } from "./supabase-config.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, 
   calcularPuntos, calcularPuntosCampeon,
@@ -34,113 +33,146 @@ function partidoProximo(partido, resultados) {
 // ═══════════════════════════════════════════════════════
 
 async function cargarDatosCompletos() {
-  const usuariosSnap = await getDocs(collection(db, "usuarios"));
-  const usuarios = {};
-  usuariosSnap.forEach(d => { usuarios[d.id] = d.data(); });
-  todosLosUsuarios = usuarios;
+  try {
+    // Cargar usuarios
+    const { data: usuariosData, error: usuariosError } = await supabase
+      .from('usuarios')
+      .select('*');
 
-  const predsSnap = await getDocs(collection(db, "predicciones"));
-  const resSnap = await getDocs(collection(db, "resultados"));
-  const campeonesSnap = await getDocs(collection(db, "campeones"));
-  const finalSnap = await getDoc(doc(db, "config", "final"));
+    if (usuariosError) throw usuariosError;
 
-  const resultados = {};
-  resSnap.forEach(d => { resultados[d.id] = d.data(); });
+    const usuarios = {};
+    usuariosData.forEach(u => { usuarios[u.id] = u; });
+    todosLosUsuarios = usuarios;
 
-  const campeones = {};
-  campeonesSnap.forEach(d => { campeones[d.id] = d.data(); });
+    // Cargar predicciones
+    const { data: predsData, error: predsError } = await supabase
+      .from('predicciones')
+      .select('*');
 
-  const resultadoFinal = finalSnap.exists() ? finalSnap.data() : null;
-  const campeonReal = resultadoFinal?.campeon;
+    if (predsError) throw predsError;
 
-  // Calcular ranking base
-  const ranking = {};
+    // Cargar resultados
+    const { data: resData, error: resError } = await supabase
+      .from('resultados')
+      .select('*');
 
-  predsSnap.forEach(doc => {
-    const pred = doc.data();
-    const res = resultados[pred.partidoId];
-    const pts = res ? calcularPuntos(pred, res) : 0;
+    if (resError) throw resError;
 
-    if (!ranking[pred.uid]) {
-      const u = usuarios[pred.uid] || {};
-      ranking[pred.uid] = {
-        uid: pred.uid,
-        nombre: u.nombre || "Jugador",
-        apellido: u.apellido || "",
-        apodo: u.apodo || null,
-        grupos: u.grupos || [],
-        puntos: 0,
-        puntosCampeon: 0,
-        partidosPronosticados: 0,
-        partidosAcertados: 0
-      };
+    const resultados = {};
+    resData.forEach(r => { resultados[r.partido_id] = r; });
+
+    // Cargar campeones
+    const { data: campeonesData, error: campeonesError } = await supabase
+      .from('campeones')
+      .select('*');
+
+    if (campeonesError) throw campeonesError;
+
+    const campeones = {};
+    campeonesData.forEach(c => { campeones[c.user_id] = c; });
+
+    // Cargar campeón real
+    const { data: finalData, error: finalError } = await supabase
+      .from('config')
+      .select('*')
+      .eq('id', 'final')
+      .single();
+
+    const resultadoFinal = !finalError ? finalData : null;
+    const campeonReal = resultadoFinal?.campeon;
+
+    // Calcular ranking
+    const ranking = {};
+
+    predsData.forEach(pred => {
+      const res = resultados[pred.partido_id];
+      const pts = res ? calcularPuntos(pred, res) : 0;
+
+      if (!ranking[pred.user_id]) {
+        const u = usuarios[pred.user_id] || {};
+        ranking[pred.user_id] = {
+          uid: pred.user_id,
+          nombre: u.nombre || "Jugador",
+          apellido: u.apellido || "",
+          apodo: u.apodo || null,
+          grupos: u.grupos || [],
+          puntos: 0,
+          puntosCampeon: 0,
+          partidosPronosticados: 0,
+          partidosAcertados: 0
+        };
+      }
+      ranking[pred.user_id].puntos += pts;
+      ranking[pred.user_id].partidosPronosticados += 1;
+      if (pts > 0) ranking[pred.user_id].partidosAcertados += 1;
+    });
+
+    Object.entries(campeones).forEach(([uid, pred]) => {
+      if (!ranking[uid]) {
+        const u = usuarios[uid] || {};
+        ranking[uid] = {
+          uid,
+          nombre: u.nombre || "Jugador",
+          apellido: u.apellido || "",
+          apodo: u.apodo || null,
+          grupos: u.grupos || [],
+          puntos: 0,
+          puntosCampeon: 0,
+          partidosPronosticados: 0,
+          partidosAcertados: 0
+        };
+      }
+      if (campeonReal) {
+        ranking[uid].puntosCampeon = calcularPuntosCampeon(pred, campeonReal);
+      }
+    });
+
+    // Agregar usuarios sin predicciones
+    Object.values(usuarios).forEach(u => {
+      if (!ranking[u.id]) {
+        ranking[u.id] = {
+          uid: u.id,
+          nombre: u.nombre,
+          apellido: u.apellido || "",
+          apodo: u.apodo || null,
+          grupos: u.grupos || [],
+          puntos: 0,
+          puntosCampeon: 0,
+          partidosPronosticados: 0,
+          partidosAcertados: 0
+        };
+      }
+    });
+
+    // Calcular totales
+    const lista = Object.values(ranking).map(u => {
+      const bonus = u.partidosPronosticados >= 104 ? 100 : 0;
+      return { ...u, bonus, total: u.puntos + u.puntosCampeon + bonus };
+    });
+
+    // Aplicar filtro de grupo
+    let listaFiltrada = lista;
+    if (filtroGrupoActual) {
+      listaFiltrada = lista.filter(u => 
+        u.grupos && u.grupos.includes(filtroGrupoActual)
+      );
     }
-    ranking[pred.uid].puntos += pts;
-    ranking[pred.uid].partidosPronosticados += 1;
-    if (pts > 0) ranking[pred.uid].partidosAcertados += 1;
-  });
 
-  Object.entries(campeones).forEach(([uid, pred]) => {
-    if (!ranking[uid]) {
-      const u = usuarios[uid] || {};
-      ranking[uid] = {
-        uid,
-        nombre: u.nombre || "Jugador",
-        apellido: u.apellido || "",
-        apodo: u.apodo || null,
-        grupos: u.grupos || [],
-        puntos: 0,
-        puntosCampeon: 0,
-        partidosPronosticados: 0,
-        partidosAcertados: 0
-      };
-    }
-    if (campeonReal) {
-      ranking[uid].puntosCampeon = calcularPuntosCampeon(pred, campeonReal);
-    }
-  });
+    // Ordenar
+    listaFiltrada.sort((a, b) => {
+      if (b.total !== a.total) return b.total - a.total;
+      if (b.partidosAcertados !== a.partidosAcertados) return b.partidosAcertados - a.partidosAcertados;
+      return b.puntosCampeon - a.puntosCampeon;
+    });
 
-  // Agregar usuarios sin predicciones
-  Object.values(usuarios).forEach(u => {
-    if (!ranking[u.uid]) {
-      ranking[u.uid] = {
-        uid: u.uid,
-        nombre: u.nombre,
-        apellido: u.apellido || "",
-        apodo: u.apodo || null,
-        grupos: u.grupos || [],
-        puntos: 0,
-        puntosCampeon: 0,
-        partidosPronosticados: 0,
-        partidosAcertados: 0
-      };
-    }
-  });
+    listaFiltrada.forEach((u, i) => u.pos = i + 1);
 
-  // Calcular totales
-  const lista = Object.values(ranking).map(u => {
-    const bonus = u.partidosPronosticados >= 104 ? 100 : 0;
-    return { ...u, bonus, total: u.puntos + u.puntosCampeon + bonus };
-  });
-
-  // Aplicar filtro de grupo
-  let listaFiltrada = lista;
-  if (filtroGrupoActual) {
-    listaFiltrada = lista.filter(u => 
-      u.grupos && u.grupos.includes(filtroGrupoActual)
-    );
+    return { lista: listaFiltrada, resultados, todosLosUsuarios: usuarios };
+  } catch (err) {
+    console.error("Error al cargar datos:", err);
+    throw err;
   }
-
-  // Ordenar
-  listaFiltrada.sort((a, b) => {
-    if (b.total !== a.total) return b.total - a.total;
-    if (b.partidosAcertados !== a.partidosAcertados) return b.partidosAcertados - a.partidosAcertados;
-    return b.puntosCampeon - a.puntosCampeon;
-  });
-
-  listaFiltrada.forEach((u, i) => u.pos = i + 1);
-
-  return { lista: listaFiltrada, resultados, todosLosUsuarios: usuarios };
 }
 
 // ═══════════════════════════════════════════════════════
@@ -209,7 +241,7 @@ function renderRanking(lista) {
   if (lista.length >= 3) {
     const orden = [1, 0, 2];
     const colores = ["p2", "p1", "p3"];
-    const emojis = ["🥈", "🥇", "🥉"];
+    const emojis = ["🥈", "🥇", ""];
     
     top3Div.innerHTML = orden.map((idx, i) => {
       const u = lista[idx];
@@ -232,7 +264,7 @@ function renderRanking(lista) {
   const tbody = document.getElementById("rankingBody");
   tbody.innerHTML = lista.map(u => {
     const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
-    const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","🥈","🥉"][u.pos-1]}</span>` : u.pos;
+    const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","","🥉"][u.pos-1]}</span>` : u.pos;
     const gruposHTML = u.grupos && u.grupos.length > 0 
       ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
       : '<span style="color:var(--text3); font-size:11px;">—</span>';
@@ -335,12 +367,10 @@ function renderResultados(resultados) {
   secciones.forEach(sec => {
     if (sec.partidos.length === 0) return;
 
-    // Clasificar partidos
     const vivos = sec.partidos.filter(p => partidoEnJuego(p) && !resultados[p.id]);
     const finalizados = sec.partidos.filter(p => resultados[p.id]);
     const proximos = sec.partidos.filter(p => !resultados[p.id] && !partidoEnJuego(p));
 
-    // Ordenar: primero vivos, luego finalizados, luego próximos
     const ordenados = [...vivos, ...finalizados, ...proximos];
 
     html += `<h3 class="seccion-titulo">${sec.label} <span style="font-size:12px; color:var(--text2); font-family:'DM Sans'; font-weight:400;">(${sec.partidos.length} partidos)</span></h3>`;
