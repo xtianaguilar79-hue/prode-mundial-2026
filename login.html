@@ -160,6 +160,8 @@
 
   const $ = id => document.getElementById(id);
 
+  console.log("🔥 Firebase configurado:", { auth, db, ADMIN_EMAIL });
+
   onAuthStateChanged(auth, (user) => {
     if (user) window.location.href = "prode.html";
   });
@@ -284,10 +286,14 @@
     const password = $("password").value;
     const btn = $("btnSubmit");
 
+    console.log("📝 Formulario enviado, modo:", modo);
+
     if (modo === "registro") {
       const nombre = $("nombre").value.trim();
       const apellido = $("apellido").value.trim();
       const apodo = $("apodo").value.trim();
+      
+      console.log("📋 Datos del registro:", { nombre, apellido, apodo, email });
       
       if (!nombre) {
         mostrarError("Ingresá tu nombre");
@@ -302,11 +308,13 @@
       btn.textContent = "Procesando...";
 
       try {
+        console.log("🔐 Creando usuario en Authentication...");
         const cred = await createUserWithEmailAndPassword(auth, email, password);
         const user = cred.user;
         
-        // GUARDAR EN FIRESTORE CON TODOS LOS CAMPOS
-        await setDoc(doc(db, "usuarios", user.uid), {
+        console.log("✅ Usuario creado en Auth:", user.uid);
+        
+        const userData = {
           uid: user.uid,
           email: email,
           nombre: nombre,
@@ -316,20 +324,36 @@
           esAdmin: email === ADMIN_EMAIL.toLowerCase(),
           fechaRegistro: serverTimestamp(),
           puntosTotales: 0
-        });
+        };
         
-        console.log("✅ Usuario creado en Firestore:", {
-          uid: user.uid,
-          nombre: nombre,
-          apellido: apellido,
-          email: email
-        });
+        console.log("💾 Guardando en Firestore:", userData);
+        
+        // Intentar guardar con retry
+        let intentos = 0;
+        const maxIntentos = 3;
+        
+        while (intentos < maxIntentos) {
+          try {
+            await setDoc(doc(db, "usuarios", user.uid), userData);
+            console.log("✅ Usuario guardado en Firestore correctamente");
+            break;
+          } catch (retryErr) {
+            intentos++;
+            console.warn(`⚠️ Intento ${intentos} falló:`, retryErr);
+            if (intentos >= maxIntentos) {
+              throw retryErr;
+            }
+            await new Promise(resolve => setTimeout(resolve, 1000));
+          }
+        }
         
         mostrarOk("¡Cuenta creada! Ingresando...");
-        setTimeout(() => window.location.href = "prode.html", 800);
+        setTimeout(() => window.location.href = "prode.html", 1000);
       } catch (err) {
-        console.error("Error al crear usuario:", err);
-        mostrarError(traducirError(err.code));
+        console.error("❌ Error completo:", err);
+        console.error("❌ Código de error:", err.code);
+        console.error("❌ Mensaje:", err.message);
+        mostrarError(traducirError(err.code) + " - " + err.message);
         btn.disabled = false;
         btn.textContent = "Registrarme";
       }
@@ -361,6 +385,7 @@
       "auth/too-many-requests": "Demasiados intentos. Probá más tarde",
       "auth/network-request-failed": "Error de conexión. Verificá tu internet",
       "auth/api-key-not-valid": "Error de configuración. Contactá al administrador",
+      "permission-denied": "Permiso denegado. Contactá al administrador",
     };
     return errores[code] || "Error: " + code;
   }
