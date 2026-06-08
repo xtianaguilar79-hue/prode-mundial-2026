@@ -2,8 +2,10 @@ import { supabase } from "./supabase-config.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, PUNTOS, 
   calcularPuntos, SELECCIONES, obtenerPuntosCampeonDisponibles,
-  calcularPuntosCampeon, msHastaBloqueo, formatearTiempo, partidoBloqueado
+  calcularPuntosCampeon, msHastaBloqueo, formatearTiempo, partidoBloqueado,
+  partidoListoParaPronosticar
 } from "../datos-partidos.js";
+import { obtenerPartidosConEquiposReales } from "./clasificaciones.js";
 
 let usuarioId = null;
 let perfil = null;
@@ -13,19 +15,42 @@ let prediccionCampeon = null;
 let resultadoFinal = null;
 let faseActiva = "j1";
 let intervalosCrono = [];
+let partidosConEquiposReales = TODOS_PARTIDOS;
+let equiposActualizados = {};
 
 window.addEventListener("usuarioListo", async (e) => {
-  usuarioId = e.detail.user.uid;  // ← Ahora sí tiene uid
+  usuarioId = e.detail.user.uid;
   perfil = e.detail.perfil;
 
   console.log(" app-prode.js iniciado para:", perfil.nombre, perfil.apellido, "UID:", usuarioId);
 
+  await cargarEquiposReales();
   await cargarDatos();
   await cargarCampeon();
   renderTabs();
   renderPartidos();
   renderCampeon();
 });
+
+async function cargarEquiposReales() {
+  try {
+    partidosConEquiposReales = await obtenerPartidosConEquiposReales();
+    
+    // Crear mapa de equipos actualizados
+    equiposActualizados = {};
+    partidosConEquiposReales.forEach(p => {
+      const original = TODOS_PARTIDOS.find(x => x.id === p.id);
+      if (original && (p.local !== original.local || p.visit !== original.visit)) {
+        equiposActualizados[p.id] = { local: p.local, visit: p.visit };
+      }
+    });
+    
+    console.log("✅ Equipos reales cargados:", equiposActualizados);
+  } catch (err) {
+    console.error("❌ Error al cargar equipos reales:", err);
+    partidosConEquiposReales = TODOS_PARTIDOS;
+  }
+}
 
 async function cargarDatos() {
   try {
@@ -149,15 +174,20 @@ function renderPartidos() {
   grid.style.display = "grid";
 
   const partidos = getPartidosFase();
-  grid.innerHTML = partidos.map(p => renderTarjeta(p)).join("");
+  grid.innerHTML = partidos.map(p => {
+    // Buscar el partido con equipos reales
+    const partidoReal = partidosConEquiposReales.find(x => x.id === p.id) || p;
+    return renderTarjeta(partidoReal);
+  }).join("");
 
   grid.querySelectorAll(".btn-guardar").forEach(btn => {
     btn.onclick = () => guardarPrediccion(btn.dataset.id);
   });
 
   partidos.forEach(p => {
-    if (!predicciones[p.id]) {
-      iniciarCronometro(p);
+    const partidoReal = partidosConEquiposReales.find(x => x.id === p.id) || p;
+    if (!predicciones[p.id] && partidoListoParaPronosticar(partidoReal, equiposActualizados)) {
+      iniciarCronometro(partidoReal);
     }
   });
 }
@@ -212,7 +242,10 @@ function renderTarjeta(p) {
   const flagL = FLAGS[p.local] || "🏳️";
   const flagV = FLAGS[p.visit] || "🏳️";
   const pts = guardado && res ? calcularPuntos(pred, res) : null;
-  const bloqueado = partidoBloqueado(p);
+  
+  // Verificar si el partido está listo para pronosticar
+  const listo = partidoListoParaPronosticar(p, equiposActualizados);
+  const bloqueado = !listo || partidoBloqueado(p);
 
   let marcadorHTML;
   if (guardado) {
@@ -241,6 +274,15 @@ function renderTarjeta(p) {
     }
     
     marcadorHTML = detalleHTML;
+  } else if (!listo) {
+    // Partido sin equipos definidos
+    marcadorHTML = `
+      <div style="text-align:center; padding:20px; color:var(--text2);">
+        <div style="font-size:32px; margin-bottom:8px;">⏳</div>
+        <div style="font-size:13px; font-weight:600;">Esperando definición de equipos</div>
+        <div style="font-size:11px; margin-top:4px;">Los equipos se conocerán cuando se definan los clasificados</div>
+      </div>
+    `;
   } else {
     marcadorHTML = `
       <div class="marcador">
@@ -267,7 +309,7 @@ function renderTarjeta(p) {
     `;
   }
 
-  const cronoHTML = !guardado ? `
+  const cronoHTML = (!guardado && listo) ? `
     <div class="crono-box">
       <span style="color:var(--text2); font-size:11px;">Se bloquea en: </span>
       <span id="crono-${p.id}" style="font-family:'Anton'; font-size:14px; color:var(--gold);">--:--:--</span>
@@ -308,9 +350,11 @@ function renderTarjeta(p) {
         ` : ""}
         ${guardado 
           ? `<span class="tag-bloqueado">🔒 Guardado</span>` 
-          : bloqueado 
-            ? `<span class="tag-bloqueado" style="color:var(--red);">🔒 Bloqueado</span>`
-            : `<button class="btn-guardar" data-id="${p.id}">Guardar pronóstico</button>`
+          : !listo
+            ? `<span class="tag-bloqueado" style="color:var(--text2);">⏳ Esperando equipos</span>`
+            : bloqueado 
+              ? `<span class="tag-bloqueado" style="color:var(--red);">🔒 Bloqueado</span>`
+              : `<button class="btn-guardar" data-id="${p.id}">Guardar pronóstico</button>`
         }
       </div>
     </div>
