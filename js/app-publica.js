@@ -5,6 +5,8 @@ import {
   getKickoffTimestamp
 } from "../datos-partidos.js";
 
+console.log(" app-publica.js cargado");
+
 let todosLosUsuarios = {};
 let filtroGrupoActual = "";
 
@@ -26,10 +28,12 @@ async function cargarDatosCompletos() {
     if (usuariosError) throw usuariosError;
 
     const usuarios = {};
-    usuariosData.forEach(u => { usuarios[u.id] = u; });
+    if (usuariosData) {
+      usuariosData.forEach(u => { usuarios[u.id] = u; });
+    }
     todosLosUsuarios = usuarios;
 
-    // Cargar predicciones (SOLO las reales, no las de prueba)
+    // Cargar predicciones
     const { data: predsData, error: predsError } = await supabase
       .from('predicciones')
       .select('*');
@@ -40,12 +44,14 @@ async function cargarDatosCompletos() {
     const { data: resData, error: resError } = await supabase
       .from('resultados')
       .select('*')
-      .eq('es_prueba', false);  // ← IMPORTANTE: Filtrar resultados de prueba
+      .eq('es_prueba', false);
 
     if (resError) throw resError;
 
     const resultados = {};
-    resData.forEach(r => { resultados[r.partido_id] = r; });
+    if (resData) {
+      resData.forEach(r => { resultados[r.partido_id] = r; });
+    }
 
     // Cargar campeones
     const { data: campeonesData, error: campeonesError } = await supabase
@@ -55,7 +61,9 @@ async function cargarDatosCompletos() {
     if (campeonesError) throw campeonesError;
 
     const campeones = {};
-    campeonesData.forEach(c => { campeones[c.user_id] = c; });
+    if (campeonesData) {
+      campeonesData.forEach(c => { campeones[c.user_id] = c; });
+    }
 
     // Cargar campeón real
     const { data: finalData, error: finalError } = await supabase
@@ -70,28 +78,30 @@ async function cargarDatosCompletos() {
     // Calcular ranking
     const ranking = {};
 
-    predsData.forEach(pred => {
-      const res = resultados[pred.partido_id];
-      const pts = res ? calcularPuntos(pred, res) : 0;
+    if (predsData) {
+      predsData.forEach(pred => {
+        const res = resultados[pred.partido_id];
+        const pts = res ? calcularPuntos(pred, res) : 0;
 
-      if (!ranking[pred.user_id]) {
-        const u = usuarios[pred.user_id] || {};
-        ranking[pred.user_id] = {
-          uid: pred.user_id,
-          nombre: u.nombre || "Jugador",
-          apellido: u.apellido || "",
-          apodo: u.apodo || null,
-          grupos: u.grupos || [],
-          puntos: 0,
-          puntosCampeon: 0,
-          partidosPronosticados: 0,
-          partidosAcertados: 0
-        };
-      }
-      ranking[pred.user_id].puntos += pts;
-      ranking[pred.user_id].partidosPronosticados += 1;
-      if (pts > 0) ranking[pred.user_id].partidosAcertados += 1;
-    });
+        if (!ranking[pred.user_id]) {
+          const u = usuarios[pred.user_id] || {};
+          ranking[pred.user_id] = {
+            uid: pred.user_id,
+            nombre: u.nombre || "Jugador",
+            apellido: u.apellido || "",
+            apodo: u.apodo || null,
+            grupos: u.grupos || [],
+            puntos: 0,
+            puntosCampeon: 0,
+            partidosPronosticados: 0,
+            partidosAcertados: 0
+          };
+        }
+        ranking[pred.user_id].puntos += pts;
+        ranking[pred.user_id].partidosPronosticados += 1;
+        if (pts > 0) ranking[pred.user_id].partidosAcertados += 1;
+      });
+    }
 
     Object.entries(campeones).forEach(([uid, pred]) => {
       if (!ranking[uid]) {
@@ -149,7 +159,7 @@ async function cargarDatosCompletos() {
 
     listaFiltrada.forEach((u, i) => u.pos = i + 1);
 
-    return { lista: listaFiltrada, resultados, todosLosUsuarios: usuarios, totalUsuarios: usuariosData.length };
+    return { lista: listaFiltrada, resultados, todosLosUsuarios: usuarios, totalUsuarios: usuariosData?.length || 0 };
   } catch (err) {
     console.error("Error al cargar datos:", err);
     throw err;
@@ -165,6 +175,8 @@ function actualizarSelectorGrupos(usuarios) {
   });
 
   const select = document.getElementById("filtroGrupo");
+  if (!select) return;
+  
   const valorActual = select.value;
   
   select.innerHTML = '<option value="">🌍 Ranking General (todos los jugadores)</option>';
@@ -185,36 +197,45 @@ function actualizarSelectorGrupos(usuarios) {
 }
 
 function renderRanking(lista, totalUsuarios) {
-  document.getElementById("rankingLoader").style.display = "none";
-  document.getElementById("actualizado").textContent = "Actualizado: " + new Date().toLocaleTimeString();
+  const rankingLoader = document.getElementById("rankingLoader");
+  const actualizado = document.getElementById("actualizado");
+  
+  if (rankingLoader) rankingLoader.style.display = "none";
+  if (actualizado) actualizado.textContent = "Actualizado: " + new Date().toLocaleTimeString();
 
   const jugadoresActivos = lista.filter(u => u.partidosPronosticados > 0);
   const hayActivos = jugadoresActivos.length > 0;
 
   if (!hayActivos) {
-    document.getElementById("rankingTabla").style.display = "none";
-    document.getElementById("top3").innerHTML = `
-      <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1.5px solid var(--gold); box-shadow: 0 4px 24px rgba(255, 201, 60, 0.08);">
-        <div style="font-size:70px; margin-bottom:16px;">🏆</div>
-        <h3 style="color:var(--gold); font-family:'Anton'; font-size:clamp(24px, 4vw, 36px); margin-bottom:12px; letter-spacing:1px;">¡MUY PRONTO ARRANCA EL TORNEO!</h3>
-        <p style="color:var(--text2); font-size:15px; max-width:450px; margin:0 auto 20px; line-height:1.6;">
-          ${totalUsuarios > 0 
-            ? `Ya hay <strong style="color:var(--gold)">${totalUsuarios}</strong> jugador${totalUsuarios === 1 ? '' : 'es'} registrado${totalUsuarios === 1 ? '' : 's'}. El ranking se activará cuando comience el Mundial.`
-            : `El ranking se activará una vez que comience el Mundial y los jugadores carguen sus pronósticos.`}
-        </p>
-        <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none; font-size:14px;">🔐 Registrarme y pronosticar</a>
-      </div>
-    `;
+    const rankingTabla = document.getElementById("rankingTabla");
+    if (rankingTabla) rankingTabla.style.display = "none";
+    
+    const top3 = document.getElementById("top3");
+    if (top3) {
+      top3.innerHTML = `
+        <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1.5px solid var(--gold); box-shadow: 0 4px 24px rgba(255, 201, 60, 0.08);">
+          <div style="font-size:70px; margin-bottom:16px;"></div>
+          <h3 style="color:var(--gold); font-family:'Anton'; font-size:clamp(24px, 4vw, 36px); margin-bottom:12px; letter-spacing:1px;">¡MUY PRONTO ARRANCA EL TORNEO!</h3>
+          <p style="color:var(--text2); font-size:15px; max-width:450px; margin:0 auto 20px; line-height:1.6;">
+            ${totalUsuarios > 0 
+              ? `Ya hay <strong style="color:var(--gold)">${totalUsuarios}</strong> jugador${totalUsuarios === 1 ? '' : 'es'} registrado${totalUsuarios === 1 ? '' : 's'}. El ranking se activará cuando comience el Mundial.`
+              : `El ranking se activará una vez que comience el Mundial y los jugadores carguen sus pronósticos.`}
+          </p>
+          <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none; font-size:14px;">🔐 Registrarme y pronosticar</a>
+        </div>
+      `;
+    }
     return;
   }
 
-  document.getElementById("rankingTabla").style.display = "block";
+  const rankingTabla = document.getElementById("rankingTabla");
+  if (rankingTabla) rankingTabla.style.display = "block";
 
   const top3Div = document.getElementById("top3");
-  if (lista.length >= 3) {
+  if (top3Div && lista.length >= 3) {
     const orden = [1, 0, 2];
     const colores = ["p2", "p1", "p3"];
-    const emojis = ["", "🥇", ""];
+    const emojis = ["", "", ""];
     
     top3Div.innerHTML = orden.map((idx, i) => {
       const u = lista[idx];
@@ -229,34 +250,36 @@ function renderRanking(lista, totalUsuarios) {
         </div>
       `;
     }).join("");
-  } else {
+  } else if (top3Div) {
     top3Div.innerHTML = "";
   }
 
   const tbody = document.getElementById("rankingBody");
-  tbody.innerHTML = lista.map(u => {
-    const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
-    const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","","🥉"][u.pos-1]}</span>` : u.pos;
-    const gruposHTML = u.grupos && u.grupos.length > 0 
-      ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
-      : '<span style="color:var(--text3); font-size:11px;">—</span>';
-    
-    return `
-      <tr class="${claseFila}">
-        <td>${posText}</td>
-        <td class="left">
-          <strong>${u.nombre} ${u.apellido}</strong>
-          ${u.apodo ? `<div style="font-size:11px; color:var(--text2);">"${u.apodo}"</div>` : ""}
-        </td>
-        <td style="font-size:11px;">${gruposHTML}</td>
-        <td>${u.partidosPronosticados}/104</td>
-        <td>${u.partidosAcertados}</td>
-        <td>${u.puntosCampeon > 0 ? `<span style="color:var(--gold)">+${u.puntosCampeon}</span>` : "—"}</td>
-        <td>${u.bonus > 0 ? `<span style="color:var(--green)">+${u.bonus}</span>` : "—"}</td>
-        <td class="pts-total">${u.total}</td>
-      </tr>
-    `;
-  }).join("");
+  if (tbody) {
+    tbody.innerHTML = lista.map(u => {
+      const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
+      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","","🥉"][u.pos-1]}</span>` : u.pos;
+      const gruposHTML = u.grupos && u.grupos.length > 0 
+        ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
+        : '<span style="color:var(--text3); font-size:11px;">—</span>';
+      
+      return `
+        <tr class="${claseFila}">
+          <td>${posText}</td>
+          <td class="left">
+            <strong>${u.nombre} ${u.apellido}</strong>
+            ${u.apodo ? `<div style="font-size:11px; color:var(--text2);">"${u.apodo}"</div>` : ""}
+          </td>
+          <td style="font-size:11px;">${gruposHTML}</td>
+          <td>${u.partidosPronosticados}/104</td>
+          <td>${u.partidosAcertados}</td>
+          <td>${u.puntosCampeon > 0 ? `<span style="color:var(--gold)">+${u.puntosCampeon}</span>` : "—"}</td>
+          <td>${u.bonus > 0 ? `<span style="color:var(--green)">+${u.bonus}</span>` : "—"}</td>
+          <td class="pts-total">${u.total}</td>
+        </tr>
+      `;
+    }).join("");
+  }
 }
 
 function renderCardPartido(p, resultado, estado) {
@@ -269,7 +292,7 @@ function renderCardPartido(p, resultado, estado) {
 
   let liveBadge = "";
   if (estado === "vivo") {
-    liveBadge = `<span class="live-badge">🔴 EN VIVO</span>`;
+    liveBadge = `<span class="live-badge"> EN VIVO</span>`;
   }
 
   let marcadorHTML;
@@ -318,7 +341,10 @@ function renderCardPartido(p, resultado, estado) {
 
 function renderResultados(resultados) {
   const cont = document.getElementById("resultadosContenido");
-  document.getElementById("resultadosLoader").style.display = "none";
+  const loader = document.getElementById("resultadosLoader");
+  
+  if (loader) loader.style.display = "none";
+  if (!cont) return;
 
   if (Object.keys(resultados).length === 0) {
     cont.innerHTML = `
@@ -352,7 +378,6 @@ function renderResultados(resultados) {
 
     const vivos = sec.partidos.filter(p => partidoEnJuego(p) && !resultados[p.id]);
     const finalizados = sec.partidos.filter(p => resultados[p.id]);
-    const proximos = sec.partidos.filter(p => !resultados[p.id] && !partidoEnJuego(p));
 
     if (finalizados.length === 0 && vivos.length === 0) return;
 
@@ -395,9 +420,14 @@ async function cargarYRenderizar() {
     renderResultados(resultados);
   } catch (err) {
     console.error(err);
-    document.getElementById("rankingLoader").innerHTML = "<p style='color:var(--red)'>Error al cargar los datos</p>";
-    document.getElementById("resultadosLoader").style.display = "none";
-    document.getElementById("resultadosContenido").innerHTML = "<p style='color:var(--red); text-align:center; padding:30px;'>Error al cargar resultados</p>";
+    const rankingLoader = document.getElementById("rankingLoader");
+    if (rankingLoader) rankingLoader.innerHTML = "<p style='color:var(--red)'>Error al cargar los datos</p>";
+    
+    const resultadosLoader = document.getElementById("resultadosLoader");
+    if (resultadosLoader) resultadosLoader.style.display = "none";
+    
+    const resultadosContenido = document.getElementById("resultadosContenido");
+    if (resultadosContenido) resultadosContenido.innerHTML = "<p style='color:var(--red); text-align:center; padding:30px;'>Error al cargar resultados</p>";
   }
 }
 
