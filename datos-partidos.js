@@ -1,33 +1,68 @@
 // ═══════════════════════════════════════════════════════
-//  PRODE MUNDIAL 2026 - FIXTURE OFICIAL FIFA
+// 🏆 PRODE MUNDIAL 2026 - FIXTURE OFICIAL FIFA
 // Horarios en HORA ARGENTINA (UTC-3)
 // Bloqueo: 5 minutos antes del kickoff
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 
-// ─── BANDERAS DE LAS 48 SELECCIONES (CORREGIDAS) ───
+// ─── BANDERAS DE LAS 48 SELECCIONES (TODAS CORRECTAS) ───
 export const FLAGS = {
-  "México":"🇲🇽","Sudáfrica":"🇿🇦","Corea del Sur":"🇰🇷","Rep. Checa":"🇨🇿",
-  "Canadá":"🇨🇦","Bosnia-Herzegovina":"🇧🇦","Qatar":"🇶","Suiza":"🇨🇭",
-  "Brasil":"🇧🇷","Marruecos":"🇲🇦","Haití":"🇭🇹","Escocia":"🏴󠁧󠁳󠁣󠁿",
-  "Estados Unidos":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇺","Turquía":"🇹🇷",
-  "Alemania":"🇪","Curazao":"🇨🇼","Costa de Marfil":"🇮","Ecuador":"🇪🇨",
-  "Países Bajos":"🇳🇱","Japón":"🇯🇵","Suecia":"🇪","Túnez":"🇳",
-  "Bélgica":"🇧🇪","Egipto":"🇪🇬","Irán":"🇮🇷","Nueva Zelanda":"🇳🇿",
-  "España":"🇪🇸","Cabo Verde":"🇨🇻","Arabia Saudita":"🇸🇦","Uruguay":"🇺🇾",
-  "Francia":"🇫🇷","Senegal":"🇳","Irak":"🇮🇶","Noruega":"🇳",
-  "Argentina":"🇦","Argelia":"🇩🇿","Austria":"🇦🇹","Jordania":"🇯🇴",
-  "Portugal":"🇵🇹","RD Congo":"🇨🇩","Uzbekistán":"🇺🇿","Colombia":"🇨🇴",
-  "Inglaterra":"🏴󠁧󠁥󠁮󠁿","Croacia":"🇭🇷","Ghana":"🇬","Panamá":"🇵🇦",
+  "México": "🇲🇽",
+  "Sudáfrica": "🇿🇦",
+  "Corea del Sur": "🇰🇷",
+  "Rep. Checa": "🇨🇿",
+  "Canadá": "🇨🇦",
+  "Bosnia-Herzegovina": "🇧🇦",
+  "Qatar": "🇶🇦",
+  "Suiza": "🇨🇭",
+  "Brasil": "🇧🇷",
+  "Marruecos": "🇲🇦",
+  "Haití": "🇭🇹",
+  "Escocia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+  "Estados Unidos": "🇺🇸",
+  "Paraguay": "🇵🇾",
+  "Australia": "🇦🇺",
+  "Turquía": "🇹🇷",
+  "Alemania": "🇩🇪",
+  "Curazao": "🇨🇼",
+  "Costa de Marfil": "🇨🇮",
+  "Ecuador": "🇪🇨",
+  "Países Bajos": "🇳🇱",
+  "Japón": "🇯🇵",
+  "Suecia": "🇸🇪",
+  "Túnez": "🇹🇳",
+  "Bélgica": "🇧🇪",
+  "Egipto": "🇪🇬",
+  "Irán": "🇮🇷",
+  "Nueva Zelanda": "🇳🇿",
+  "España": "🇪🇸",
+  "Cabo Verde": "🇨🇻",
+  "Arabia Saudita": "🇸🇦",
+  "Uruguay": "🇺🇾",
+  "Francia": "🇫🇷",
+  "Senegal": "🇸🇳",
+  "Irak": "🇮🇶",
+  "Noruega": "🇳🇴",
+  "Argentina": "🇦🇷",
+  "Argelia": "🇩🇿",
+  "Austria": "🇦🇹",
+  "Jordania": "🇯🇴",
+  "Portugal": "🇵🇹",
+  "RD Congo": "🇨🇩",
+  "Uzbekistán": "🇺🇿",
+  "Colombia": "🇨🇴",
+  "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  "Croacia": "🇭🇷",
+  "Ghana": "🇬🇭",
+  "Panamá": "🇵🇦"
 };
 
 export const SELECCIONES = Object.keys(FLAGS);
 
 export function getFlag(equipo) {
-  return FLAGS[equipo] || "️";
+  return FLAGS[equipo] || "🏳️";
 }
 
 // ─── PARTIDOS FASE DE GRUPOS (72 partidos) ───
-// Horarios oficiales FIFA en hora Argentina (UTC-3)
 export const PARTIDOS_GRUPOS = [
   // ═══ JORNADA 1 ═══
   { id:"M001", j:1, grupo:"A", local:"México", visit:"Sudáfrica", fecha:"11/06", hora:"16:00", sede:"Azteca, CDMX" },
@@ -109,7 +144,6 @@ export const PARTIDOS_GRUPOS = [
 ];
 
 // ─── PARTIDOS ELIMINATORIOS (32 partidos) ───
-// Horarios oficiales FIFA en hora Argentina (UTC-3)
 export const PARTIDOS_ELIM = [
   // ═══ DIECISEISAVOS DE FINAL ═══
   { id:"M073", fase:"16avos", local:"2°A", visit:"2°B", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
@@ -139,13 +173,13 @@ export const PARTIDOS_ELIM = [
   { id:"M095", fase:"octavos", local:"G86", visit:"G88", fecha:"07/07", hora:"13:00", sede:"Atlanta, USA" },
   { id:"M096", fase:"octavos", local:"G85", visit:"G87", fecha:"07/07", hora:"17:00", sede:"Vancouver, CAN" },
 
-  // ══ CUARTOS DE FINAL ═══
+  // ═══ CUARTOS DE FINAL ═══
   { id:"M097", fase:"cuartos", local:"G89", visit:"G90", fecha:"09/07", hora:"17:00", sede:"Boston, USA" },
   { id:"M098", fase:"cuartos", local:"G93", visit:"G94", fecha:"10/07", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M099", fase:"cuartos", local:"G91", visit:"G92", fecha:"11/07", hora:"18:00", sede:"Miami, USA" },
   { id:"M100", fase:"cuartos", local:"G95", visit:"G96", fecha:"11/07", hora:"22:00", sede:"Kansas City, USA" },
 
-  // ══ SEMIFINALES ═══
+  // ═══ SEMIFINALES ═══
   { id:"M101", fase:"semis", local:"G97", visit:"G98", fecha:"14/07", hora:"16:00", sede:"Dallas, USA" },
   { id:"M102", fase:"semis", local:"G99", visit:"G100", fecha:"15/07", hora:"16:00", sede:"Atlanta, USA" },
 
@@ -159,7 +193,6 @@ export const PARTIDOS_ELIM = [
 export const TODOS_PARTIDOS = [...PARTIDOS_GRUPOS, ...PARTIDOS_ELIM];
 
 // ─── SISTEMA DE PUNTOS UNIFICADO ───
-// Grupos: máx 11 pts | Eliminatorias: máx 22 pts
 export const PUNTOS = {
   grupos:    { signo: 2,  golL: 2,  golV: 2,  exacto: 5,  alargue: 0,  penales: 0  },
   "16avos":  { signo: 3,  golL: 3,  golV: 3,  exacto: 8,  alargue: 3,  penales: 2  },
@@ -182,19 +215,15 @@ export function calcularPuntos(pred, resultado) {
   const pts = PUNTOS[fase];
   let total = 0;
 
-  // Signo (90')
   const signoR = rL > rV ? "L" : rL < rV ? "V" : "E";
   const signoP = pL > pV ? "L" : pL < pV ? "V" : "E";
   if (signoP === signoR) total += pts.signo;
 
-  // Goles exactos
   if (pL === rL) total += pts.golL;
   if (pV === rV) total += pts.golV;
 
-  // Resultado exacto
   if (pL === rL && pV === rV) total += pts.exacto;
 
-  // Eliminatorias: alargue y penales
   if (fase !== "grupos" && signoP === "E" && signoR === "E") {
     const pAL = pred.alargue_local !== null && pred.alargue_local !== undefined ? parseInt(pred.alargue_local) : null;
     const pAV = pred.alargue_visit !== null && pred.alargue_visit !== undefined ? parseInt(pred.alargue_visit) : null;
@@ -280,7 +309,6 @@ export function calcularPuntosCampeon(prediccion, campeonReal) {
 }
 
 // ─── CRONÓMETRO Y BLOQUEO ───
-// Bloqueo 5 minutos antes del kickoff (hora Argentina UTC-3)
 export function getKickoffTimestamp(partido) {
   const [dia, mes] = partido.fecha.split("/");
   const [hora, min] = partido.hora.split(":");
@@ -308,7 +336,6 @@ export function partidoBloqueado(partido) {
   return msHastaBloqueo(partido) <= 0;
 }
 
-// ─── VERIFICAR SI UN PARTIDO TIENE EQUIPOS REALES ───
 export function partidoListoParaPronosticar(partido, equiposActualizados) {
   if (partido.j) return true;
   
