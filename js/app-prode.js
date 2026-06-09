@@ -25,37 +25,13 @@ async function init() {
   console.log("🚀 Iniciando prode...");
   
   try {
-    const { data: { session }, error } = await supabase.auth.getSession();
+    // Usar el guard mejorado
+    const user = await protegerPagina(false);
+    if (!user) return; // Si redirigió a login, detenemos todo
+
+    usuarioId = user.uid;
+    console.log("✅ Autenticado como:", user.nombre);
     
-    if (error || !session) {
-      window.location.href = "login.html";
-      return;
-    }
-
-    const { data: usuario, error: userError } = await supabase
-      .from('usuarios')
-      .select('*')
-      .eq('id', session.user.id)
-      .single();
-
-    if (userError || !usuario) {
-      window.location.href = "login.html";
-      return;
-    }
-
-    usuarioId = usuario.id;
-    console.log("✅ Autenticado como:", usuario.nombre);
-
-    const userNameEl = document.getElementById("userName");
-    if (userNameEl) userNameEl.textContent = usuario.nombre;
-
-    if (usuario.es_admin) {
-      const adminTag = document.getElementById("adminTag");
-      if (adminTag) adminTag.style.display = "inline";
-      const linkAdmin = document.getElementById("linkAdmin");
-      if (linkAdmin) linkAdmin.style.display = "inline-block";
-    }
-
     await cargarDatos();
     await cargarCampeon();
     renderTabs();
@@ -64,7 +40,12 @@ async function init() {
     
     console.log("✅ Prode iniciado correctamente");
   } catch (err) {
-    console.error("❌ Error en init:", err);
+    console.error("❌ Error crítico en init:", err);
+  }
+}
+
+// Ejecutar
+init();
   }
 }
 
