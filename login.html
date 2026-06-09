@@ -6,78 +6,7 @@
   <title>Ingresar · Prode Mundial 2026</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .grupos-container {
-      background: var(--bg2);
-      border: 1px solid var(--border);
-      border-radius: var(--r-sm);
-      padding: 12px;
-      margin-bottom: 12px;
-    }
-    .grupos-list {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
-      margin-bottom: 8px;
-      min-height: 20px;
-    }
-    .grupo-chip {
-      background: var(--gold-soft);
-      border: 1px solid var(--gold);
-      color: var(--gold);
-      padding: 4px 10px;
-      border-radius: 20px;
-      font-size: 12px;
-      font-weight: 600;
-      display: inline-flex;
-      align-items: center;
-      gap: 6px;
-    }
-    .grupo-chip button {
-      background: none;
-      border: none;
-      color: var(--gold);
-      cursor: pointer;
-      font-size: 14px;
-      font-weight: 700;
-      padding: 0;
-      line-height: 1;
-    }
-    .grupo-chip button:hover { color: var(--red); }
-    .grupo-input-row {
-      display: flex;
-      gap: 6px;
-    }
-    .grupo-input-row input {
-      flex: 1;
-      padding: 8px 10px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      border-radius: 6px;
-      color: var(--text);
-      font-size: 13px;
-      outline: none;
-      font-family: inherit;
-    }
-    .grupo-input-row input:focus { border-color: var(--gold); }
-    .grupo-input-row button {
-      padding: 8px 14px;
-      background: var(--gold);
-      color: #000;
-      border: none;
-      border-radius: 6px;
-      font-weight: 700;
-      cursor: pointer;
-      font-family: inherit;
-    }
-    .grupo-hint {
-      font-size: 11px;
-      color: var(--text3);
-      margin-top: 6px;
-    }
-    .btn:disabled {
-      opacity: 0.6;
-      cursor: not-allowed;
-    }
+    .btn:disabled { opacity: 0.6; cursor: not-allowed; }
   </style>
 </head>
 <body>
@@ -92,26 +21,16 @@
     <div id="ok" class="ok" style="display:none"></div>
 
     <form id="form">
-      <input type="text" id="nombre" class="input" placeholder="Nombre" style="display:none">
-      <input type="text" id="apellido" class="input" placeholder="Apellido" style="display:none">
-      <input type="text" id="apodo" class="input" placeholder="Apodo (opcional)" style="display:none">
-      
-      <div id="gruposContainer" class="grupos-container" style="display:none">
-        <label style="display:block; font-size:12px; color:var(--text2); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
-          🏢 Empresa, Colegio o Grupo (opcional)
-        </label>
-        <div id="gruposList" class="grupos-list"></div>
-        <div class="grupo-input-row">
-          <input type="text" id="grupoInput" placeholder="Ej: Empresa X, Colegio Y">
-          <button type="button" id="btnAgregarGrupo">+ Agregar</button>
-        </div>
-        <div class="grupo-hint">
-          💡 Podés agregar varios grupos para competir en rankings paralelos.
-        </div>
+      <!-- Campos de registro (ocultos por defecto) -->
+      <div id="campos-registro" style="display:none;">
+        <input type="text" id="nombre" class="input" placeholder="Nombre">
+        <input type="text" id="apellido" class="input" placeholder="Apellido">
+        <input type="text" id="apodo" class="input" placeholder="Apodo (opcional)">
       </div>
 
       <input type="email" id="email" class="input" placeholder="Email" required autocomplete="email">
       <input type="password" id="password" class="input" placeholder="Contraseña (mín. 6 caracteres)" required minlength="6" autocomplete="current-password">
+      
       <button type="submit" class="btn" id="btnSubmit">Ingresar</button>
     </form>
 
@@ -123,10 +42,6 @@
     </p>
 
     <p style="margin-top:8px; font-size:12px">
-      <a href="instructivo.html">📘 Leer reglamento completo</a>
-    </p>
-
-    <p style="margin-top:8px; font-size:12px">
       <a href="index.html">← Volver al inicio</a>
     </p>
   </div>
@@ -135,219 +50,102 @@
 <script type="module">
   import { supabase, ADMIN_EMAIL } from "./js/supabase-config.js";
 
-  let modo = "login";
-  let gruposAgregados = [];
-  let procesando = false; // Flag para evitar doble submit
+  let modo = "login"; // 'login' o 'registro'
+  let procesando = false;
 
   const $ = id => document.getElementById(id);
 
-  console.log("🔥 Login inicializado");
-
-  // Verificar si ya está logueado (solo una vez)
-  const yaRedirigido = sessionStorage.getItem("yaRedirigido");
-  if (!yaRedirigido) {
+  // 1. VERIFICAR SI YA ESTÁ LOGUEADO AL CARGAR
+  (async () => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
-      console.log("✅ Sesión activa, redirigiendo...");
-      sessionStorage.setItem("yaRedirigido", "true");
+      console.log("✅ Sesión activa detectada, redirigiendo a Prode...");
       window.location.href = "prode.html";
     }
-  }
+  })();
 
-  function renderGrupos() {
-    const list = $("gruposList");
-    if (gruposAgregados.length === 0) {
-      list.innerHTML = '<span style="color:var(--text3); font-size:12px;">Sin grupos agregados</span>';
-      return;
-    }
-    list.innerHTML = gruposAgregados.map((g, i) => `
-      <span class="grupo-chip">
-        ${g}
-        <button type="button" onclick="window.__quitarGrupo(${i})">×</button>
-      </span>
-    `).join("");
-  }
-
-  window.__agregarGrupo = () => {
-    const input = $("grupoInput");
-    const valor = input.value.trim();
-    if (!valor) return;
-    if (gruposAgregados.includes(valor)) {
-      input.value = "";
-      return;
-    }
-    if (gruposAgregados.length >= 10) {
-      alert("Máximo 10 grupos");
-      return;
-    }
-    gruposAgregados.push(valor);
-    input.value = "";
-    renderGrupos();
-  };
-
-  window.__quitarGrupo = (index) => {
-    gruposAgregados.splice(index, 1);
-    renderGrupos();
-  };
-
-  $("btnAgregarGrupo").onclick = window.__agregarGrupo;
-  $("grupoInput").addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      window.__agregarGrupo();
-    }
-  });
-
+  // 2. CAMBIAR ENTRE LOGIN Y REGISTRO
   $("btnCambiar").onclick = () => {
     modo = modo === "login" ? "registro" : "login";
-    console.log("🔄 Modo:", modo);
     
     $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
     $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
     $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";
     $("btnSubmit").textContent = modo === "login" ? "Ingresar" : "Registrarme";
     
-    const camposRegistro = ["nombre", "apellido", "apodo", "gruposContainer"];
-    camposRegistro.forEach(id => {
-      $(id).style.display = modo === "registro" ? "block" : "none";
-      if (modo === "registro") {
-        $("nombre").setAttribute("required", "");
-        $("apellido").setAttribute("required", "");
-      } else {
-        $("nombre").removeAttribute("required");
-        $("apellido").removeAttribute("required");
-        $("nombre").value = "";
-        $("apellido").value = "";
-        $("apodo").value = "";
-        gruposAgregados = [];
-        renderGrupos();
-      }
-    });
+    const campos = $("campos-registro");
+    campos.style.display = modo === "registro" ? "block" : "none";
+
+    if (modo === "login") {
+      $("nombre").removeAttribute("required");
+      $("apellido").removeAttribute("required");
+    } else {
+      $("nombre").setAttribute("required", "");
+      $("apellido").setAttribute("required", "");
+    }
     
     ocultarMensajes();
-    if (modo === "registro") renderGrupos();
   };
 
+  // 3. MANEJAR EL SUBMIT
   $("form").onsubmit = async (e) => {
     e.preventDefault();
-    
-    // Prevenir doble submit
-    if (procesando) {
-      console.log("⚠️ Ya se está procesando, ignorando...");
-      return;
-    }
+    if (procesando) return;
     procesando = true;
-    
     ocultarMensajes();
 
     const email = $("email").value.trim().toLowerCase();
     const password = $("password").value;
     const btn = $("btnSubmit");
 
-    console.log("📤 Form enviado - Modo:", modo, "Email:", email);
-
     try {
+      btn.disabled = true;
+      btn.textContent = "Procesando...";
+
       if (modo === "registro") {
+        // --- REGISTRO ---
         const nombre = $("nombre").value.trim();
         const apellido = $("apellido").value.trim();
         const apodo = $("apodo").value.trim();
-        
-        if (!nombre) {
-          mostrarError("Ingresá tu nombre");
-          procesando = false;
-          return;
-        }
-        if (!apellido) {
-          mostrarError("Ingresá tu apellido");
-          procesando = false;
-          return;
-        }
 
-        btn.disabled = true;
-        btn.textContent = "Procesando...";
-
-        console.log("🔐 PASO 1: Creando usuario en Auth...");
-        const { data: authData, error: authError } = await supabase.auth.signUp({
-          email,
-          password,
-        });
-
+        // 1. Crear usuario en Auth
+        const { data: authData, error: authError } = await supabase.auth.signUp({ email, password });
         if (authError) throw authError;
-        if (!authData.user) throw new Error("No se creó el usuario");
+        if (!authData.user) throw new Error("No se pudo crear el usuario");
 
-        console.log("✅ PASO 1 OK - UID:", authData.user.id);
-
-        // Esperar un momento para que el usuario esté disponible
-        await new Promise(resolve => setTimeout(resolve, 1500));
-
-        console.log(" PASO 2: Creando perfil...");
-        const { error: profileError } = await supabase
-          .from('usuarios')
-          .insert({
-            id: authData.user.id,
-            email: email,
-            nombre: nombre,
-            apellido: apellido,
-            apodo: apodo || null,
-            grupos: gruposAgregados,
-            es_admin: email === ADMIN_EMAIL.toLowerCase(),
-            puntos_totales: 0
-          });
-
-        if (profileError) {
-          console.error(" Error perfil:", profileError);
-          // Si el perfil ya existe, no es grave
-          if (!profileError.message.includes("duplicate")) {
-            throw profileError;
-          }
-        }
-
-        console.log("✅ PASO 2 OK");
-
-        // Iniciar sesión automáticamente
-        console.log("🔐 PASO 3: Iniciando sesión...");
-        const { error: signInError } = await supabase.auth.signInWithPassword({
-          email,
-          password
+        // 2. Crear perfil en tabla 'usuarios'
+        const { error: profileError } = await supabase.from('usuarios').insert({
+          id: authData.user.id,
+          email: email,
+          nombre: nombre,
+          apellido: apellido,
+          apodo: apodo || null,
+          grupos: [],
+          es_admin: email === ADMIN_EMAIL.toLowerCase(),
+          puntos_totales: 0
         });
 
-        if (signInError) throw signInError;
+        if (profileError) throw profileError;
 
-        console.log("✅ PASO 3 OK - Sesión iniciada");
-        mostrarOk("¡Cuenta creada! Redirigiendo...");
+        // 3. Iniciar sesión automáticamente
+        await supabase.auth.signInWithPassword({ email, password });
         
-        // Marcar que ya redirigimos para evitar bucle
-        sessionStorage.setItem("yaRedirigido", "true");
+        mostrarOk("¡Cuenta creada! Entrando...");
         
-        // Esperar un poco más antes de redirigir
-        setTimeout(() => {
-          window.location.href = "prode.html";
-        }, 1500);
-
       } else {
-        // LOGIN
-        console.log("🔐 LOGIN...");
-        btn.disabled = true;
-        btn.textContent = "Procesando...";
-
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (error) throw error;
-
-        console.log("✅ Login exitoso");
-        mostrarOk("Ingresando...");
-        
-        sessionStorage.setItem("yaRedirigido", "true");
-        
-        setTimeout(() => {
-          window.location.href = "prode.html";
-        }, 800);
+        // --- LOGIN ---
+        const { error: loginError } = await supabase.auth.signInWithPassword({ email, password });
+        if (loginError) throw loginError;
+        mostrarOk("¡Bienvenido! Entrando...");
       }
+
+      // 4. Redirigir
+      setTimeout(() => {
+        window.location.href = "prode.html";
+      }, 1000);
+
     } catch (err) {
-      console.error("❌ Error:", err);
+      console.error(err);
       mostrarError(err.message || "Error al procesar");
       btn.disabled = false;
       btn.textContent = modo === "login" ? "Ingresar" : "Registrarme";
@@ -359,12 +157,10 @@
     $("error").textContent = msg;
     $("error").style.display = "block";
   }
-
   function mostrarOk(msg) {
     $("ok").textContent = msg;
     $("ok").style.display = "block";
   }
-
   function ocultarMensajes() {
     $("error").style.display = "none";
     $("ok").style.display = "none";
