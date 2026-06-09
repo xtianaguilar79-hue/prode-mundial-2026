@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Ingresar · Prode Mundial 2026</title>
   <link rel="stylesheet" href="style.css">
   <style>
@@ -74,6 +74,10 @@
       color: var(--text3);
       margin-top: 6px;
     }
+    .btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+    }
   </style>
 </head>
 <body>
@@ -119,7 +123,7 @@
     </p>
 
     <p style="margin-top:8px; font-size:12px">
-      <a href="instructivo.html"> Leer reglamento completo</a>
+      <a href="instructivo.html">📘 Leer reglamento completo</a>
     </p>
 
     <p style="margin-top:8px; font-size:12px">
@@ -133,16 +137,21 @@
 
   let modo = "login";
   let gruposAgregados = [];
+  let procesando = false; // Flag para evitar doble submit
 
   const $ = id => document.getElementById(id);
 
   console.log("🔥 Login inicializado");
 
-  // Verificar si ya está logueado
-  const { data: { session } } = await supabase.auth.getSession();
-  if (session) {
-    console.log("✅ Sesión activa, redirigiendo a prode.html");
-    window.location.href = "prode.html";
+  // Verificar si ya está logueado (solo una vez)
+  const yaRedirigido = sessionStorage.getItem("yaRedirigido");
+  if (!yaRedirigido) {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (session) {
+      console.log("✅ Sesión activa, redirigiendo...");
+      sessionStorage.setItem("yaRedirigido", "true");
+      window.location.href = "prode.html";
+    }
   }
 
   function renderGrupos() {
@@ -221,56 +230,57 @@
 
   $("form").onsubmit = async (e) => {
     e.preventDefault();
+    
+    // Prevenir doble submit
+    if (procesando) {
+      console.log("⚠️ Ya se está procesando, ignorando...");
+      return;
+    }
+    procesando = true;
+    
     ocultarMensajes();
 
     const email = $("email").value.trim().toLowerCase();
     const password = $("password").value;
     const btn = $("btnSubmit");
 
-    console.log(" Form enviado - Modo:", modo, "Email:", email);
+    console.log("📤 Form enviado - Modo:", modo, "Email:", email);
 
-    if (modo === "registro") {
-      const nombre = $("nombre").value.trim();
-      const apellido = $("apellido").value.trim();
-      const apodo = $("apodo").value.trim();
-      
-      console.log("📋 Datos registro:", { nombre, apellido, apodo, email, grupos: gruposAgregados });
-      
-      if (!nombre) {
-        mostrarError("Ingresá tu nombre");
-        return;
-      }
-      if (!apellido) {
-        mostrarError("Ingresá tu apellido");
-        return;
-      }
+    try {
+      if (modo === "registro") {
+        const nombre = $("nombre").value.trim();
+        const apellido = $("apellido").value.trim();
+        const apodo = $("apodo").value.trim();
+        
+        if (!nombre) {
+          mostrarError("Ingresá tu nombre");
+          procesando = false;
+          return;
+        }
+        if (!apellido) {
+          mostrarError("Ingresá tu apellido");
+          procesando = false;
+          return;
+        }
 
-      btn.disabled = true;
-      btn.textContent = "Procesando...";
+        btn.disabled = true;
+        btn.textContent = "Procesando...";
 
-      try {
         console.log("🔐 PASO 1: Creando usuario en Auth...");
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
         });
 
-        if (authError) {
-          console.error("❌ Error Auth:", authError);
-          throw authError;
-        }
-        
-        if (!authData.user) {
-          console.error("❌ No se creó el usuario");
-          throw new Error("No se creó el usuario");
-        }
+        if (authError) throw authError;
+        if (!authData.user) throw new Error("No se creó el usuario");
 
         console.log("✅ PASO 1 OK - UID:", authData.user.id);
 
         // Esperar un momento para que el usuario esté disponible
-        await new Promise(resolve => setTimeout(resolve, 1000));
+        await new Promise(resolve => setTimeout(resolve, 1500));
 
-        console.log("🔐 PASO 2: Creando perfil en tabla usuarios...");
+        console.log(" PASO 2: Creando perfil...");
         const { error: profileError } = await supabase
           .from('usuarios')
           .insert({
@@ -285,11 +295,14 @@
           });
 
         if (profileError) {
-          console.error("❌ Error perfil:", profileError);
-          throw profileError;
+          console.error(" Error perfil:", profileError);
+          // Si el perfil ya existe, no es grave
+          if (!profileError.message.includes("duplicate")) {
+            throw profileError;
+          }
         }
 
-        console.log("✅ PASO 2 OK - Perfil creado");
+        console.log("✅ PASO 2 OK");
 
         // Iniciar sesión automáticamente
         console.log("🔐 PASO 3: Iniciando sesión...");
@@ -298,55 +311,47 @@
           password
         });
 
-        if (signInError) {
-          console.error("❌ Error signIn:", signInError);
-          throw signInError;
-        }
+        if (signInError) throw signInError;
 
         console.log("✅ PASO 3 OK - Sesión iniciada");
         mostrarOk("¡Cuenta creada! Redirigiendo...");
         
+        // Marcar que ya redirigimos para evitar bucle
+        sessionStorage.setItem("yaRedirigido", "true");
+        
+        // Esperar un poco más antes de redirigir
         setTimeout(() => {
           window.location.href = "prode.html";
-        }, 1000);
+        }, 1500);
 
-      } catch (err) {
-        console.error("❌ Error completo:", err);
-        mostrarError(err.message || "Error al registrar");
-        btn.disabled = false;
-        btn.textContent = "Registrarme";
-      }
+      } else {
+        // LOGIN
+        console.log("🔐 LOGIN...");
+        btn.disabled = true;
+        btn.textContent = "Procesando...";
 
-    } else {
-      // LOGIN
-      console.log("🔐 LOGIN - Intentando ingresar...");
-      btn.disabled = true;
-      btn.textContent = "Procesando...";
-
-      try {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
 
-        if (error) {
-          console.error("❌ Error login:", error);
-          throw error;
-        }
+        if (error) throw error;
 
         console.log("✅ Login exitoso");
         mostrarOk("Ingresando...");
         
+        sessionStorage.setItem("yaRedirigido", "true");
+        
         setTimeout(() => {
           window.location.href = "prode.html";
         }, 800);
-
-      } catch (err) {
-        console.error("❌ Error login:", err);
-        mostrarError(err.message || "Email o contraseña incorrectos");
-        btn.disabled = false;
-        btn.textContent = "Ingresar";
       }
+    } catch (err) {
+      console.error("❌ Error:", err);
+      mostrarError(err.message || "Error al procesar");
+      btn.disabled = false;
+      btn.textContent = modo === "login" ? "Ingresar" : "Registrarme";
+      procesando = false;
     }
   };
 
