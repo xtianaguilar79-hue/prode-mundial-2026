@@ -1,31 +1,59 @@
 import { supabase } from "./supabase-config.js";
+import { protegerPagina } from "./auth-guard.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, SELECCIONES
 } from "../datos-partidos.js";
 
 console.log("📋 app-admin.js cargado");
 
-let faseActiva = "j1";
+let faseActiva = "todos";
 let resultados = {};
 
-window.addEventListener("usuarioListo", async () => {
-  console.log("✅ Admin iniciado");
+async function init() {
+  console.log("🚀 Iniciando admin...");
+  
+  // 1. Proteger página (espera la autenticación)
+  const user = await protegerPagina(true);
+  if (!user) {
+    console.error(" No se pudo autenticar");
+    return;
+  }
+  
+  console.log("✅ Autenticado como:", user.nombre);
+  
+  // 2. Cargar datos
   await cargarResultados();
+  
+  // 3. Renderizar UI
   renderTabs();
   renderPartidos();
   cargarCampeonReal();
-});
+  
+  console.log("✅ Admin iniciado correctamente");
+}
 
 async function cargarResultados() {
-  const { data } = await supabase.from('resultados').select('*');
-  resultados = {};
-  if (data) data.forEach(r => { resultados[r.partido_id] = r; });
-  console.log("✅ Resultados cargados:", Object.keys(resultados).length);
+  try {
+    const { data, error } = await supabase.from('resultados').select('*');
+    if (error) throw error;
+    
+    resultados = {};
+    if (data) {
+      data.forEach(r => { resultados[r.partido_id] = r; });
+    }
+    console.log("✅ Resultados cargados:", Object.keys(resultados).length);
+  } catch (err) {
+    console.error("❌ Error cargando resultados:", err);
+  }
 }
 
 function renderTabs() {
+  console.log("📑 Renderizando tabs...");
   const tabsContainer = document.getElementById("faseTabs");
-  if (!tabsContainer) return;
+  if (!tabsContainer) {
+    console.error(" No se encontró #faseTabs");
+    return;
+  }
 
   const tabs = [
     { id: "todos", label: "📋 Todos los partidos" },
@@ -53,6 +81,8 @@ function renderTabs() {
       renderPartidos();
     };
   });
+  
+  console.log("✅ Tabs renderizadas");
 }
 
 function getPartidosFase() {
@@ -66,99 +96,10 @@ function getPartidosFase() {
   return PARTIDOS_ELIM.filter(p => p.fase === faseActiva);
 }
 
-function renderPartidos() {
-  const cont = document.getElementById("partidosAdmin");
-  if (!cont) return;
-  
-  const partidos = getPartidosFase();
-  console.log(`📋 Renderizando ${partidos.length} partidos, fase: ${faseActiva}`);
-  
-  if (partidos.length === 0) {
-    cont.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px;">No hay partidos</p>';
-    return;
-  }
-  
-  // Agrupar por fecha si es "todos"
-  if (faseActiva === "todos") {
-    const porFecha = {};
-    partidos.forEach(p => {
-      const key = `${p.fecha} - ${p.hora}`;
-      if (!porFecha[key]) porFecha[key] = [];
-      porFecha[key].push(p);
-    });
-    
-    const fechasOrdenadas = Object.keys(porFecha).sort((a, b) => {
-      const [fechaA, horaA] = a.split(" - ");
-      const [fechaB, horaB] = b.split(" - ");
-      const [diaA, mesA] = fechaA.split("/");
-      const [diaB, mesB] = fechaB.split("/");
-      if (mesA !== mesB) return parseInt(mesA) - parseInt(mesB);
-      if (diaA !== diaB) return parseInt(diaA) - parseInt(diaB);
-      return horaA.localeCompare(horaB);
-    });
-    
-    let html = "";
-    fechasOrdenadas.forEach(fecha => {
-      const partidosDeFecha = porFecha[fecha];
-      html += `<h3 style="color:var(--gold); margin:24px 0 16px; font-family:'Anton'; font-size:18px;">📅 ${fecha}</h3>`;
-      html += `<div style="display:grid; gap:12px;">`;
-      partidosDeFecha.forEach(p => {
-        html += renderPartidoCard(p);
-      });
-      html += `</div>`;
-    });
-    
-    cont.innerHTML = html;
-  } else {
-    cont.innerHTML = `<div style="display:grid; gap:12px;">`;
-    partidos.forEach(p => {
-      cont.innerHTML += renderPartidoCard(p);
-    });
-    cont.innerHTML += `</div>`;
-  }
-
-  cont.querySelectorAll(".btn-res").forEach(btn => {
-    btn.onclick = () => guardarResultado(btn.dataset.id);
-  });
-  
-  cont.querySelectorAll("[data-borrar]").forEach(btn => {
-    btn.onclick = () => borrarResultado(btn.dataset.borrar);
-  });
-
-  cont.querySelectorAll(".score-in").forEach(input => {
-    input.addEventListener("input", (e) => {
-      const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "");
-      const gL = document.getElementById("gL-" + id)?.value;
-      const gV = document.getElementById("gV-" + id)?.value;
-      const alL = document.getElementById("alL-" + id)?.value;
-      const alV = document.getElementById("alV-" + id)?.value;
-      const extDiv = document.getElementById("ext-" + id);
-      const penDiv = document.getElementById("pen-" + id);
-      
-      if (extDiv) {
-        if (gL !== "" && gV !== "" && parseInt(gL) === parseInt(gV)) {
-          extDiv.style.display = "flex";
-        } else {
-          extDiv.style.display = "none";
-          if (penDiv) penDiv.style.display = "none";
-        }
-      }
-      
-      if (penDiv && extDiv && extDiv.style.display === "flex") {
-        if (alL !== "" && alV !== "" && parseInt(alL) === parseInt(alV)) {
-          penDiv.style.display = "flex";
-        } else {
-          penDiv.style.display = "none";
-        }
-      }
-    });
-  });
-}
-
 function renderPartidoCard(p) {
   const res = resultados[p.id];
   const flagL = FLAGS[p.local] || "🏳️";
-  const flagV = FLAGS[p.visit] || "🏳️";
+  const flagV = FLAGS[p.visit] || "️";
   const esElim = !p.j || p.fase;
   
   let showAlargue = false;
@@ -167,7 +108,8 @@ function renderPartidoCard(p) {
   if (res && res.local !== undefined && res.visit !== undefined) {
     if (parseInt(res.local) === parseInt(res.visit)) {
       showAlargue = true;
-      if (res.alargue_local !== null && parseInt(res.alargue_local) === parseInt(res.alargue_visit)) {
+      if (res.alargue_local !== null && res.alargue_visit !== null && 
+          parseInt(res.alargue_local) === parseInt(res.alargue_visit)) {
         showPenales = true;
       }
     }
@@ -179,7 +121,7 @@ function renderPartidoCard(p) {
         <span class="badge badge-id">${p.id}</span>
         ${p.grupo ? `<span class="badge badge-grupo">Grupo ${p.grupo}</span>` : ""}
         ${p.fase ? `<span class="badge badge-grupo">${p.fase.toUpperCase()}</span>` : ""}
-        <span class="badge badge-fecha">${p.fecha} · ${p.hora} ARG · 📍 ${p.sede}</span>
+        <span class="badge badge-fecha">${p.fecha} · ${p.hora} ARG ·  ${p.sede}</span>
       </div>
 
       <div class="partido-equipos">
@@ -220,10 +162,104 @@ function renderPartidoCard(p) {
         <button class="btn-guardar btn-res" data-id="${p.id}" style="padding:8px 16px;">
           ${res ? "✓ Actualizar" : "💾 Cargar resultado"}
         </button>
-        ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px; margin-left:8px;">🗑️ Borrar</button>` : ""}
+        ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px; margin-left:8px;">️ Borrar</button>` : ""}
       </div>
     </div>
   `;
+}
+
+function renderPartidos() {
+  console.log("⚽ Renderizando partidos, fase:", faseActiva);
+  const cont = document.getElementById("partidosAdmin");
+  if (!cont) {
+    console.error("❌ No se encontró #partidosAdmin");
+    return;
+  }
+  
+  const partidos = getPartidosFase();
+  console.log(`📋 Cantidad de partidos: ${partidos.length}`);
+  
+  if (partidos.length === 0) {
+    cont.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px;">No hay partidos</p>';
+    return;
+  }
+  
+  if (faseActiva === "todos") {
+    // Agrupar por fecha
+    const porFecha = {};
+    partidos.forEach(p => {
+      const key = `${p.fecha} - ${p.hora}`;
+      if (!porFecha[key]) porFecha[key] = [];
+      porFecha[key].push(p);
+    });
+    
+    const fechasOrdenadas = Object.keys(porFecha).sort((a, b) => {
+      const [fechaA, horaA] = a.split(" - ");
+      const [fechaB, horaB] = b.split(" - ");
+      const [diaA, mesA] = fechaA.split("/");
+      const [diaB, mesB] = fechaB.split("/");
+      if (mesA !== mesB) return parseInt(mesA) - parseInt(mesB);
+      if (diaA !== diaB) return parseInt(diaA) - parseInt(diaB);
+      return horaA.localeCompare(horaB);
+    });
+    
+    let html = "";
+    fechasOrdenadas.forEach(fecha => {
+      const partidosDeFecha = porFecha[fecha];
+      html += `<h3 style="color:var(--gold); margin:24px 0 16px; font-family:'Anton'; font-size:18px;">📅 ${fecha} (${partidosDeFecha.length} partidos)</h3>`;
+      html += `<div style="display:grid; gap:12px;">`;
+      partidosDeFecha.forEach(p => {
+        html += renderPartidoCard(p);
+      });
+      html += `</div>`;
+    });
+    
+    cont.innerHTML = html;
+  } else {
+    cont.innerHTML = `<div style="display:grid; gap:12px;">` + 
+      partidos.map(p => renderPartidoCard(p)).join("") + 
+      `</div>`;
+  }
+
+  // Event listeners
+  cont.querySelectorAll(".btn-res").forEach(btn => {
+    btn.onclick = () => guardarResultado(btn.dataset.id);
+  });
+  
+  cont.querySelectorAll("[data-borrar]").forEach(btn => {
+    btn.onclick = () => borrarResultado(btn.dataset.borrar);
+  });
+
+  cont.querySelectorAll(".score-in").forEach(input => {
+    input.addEventListener("input", (e) => {
+      const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "");
+      const gL = document.getElementById("gL-" + id)?.value;
+      const gV = document.getElementById("gV-" + id)?.value;
+      const alL = document.getElementById("alL-" + id)?.value;
+      const alV = document.getElementById("alV-" + id)?.value;
+      const extDiv = document.getElementById("ext-" + id);
+      const penDiv = document.getElementById("pen-" + id);
+      
+      if (extDiv) {
+        if (gL !== "" && gV !== "" && parseInt(gL) === parseInt(gV)) {
+          extDiv.style.display = "flex";
+        } else {
+          extDiv.style.display = "none";
+          if (penDiv) penDiv.style.display = "none";
+        }
+      }
+      
+      if (penDiv && extDiv && extDiv.style.display === "flex") {
+        if (alL !== "" && alV !== "" && parseInt(alL) === parseInt(alV)) {
+          penDiv.style.display = "flex";
+        } else {
+          penDiv.style.display = "none";
+        }
+      }
+    });
+  });
+  
+  console.log("✅ Partidos renderizados");
 }
 
 async function guardarResultado(id) {
@@ -362,7 +398,7 @@ window.reiniciar = async () => {
     await supabase.from('config').delete().neq('id', '');
     await supabase.from('clasificados').delete().neq('posicion', '');
 
-    mostrarMensaje("⚠️ Prode reiniciado", "ok");
+    mostrarMensaje("️ Prode reiniciado", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
@@ -391,10 +427,14 @@ window.actualizarEquipos = async () => {
 };
 
 async function cargarCampeonReal() {
-  const { data } = await supabase.from('config').select('*').eq('id', 'final').single();
-  if (data) {
-    document.getElementById("realCampeon").value = data.campeon;
-    document.getElementById("campeonRealActual").textContent = `🏆 ${FLAGS[data.campeon] || "🏳️"} ${data.campeon}`;
+  try {
+    const { data } = await supabase.from('config').select('*').eq('id', 'final').single();
+    if (data) {
+      document.getElementById("realCampeon").value = data.campeon;
+      document.getElementById("campeonRealActual").textContent = `🏆 ${FLAGS[data.campeon] || "🏳️"} ${data.campeon}`;
+    }
+  } catch (err) {
+    console.error(err);
   }
 }
 
@@ -408,3 +448,6 @@ function mostrarMensaje(msg, tipo) {
   el.style.display = "block";
   setTimeout(() => { el.style.display = "none"; }, 4000);
 }
+
+// INICIALIZACIÓN DIRECTA - SIN EVENTOS
+init();

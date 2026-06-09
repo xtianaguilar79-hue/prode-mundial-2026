@@ -1,6 +1,11 @@
 import { supabase, ADMIN_EMAIL } from "./supabase-config.js";
 
+let usuarioGuardado = null;
+
 export async function protegerPagina(requiereAdmin = false) {
+  // Si ya está protegido, retornar cacheado
+  if (usuarioGuardado) return usuarioGuardado;
+
   try {
     const { data: { session }, error } = await supabase.auth.getSession();
     
@@ -22,8 +27,23 @@ export async function protegerPagina(requiereAdmin = false) {
       return null;
     }
 
-    console.log("✅ Usuario autenticado:", usuario.nombre);
+    if (requiereAdmin && !usuario.es_admin) {
+      alert("No tenés permisos de administrador");
+      window.location.href = "prode.html";
+      return null;
+    }
 
+    // Guardar en variables globales
+    usuarioGuardado = {
+      uid: usuario.id,
+      id: usuario.id,
+      email: usuario.email,
+      nombre: usuario.nombre,
+      apellido: usuario.apellido,
+      es_admin: usuario.es_admin
+    };
+
+    // Actualizar UI
     const userNameEl = document.getElementById("userName");
     if (userNameEl) userNameEl.textContent = usuario.nombre;
 
@@ -34,31 +54,11 @@ export async function protegerPagina(requiereAdmin = false) {
       if (linkAdmin) linkAdmin.style.display = "inline-block";
     }
 
-    if (requiereAdmin && !usuario.es_admin) {
-      alert("No tenés permisos de administrador");
-      window.location.href = "prode.html";
-      return null;
-    }
-
-    const userData = {
-      uid: usuario.id,
-      id: usuario.id,
-      email: usuario.email,
-      nombre: usuario.nombre,
-      apellido: usuario.apellido,
-      es_admin: usuario.es_admin
-    };
-    
-    window.usuarioActual = userData;
+    window.usuarioActual = usuarioGuardado;
     window.session = session;
 
-    setTimeout(() => {
-      window.dispatchEvent(new CustomEvent("usuarioListo", { 
-        detail: { user: userData, perfil: usuario } 
-      }));
-    }, 100);
-
-    return { user: userData, perfil: usuario, session };
+    console.log("✅ Usuario autenticado:", usuario.nombre);
+    return usuarioGuardado;
   } catch (err) {
     console.error("❌ Error en auth-guard:", err);
     window.location.href = "login.html";
