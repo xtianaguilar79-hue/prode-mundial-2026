@@ -28,6 +28,7 @@ function renderTabs() {
   if (!tabsContainer) return;
 
   const tabs = [
+    { id: "todos", label: "📋 Todos los partidos" },
     { id: "j1", label: "Fecha 1" },
     { id: "j2", label: "Fecha 2" },
     { id: "j3", label: "Fecha 3" },
@@ -55,6 +56,9 @@ function renderTabs() {
 }
 
 function getPartidosFase() {
+  if (faseActiva === "todos") {
+    return TODOS_PARTIDOS;
+  }
   if (faseActiva.startsWith("j")) {
     const j = parseInt(faseActiva[1]);
     return PARTIDOS_GRUPOS.filter(p => p.j === j);
@@ -67,83 +71,51 @@ function renderPartidos() {
   if (!cont) return;
   
   const partidos = getPartidosFase();
-  console.log(`📋 Renderizando ${partidos.length} partidos`);
+  console.log(`📋 Renderizando ${partidos.length} partidos, fase: ${faseActiva}`);
   
   if (partidos.length === 0) {
     cont.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px;">No hay partidos</p>';
     return;
   }
   
-  cont.innerHTML = partidos.map(p => {
-    const res = resultados[p.id];
-    const flagL = FLAGS[p.local] || "🏳️";
-    const flagV = FLAGS[p.visit] || "🏳️";
-    const esElim = !p.j || p.fase;
+  // Agrupar por fecha si es "todos"
+  if (faseActiva === "todos") {
+    const porFecha = {};
+    partidos.forEach(p => {
+      const key = `${p.fecha} - ${p.hora}`;
+      if (!porFecha[key]) porFecha[key] = [];
+      porFecha[key].push(p);
+    });
     
-    let showAlargue = false;
-    let showPenales = false;
+    const fechasOrdenadas = Object.keys(porFecha).sort((a, b) => {
+      const [fechaA, horaA] = a.split(" - ");
+      const [fechaB, horaB] = b.split(" - ");
+      const [diaA, mesA] = fechaA.split("/");
+      const [diaB, mesB] = fechaB.split("/");
+      if (mesA !== mesB) return parseInt(mesA) - parseInt(mesB);
+      if (diaA !== diaB) return parseInt(diaA) - parseInt(diaB);
+      return horaA.localeCompare(horaB);
+    });
     
-    if (res && res.local !== undefined && res.visit !== undefined) {
-      if (parseInt(res.local) === parseInt(res.visit)) {
-        showAlargue = true;
-        if (res.alargue_local !== null && parseInt(res.alargue_local) === parseInt(res.alargue_visit)) {
-          showPenales = true;
-        }
-      }
-    }
+    let html = "";
+    fechasOrdenadas.forEach(fecha => {
+      const partidosDeFecha = porFecha[fecha];
+      html += `<h3 style="color:var(--gold); margin:24px 0 16px; font-family:'Anton'; font-size:18px;">📅 ${fecha}</h3>`;
+      html += `<div style="display:grid; gap:12px;">`;
+      partidosDeFecha.forEach(p => {
+        html += renderPartidoCard(p);
+      });
+      html += `</div>`;
+    });
     
-    return `
-      <div class="partido-card admin">
-        <div class="partido-meta">
-          <span class="badge badge-id">${p.id}</span>
-          ${p.grupo ? `<span class="badge badge-grupo">Grupo ${p.grupo}</span>` : ""}
-          ${p.fase ? `<span class="badge badge-grupo">${p.fase.toUpperCase()}</span>` : ""}
-          <span class="badge badge-fecha">${p.fecha} · ${p.hora} ARG</span>
-        </div>
-
-        <div class="partido-equipos">
-          <div class="equipo">
-            <span class="flag">${flagL}</span>
-            <span>${p.local}</span>
-          </div>
-          <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
-            <div class="marcador">
-              <input type="number" min="0" max="20" class="score-in" id="gL-${p.id}" value="${res?.local ?? ''}" placeholder="0">
-              <span class="sep">–</span>
-              <input type="number" min="0" max="20" class="score-in" id="gV-${p.id}" value="${res?.visit ?? ''}" placeholder="0">
-            </div>
-            ${esElim ? `
-              <div class="ext-inputs" id="ext-${p.id}" style="display:${showAlargue ? 'flex' : 'none'}; flex-direction:column; gap:6px; margin-top:8px; width:100%;">
-                <div style="display:flex; gap:6px; align-items:center;">
-                  <label style="font-size:11px; color:var(--text2); min-width:80px;">Alargue:</label>
-                  <input type="number" min="0" max="20" class="score-in" id="alL-${p.id}" value="${res?.alargue_local ?? ''}" placeholder="0" style="width:60px;">
-                  <span>–</span>
-                  <input type="number" min="0" max="20" class="score-in" id="alV-${p.id}" value="${res?.alargue_visit ?? ''}" placeholder="0" style="width:60px;">
-                </div>
-                <div id="pen-${p.id}" style="display:${showPenales ? 'flex' : 'none'}; gap:6px; align-items:center;">
-                  <label style="font-size:11px; color:var(--text2); min-width:80px;">Penales:</label>
-                  <input type="number" min="0" max="20" class="score-in" id="penL-${p.id}" value="${res?.penales_local ?? ''}" placeholder="0" style="width:60px;">
-                  <span>–</span>
-                  <input type="number" min="0" max="20" class="score-in" id="penV-${p.id}" value="${res?.penales_visit ?? ''}" placeholder="0" style="width:60px;">
-                </div>
-              </div>
-            ` : ""}
-          </div>
-          <div class="equipo visitante">
-            <span>${p.visit}</span>
-            <span class="flag">${flagV}</span>
-          </div>
-        </div>
-
-        <div class="partido-footer">
-          <button class="btn-guardar btn-res" data-id="${p.id}" style="padding:8px 16px;">
-            ${res ? "✓ Actualizar" : "💾 Cargar resultado"}
-          </button>
-          ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px; margin-left:8px;">🗑️ Borrar</button>` : ""}
-        </div>
-      </div>
-    `;
-  }).join("");
+    cont.innerHTML = html;
+  } else {
+    cont.innerHTML = `<div style="display:grid; gap:12px;">`;
+    partidos.forEach(p => {
+      cont.innerHTML += renderPartidoCard(p);
+    });
+    cont.innerHTML += `</div>`;
+  }
 
   cont.querySelectorAll(".btn-res").forEach(btn => {
     btn.onclick = () => guardarResultado(btn.dataset.id);
@@ -181,6 +153,77 @@ function renderPartidos() {
       }
     });
   });
+}
+
+function renderPartidoCard(p) {
+  const res = resultados[p.id];
+  const flagL = FLAGS[p.local] || "🏳️";
+  const flagV = FLAGS[p.visit] || "🏳️";
+  const esElim = !p.j || p.fase;
+  
+  let showAlargue = false;
+  let showPenales = false;
+  
+  if (res && res.local !== undefined && res.visit !== undefined) {
+    if (parseInt(res.local) === parseInt(res.visit)) {
+      showAlargue = true;
+      if (res.alargue_local !== null && parseInt(res.alargue_local) === parseInt(res.alargue_visit)) {
+        showPenales = true;
+      }
+    }
+  }
+  
+  return `
+    <div class="partido-card admin">
+      <div class="partido-meta">
+        <span class="badge badge-id">${p.id}</span>
+        ${p.grupo ? `<span class="badge badge-grupo">Grupo ${p.grupo}</span>` : ""}
+        ${p.fase ? `<span class="badge badge-grupo">${p.fase.toUpperCase()}</span>` : ""}
+        <span class="badge badge-fecha">${p.fecha} · ${p.hora} ARG · 📍 ${p.sede}</span>
+      </div>
+
+      <div class="partido-equipos">
+        <div class="equipo">
+          <span class="flag">${flagL}</span>
+          <span>${p.local}</span>
+        </div>
+        <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
+          <div class="marcador">
+            <input type="number" min="0" max="20" class="score-in" id="gL-${p.id}" value="${res?.local ?? ''}" placeholder="0">
+            <span class="sep">–</span>
+            <input type="number" min="0" max="20" class="score-in" id="gV-${p.id}" value="${res?.visit ?? ''}" placeholder="0">
+          </div>
+          ${esElim ? `
+            <div class="ext-inputs" id="ext-${p.id}" style="display:${showAlargue ? 'flex' : 'none'}; flex-direction:column; gap:6px; margin-top:8px; width:100%;">
+              <div style="display:flex; gap:6px; align-items:center;">
+                <label style="font-size:11px; color:var(--text2); min-width:80px;">Alargue:</label>
+                <input type="number" min="0" max="20" class="score-in" id="alL-${p.id}" value="${res?.alargue_local ?? ''}" placeholder="0" style="width:60px;">
+                <span>–</span>
+                <input type="number" min="0" max="20" class="score-in" id="alV-${p.id}" value="${res?.alargue_visit ?? ''}" placeholder="0" style="width:60px;">
+              </div>
+              <div id="pen-${p.id}" style="display:${showPenales ? 'flex' : 'none'}; gap:6px; align-items:center;">
+                <label style="font-size:11px; color:var(--text2); min-width:80px;">Penales:</label>
+                <input type="number" min="0" max="20" class="score-in" id="penL-${p.id}" value="${res?.penales_local ?? ''}" placeholder="0" style="width:60px;">
+                <span>–</span>
+                <input type="number" min="0" max="20" class="score-in" id="penV-${p.id}" value="${res?.penales_visit ?? ''}" placeholder="0" style="width:60px;">
+              </div>
+            </div>
+          ` : ""}
+        </div>
+        <div class="equipo visitante">
+          <span>${p.visit}</span>
+          <span class="flag">${flagV}</span>
+        </div>
+      </div>
+
+      <div class="partido-footer">
+        <button class="btn-guardar btn-res" data-id="${p.id}" style="padding:8px 16px;">
+          ${res ? "✓ Actualizar" : "💾 Cargar resultado"}
+        </button>
+        ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px; margin-left:8px;">🗑️ Borrar</button>` : ""}
+      </div>
+    </div>
+  `;
 }
 
 async function guardarResultado(id) {
