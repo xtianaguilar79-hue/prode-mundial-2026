@@ -8,13 +8,14 @@ import { PARTIDOS_GRUPOS, PARTIDOS_ELIM, TODOS_PARTIDOS } from "../datos-partido
 const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
 // ═══════════════════════════════════════════════════════
-// 1. CALCULAR TABLA DE UN GRUPO
+// 1. CALCULAR TABLA DE UN GRUPO (con partidos jugados)
 // ═══════════════════════════════════════════════════════
 
 export function calcularTablaGrupo(grupo, resultados) {
   try {
     const partidosGrupo = PARTIDOS_GRUPOS.filter(p => p.grupo === grupo);
     const tabla = {};
+    let partidosJugados = 0;
 
     partidosGrupo.forEach(p => {
       if (!tabla[p.local]) {
@@ -29,6 +30,7 @@ export function calcularTablaGrupo(grupo, resultados) {
       const res = resultados[p.id];
       if (!res || res.local === null || res.visit === null) return;
 
+      partidosJugados++;
       const l = tabla[p.local];
       const v = tabla[p.visit];
       const gL = parseInt(res.local);
@@ -52,73 +54,78 @@ export function calcularTablaGrupo(grupo, resultados) {
 
     Object.values(tabla).forEach(t => { t.dg = t.gf - t.gc; });
 
-    return Object.values(tabla).sort((a, b) => {
+    const ordenados = Object.values(tabla).sort((a, b) => {
       if (b.pts !== a.pts) return b.pts - a.pts;
       if (b.dg !== a.dg) return b.dg - a.dg;
       if (b.gf !== a.gf) return b.gf - a.gf;
       return a.equipo.localeCompare(b.equipo);
     });
+
+    return {
+      tabla: ordenados,
+      completo: partidosJugados === partidosGrupo.length,
+      partidosJugados,
+      totalPartidos: partidosGrupo.length
+    };
   } catch (err) {
     console.error("❌ Error en calcularTablaGrupo:", err);
-    return [];
+    return { tabla: [], completo: false, partidosJugados: 0, totalPartidos: 6 };
   }
 }
 
 // ═══════════════════════════════════════════════════════
-// 2. CALCULAR MEJORES TERCEROS
+// 2. OBTENER CLASIFICADOS PARCIALES
 // ═══════════════════════════════════════════════════════
 
-export function calcularMejoresTerceros(resultados) {
+export function obtenerClasificadosParciales(resultados) {
   try {
+    const clasificados = {};
+    const gruposCompletos = [];
     const terceros = [];
 
     GRUPOS.forEach(grupo => {
-      const tabla = calcularTablaGrupo(grupo, resultados);
-      if (tabla.length >= 3) {
-        terceros.push({ ...tabla[2], grupo });
+      const { tabla, completo } = calcularTablaGrupo(grupo, resultados);
+      
+      if (completo && tabla.length >= 2) {
+        // Grupo completo: clasificar 1° y 2°
+        clasificados[`1°${grupo}`] = tabla[0].equipo;
+        clasificados[`2°${grupo}`] = tabla[1].equipo;
+        gruposCompletos.push(grupo);
+        
+        // Agregar 3° para mejores terceros
+        if (tabla.length >= 3) {
+          terceros.push({ ...tabla[2], grupo });
+        }
       }
     });
 
-    return terceros.sort((a, b) => {
+    // Ordenar mejores terceros
+    const mejoresTerceros = terceros.sort((a, b) => {
       if (b.pts !== a.pts) return b.pts - a.pts;
       if (b.dg !== a.dg) return b.dg - a.dg;
       if (b.gf !== a.gf) return b.gf - a.gf;
       return a.equipo.localeCompare(b.equipo);
     }).slice(0, 8);
-  } catch (err) {
-    console.error("❌ Error en calcularMejoresTerceros:", err);
-    return [];
-  }
-}
 
-// ═══════════════════════════════════════════════════════
-// 3. OBTENER CLASIFICADOS DE FASE DE GRUPOS
-// ═══════════════════════════════════════════════════════
-
-export function obtenerClasificadosGrupos(resultados) {
-  try {
-    const clasificados = {};
-    const mejoresTerceros = calcularMejoresTerceros(resultados);
-
-    GRUPOS.forEach(grupo => {
-      const tabla = calcularTablaGrupo(grupo, resultados);
-      if (tabla[0]) clasificados[`1°${grupo}`] = tabla[0].equipo;
-      if (tabla[1]) clasificados[`2°${grupo}`] = tabla[1].equipo;
-    });
-
+    // Asignar números a mejores terceros
     mejoresTerceros.forEach((t, i) => {
       clasificados[`3°${i + 1}`] = t.equipo;
     });
 
-    return { clasificados, mejoresTerceros };
+    return { 
+      clasificados, 
+      gruposCompletos, 
+      mejoresTerceros,
+      totalGruposCompletos: gruposCompletos.length
+    };
   } catch (err) {
-    console.error("❌ Error en obtenerClasificadosGrupos:", err);
-    return { clasificados: {}, mejoresTerceros: [] };
+    console.error("❌ Error en obtenerClasificadosParciales:", err);
+    return { clasificados: {}, gruposCompletos: [], mejoresTerceros: [], totalGruposCompletos: 0 };
   }
 }
 
 // ═══════════════════════════════════════════════════════
-// 4. RESOLVER GANADOR DE UN PARTIDO
+// 3. RESOLVER GANADOR DE UN PARTIDO
 // ═══════════════════════════════════════════════════════
 
 export function resolverGanador(partidoId, resultados) {
@@ -154,7 +161,7 @@ export function resolverGanador(partidoId, resultados) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 5. RESOLVER CRUCES DE 16AVOS
+// 4. RESOLVER CRUCES DE 16AVOS
 // ═══════════════════════════════════════════════════════
 
 export function resolver16avos(clasificados) {
@@ -190,16 +197,16 @@ export function resolver16avos(clasificados) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 6. RESOLVER TODAS LAS FASES ELIMINATORIAS
+// 5. RESOLVER TODAS LAS FASES ELIMINATORIAS
 // ═══════════════════════════════════════════════════════
 
-export function resolverEliminatorias(resultados, clasificadosGrupos) {
+export function resolverEliminatorias(resultados, clasificados) {
   try {
     const equipos = {};
     const partidosResueltos = {};
 
     // 16avos
-    const cruces16 = resolver16avos(clasificadosGrupos);
+    const cruces16 = resolver16avos(clasificados);
     cruces16.forEach(c => {
       equipos[c.id] = { local: c.local, visit: c.visit };
       const ganador = resolverGanador(c.id, resultados);
@@ -288,14 +295,13 @@ export function resolverEliminatorias(resultados, clasificadosGrupos) {
 }
 
 // ═══════════════════════════════════════════════════════
-// 7. FUNCIÓN PRINCIPAL: OBTENER PARTIDOS CON EQUIPOS REALES
+// 6. FUNCIÓN PRINCIPAL: OBTENER PARTIDOS CON EQUIPOS REALES
 // ═══════════════════════════════════════════════════════
 
 export async function obtenerPartidosConEquiposReales() {
   try {
     console.log("🔍 Obteniendo partidos con equipos reales...");
     
-    // Cargar resultados reales (no de prueba)
     const { data: resData, error: resError } = await supabase
       .from('resultados')
       .select('*')
@@ -310,35 +316,15 @@ export async function obtenerPartidosConEquiposReales() {
     if (resData) resData.forEach(r => { resultados[r.partido_id] = r; });
 
     const partidosJugados = PARTIDOS_GRUPOS.filter(p => resultados[p.id]).length;
-    const faseGruposCompleta = partidosJugados === PARTIDOS_GRUPOS.length;
-
     console.log(`📊 Partidos jugados: ${partidosJugados}/${PARTIDOS_GRUPOS.length}`);
 
-    let equiposElim = {};
+    // Obtener clasificados parciales
+    const { clasificados, totalGruposCompletos } = obtenerClasificadosParciales(resultados);
+    console.log(`✅ Grupos completos: ${totalGruposCompletos}/12`);
+    console.log(`✅ Clasificados:`, Object.keys(clasificados).length);
 
-    if (faseGruposCompleta) {
-      console.log("✅ Fase de grupos completa, calculando clasificados...");
-      const { clasificados } = obtenerClasificadosGrupos(resultados);
-      equiposElim = resolverEliminatorias(resultados, clasificados);
-    } else {
-      // Intentar leer desde tabla clasificados
-      try {
-        const { data: clasData, error: clasError } = await supabase
-          .from('clasificados')
-          .select('*');
-
-        if (clasError) {
-          console.log("⚠️ Tabla clasificados no disponible:", clasError.message);
-        } else if (clasData && clasData.length > 0) {
-          console.log("✅ Leyendo clasificados de la base de datos");
-          const clasificados = {};
-          clasData.forEach(c => { clasificados[c.posicion] = c.equipo; });
-          equiposElim = resolverEliminatorias(resultados, clasificados);
-        }
-      } catch (clasErr) {
-        console.log("⚠️ No se pudo leer tabla clasificados:", clasErr.message);
-      }
-    }
+    // Resolver eliminatorias con clasificados parciales
+    const equiposElim = resolverEliminatorias(resultados, clasificados);
 
     // Devolver partidos con equipos reales
     const partidosActualizados = TODOS_PARTIDOS.map(p => {
@@ -361,7 +347,7 @@ export async function obtenerPartidosConEquiposReales() {
 }
 
 // ═══════════════════════════════════════════════════════
-// 8. VERIFICAR SI UN PARTIDO TIENE EQUIPOS REALES
+// 7. VERIFICAR SI UN PARTIDO TIENE EQUIPOS REALES
 // ═══════════════════════════════════════════════════════
 
 export function tieneEquiposReales(partido) {
