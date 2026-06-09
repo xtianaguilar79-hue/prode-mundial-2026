@@ -17,7 +17,7 @@ let intervalosCrono = [];
 let partidosConEquiposReales = TODOS_PARTIDOS;
 let clasificacionesCargadas = false;
 
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // INICIALIZACIÓN
 // ═══════════════════════════════════════════════════════
 
@@ -378,7 +378,7 @@ document.addEventListener("input", (e) => {
 
 // ═══════════════════════════════════════════════════════
 // GUARDAR PREDICCIÓN
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 
 async function guardarPrediccion(id) {
   const p = TODOS_PARTIDOS.find(x => x.id === id);
@@ -623,7 +623,7 @@ async function guardarCampeon() {
 
   const pts = info.puntos;
 
-  if (!confirm(`¿Confirmás tu pronóstico del campeón?\n\n Opción 1: ${v1} (+${pts[0]} pts)\n🥈 Opción 2: ${v2} (+${pts[1]} pts)\n🥉 Opción 3: ${v3} (+${pts[2]} pts)\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
+  if (!confirm(`¿Confirmás tu pronóstico del campeón?\n\n🥇 Opción 1: ${v1} (+${pts[0]} pts)\n🥈 Opción 2: ${v2} (+${pts[1]} pts)\n🥉 Opción 3: ${v3} (+${pts[2]} pts)\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
     return;
   }
 
@@ -665,7 +665,7 @@ async function guardarCampeon() {
 init();
 
 // ═══════════════════════════════════════════════════════
-// UNIRSE A UN GRUPO (NUEVO - NO TOCA NADA EXISTENTE)
+// GESTIÓN DE GRUPOS (unirse / salir / validaciones)
 // ═══════════════════════════════════════════════════════
 
 async function cargarMisGrupos() {
@@ -687,11 +687,18 @@ async function cargarMisGrupos() {
     
     if (cont) cont.style.display = "block";
     if (list) {
-      list.innerHTML = usuario.grupos.map(g => `
-        <span style="background:var(--gold-soft); border:1px solid var(--gold); color:var(--gold); padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600;">
-          👥 ${g}
-        </span>
-      `).join("");
+      list.innerHTML = usuario.grupos.map(g => {
+        // Escapar comillas simples para el onclick
+        const gEscapado = g.replace(/'/g, "\\'").replace(/"/g, "&quot;");
+        return `
+          <span style="background:var(--gold-soft); border:1px solid var(--gold); color:var(--gold); padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
+            👥 ${g}
+            <button type="button" onclick="window.salirDeGrupo('${gEscapado}')" 
+                    style="background:none; border:none; color:var(--red); cursor:pointer; font-size:16px; font-weight:700; padding:0; line-height:1; margin-left:4px;"
+                    title="Salir del grupo">×</button>
+          </span>
+        `;
+      }).join("");
     }
   } catch (err) {
     console.error("Error cargando grupos:", err);
@@ -706,6 +713,7 @@ async function unirseAGrupo() {
   
   const nombreGrupo = input.value.trim();
   
+  // Validación: nombre vacío
   if (!nombreGrupo) {
     msg.textContent = "⚠️ Escribí el nombre del grupo";
     msg.style.background = "var(--red-soft)";
@@ -714,16 +722,40 @@ async function unirseAGrupo() {
     return;
   }
 
+  // Validación: longitud mínima
+  if (nombreGrupo.length < 2) {
+    msg.textContent = "⚠️ El nombre debe tener al menos 2 caracteres";
+    msg.style.background = "var(--red-soft)";
+    msg.style.color = "var(--red)";
+    msg.style.display = "block";
+    return;
+  }
+
+  // Validación: longitud máxima
+  if (nombreGrupo.length > 40) {
+    msg.textContent = "⚠️ El nombre es muy largo (máx. 40 caracteres)";
+    msg.style.background = "var(--red-soft)";
+    msg.style.color = "var(--red)";
+    msg.style.display = "block";
+    return;
+  }
+
   try {
-    const { data: usuario } = await supabase
+    // Obtener grupos actuales del usuario
+    const { data: usuario, error: userError } = await supabase
       .from('usuarios')
       .select('grupos')
       .eq('id', usuarioId)
       .single();
 
+    if (userError) throw userError;
+
     const gruposActuales = usuario?.grupos || [];
     
-    if (gruposActuales.includes(nombreGrupo)) {
+    // Validación: ya está en ese grupo (comparación case-insensitive)
+    const yaExiste = gruposActuales.some(g => g.toLowerCase() === nombreGrupo.toLowerCase());
+    
+    if (yaExiste) {
       msg.textContent = `⚠️ Ya estás en el grupo "${nombreGrupo}"`;
       msg.style.background = "var(--red-soft)";
       msg.style.color = "var(--red)";
@@ -731,7 +763,29 @@ async function unirseAGrupo() {
       return;
     }
 
-    const nuevosGrupos = [...gruposActuales, nombreGrupo];
+    // Buscar si el grupo ya existe en el sistema (creado por otro usuario)
+    // para preservar el nombre original (misma capitalización)
+    let nombreFinal = nombreGrupo;
+    
+    const { data: otrosUsuarios } = await supabase
+      .from('usuarios')
+      .select('grupos')
+      .neq('id', usuarioId);
+
+    if (otrosUsuarios) {
+      for (const u of otrosUsuarios) {
+        if (u.grupos && Array.isArray(u.grupos)) {
+          const encontrado = u.grupos.find(g => g.toLowerCase() === nombreGrupo.toLowerCase());
+          if (encontrado) {
+            nombreFinal = encontrado; // Usamos el nombre original
+            break;
+          }
+        }
+      }
+    }
+
+    // Agregar nuevo grupo
+    const nuevosGrupos = [...gruposActuales, nombreFinal];
 
     const { error } = await supabase
       .from('usuarios')
@@ -740,7 +794,7 @@ async function unirseAGrupo() {
 
     if (error) throw error;
 
-    msg.textContent = `✅ Te uniste al grupo "${nombreGrupo}"`;
+    msg.textContent = `✅ Te uniste al grupo "${nombreFinal}"`;
     msg.style.background = "var(--green-soft)";
     msg.style.color = "var(--green)";
     msg.style.display = "block";
@@ -758,6 +812,53 @@ async function unirseAGrupo() {
     msg.style.display = "block";
   }
 }
+
+async function salirDeGrupo(nombreGrupo) {
+  const msg = document.getElementById("msgGrupo");
+  
+  if (!confirm(`¿Salir del grupo "${nombreGrupo}"?`)) return;
+
+  try {
+    const { data: usuario } = await supabase
+      .from('usuarios')
+      .select('grupos')
+      .eq('id', usuarioId)
+      .single();
+
+    if (!usuario || !usuario.grupos) return;
+
+    // Filtrar el grupo a eliminar (case-insensitive)
+    const nuevosGrupos = usuario.grupos.filter(g => g.toLowerCase() !== nombreGrupo.toLowerCase());
+
+    const { error } = await supabase
+      .from('usuarios')
+      .update({ grupos: nuevosGrupos })
+      .eq('id', usuarioId);
+
+    if (error) throw error;
+
+    if (msg) {
+      msg.textContent = `✅ Saliste del grupo "${nombreGrupo}"`;
+      msg.style.background = "var(--green-soft)";
+      msg.style.color = "var(--green)";
+      msg.style.display = "block";
+      setTimeout(() => { msg.style.display = "none"; }, 4000);
+    }
+
+    await cargarMisGrupos();
+  } catch (err) {
+    console.error(err);
+    if (msg) {
+      msg.textContent = "❌ Error: " + err.message;
+      msg.style.background = "var(--red-soft)";
+      msg.style.color = "var(--red)";
+      msg.style.display = "block";
+    }
+  }
+}
+
+// Hacer salirDeGrupo disponible globalmente (para el onclick inline)
+window.salirDeGrupo = salirDeGrupo;
 
 // Event listeners para el formulario de grupos
 const btnUnirse = document.getElementById("btnUnirseGrupo");
