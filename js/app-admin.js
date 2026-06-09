@@ -55,6 +55,13 @@ async function init() {
     renderTabs();
     renderPartidos();
     cargarCampeonReal();
+    cargarSelectCampeones();
+    
+    // Cargar tabla de clasificados manuales
+    setTimeout(() => {
+      renderTablaClasificados();
+      cargarClasificadosExistentes();
+    }, 1000);
     
     console.log("✅ Admin iniciado correctamente");
   } catch (err) {
@@ -93,7 +100,7 @@ function renderTabs() {
     { id: "cuartos", label: "Cuartos" },
     { id: "semis", label: "Semis" },
     { id: "3er", label: "3er Puesto" },
-    { id: "final", label: "Final 🏆" },
+    { id: "final", label: "Final " },
   ];
 
   tabsContainer.innerHTML = tabs.map(t => `
@@ -388,7 +395,7 @@ async function guardarResultado(id) {
       }
       
       if (parseInt(penL) === parseInt(penV)) {
-        mostrarMensaje("⚠️ En penales NO hay empate", "error");
+        mostrarMensaje("️ En penales NO hay empate", "error");
         return;
       }
       
@@ -428,7 +435,7 @@ async function borrarResultado(id) {
 
   try {
     await supabase.from('resultados').delete().eq('id', id);
-    mostrarMensaje("🗑️ Resultado borrado", "ok");
+    mostrarMensaje("️ Resultado borrado", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
@@ -436,12 +443,12 @@ async function borrarResultado(id) {
   }
 }
 
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // BOTONES DE ACCIÓN
 // ═══════════════════════════════════════════════════════
 
 window.generarPrueba = async () => {
-  if (!confirm("¿Generar resultados de PRUEBA?\n\n️ Los usuarios NO los verán")) return;
+  if (!confirm("¿Generar resultados de PRUEBA?\n\n⚠️ Los usuarios NO los verán")) return;
 
   try {
     const pruebas = TODOS_PARTIDOS.map(p => ({
@@ -458,7 +465,7 @@ window.generarPrueba = async () => {
     }));
 
     await supabase.from('resultados').upsert(pruebas, { onConflict: 'id' });
-    mostrarMensaje("🧪 Resultados de prueba generados", "ok");
+    mostrarMensaje(" Resultados de prueba generados", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
@@ -475,7 +482,7 @@ window.limpiarPrueba = async () => {
     await cargarResultados();
     renderPartidos();
   } catch (err) {
-    mostrarMensaje("❌ Error: " + err.message, "error");
+    mostrarMensaje(" Error: " + err.message, "error");
   }
 };
 
@@ -500,7 +507,7 @@ window.borrarMisPronosticos = async () => {
 };
 
 window.reiniciar = async () => {
-  if (!confirm("️ ¿REINICIAR TODO?")) return;
+  if (!confirm("⚠️ ¿REINICIAR TODO?")) return;
   if (!confirm("¿ESTÁS SEGURO?")) return;
 
   try {
@@ -510,7 +517,7 @@ window.reiniciar = async () => {
     await supabase.from('config').delete().neq('id', '');
     await supabase.from('clasificados').delete().neq('posicion', '');
 
-    mostrarMensaje("️ Prode reiniciado", "ok");
+    mostrarMensaje("⚠️ Prode reiniciado", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
@@ -527,7 +534,7 @@ window.guardarCampeonReal = async () => {
 
   try {
     await supabase.from('config').upsert({ id: 'final', campeon }, { onConflict: 'id' });
-    mostrarMensaje(` Campeón: ${campeon}`, "ok");
+    mostrarMensaje(`🏆 Campeón: ${campeon}`, "ok");
     cargarCampeonReal();
   } catch (err) {
     mostrarMensaje("❌ Error: " + err.message, "error");
@@ -535,7 +542,7 @@ window.guardarCampeonReal = async () => {
 };
 
 window.actualizarEquipos = async () => {
-  alert("Esta función se ejecuta automáticamente cuando se completa la fase de grupos.");
+  alert("Usá la sección 'Cargar Clasificados Manualmente' al final de la página para definir los equipos de 16avos en adelante.");
 };
 
 async function cargarCampeonReal() {
@@ -543,11 +550,28 @@ async function cargarCampeonReal() {
     const { data } = await supabase.from('config').select('*').eq('id', 'final').single();
     if (data) {
       document.getElementById("realCampeon").value = data.campeon;
-      document.getElementById("campeonRealActual").textContent = `🏆 ${FLAGS[data.campeon] || "🏳️"} ${data.campeon}`;
+      document.getElementById("campeonRealActual").textContent = ` ${FLAGS[data.campeon] || "🏳️"} ${data.campeon}`;
     }
   } catch (err) {
     console.error(err);
   }
+}
+
+function cargarSelectCampeones() {
+  const select = document.getElementById("realCampeon");
+  if (!select) return;
+  
+  // Limpiar opciones excepto la primera
+  while (select.options.length > 1) {
+    select.remove(1);
+  }
+  
+  SELECCIONES.sort((a, b) => a.localeCompare(b)).forEach(sel => {
+    const opt = document.createElement("option");
+    opt.value = sel;
+    opt.textContent = `${FLAGS[sel] || "🏳️"} ${sel}`;
+    select.appendChild(opt);
+  });
 }
 
 function mostrarMensaje(msg, tipo) {
@@ -559,6 +583,106 @@ function mostrarMensaje(msg, tipo) {
   el.style.color = tipo === "ok" ? "var(--green)" : "var(--red)";
   el.style.display = "block";
   setTimeout(() => { el.style.display = "none"; }, 4000);
+}
+
+// ═══════════════════════════════════════════════════════
+// CARGA MANUAL DE CLASIFICADOS
+// ═══════════════════════════════════════════════════════
+
+const GRUPOS_MANUAL = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+
+function renderTablaClasificados() {
+  const cont = document.getElementById("tablaClasificados");
+  if (!cont) return;
+
+  let html = '<div style="display:grid; grid-template-columns: 60px 1fr 1fr 1fr; gap:8px; font-size:12px; font-weight:700; color:var(--gold); margin-bottom:8px;">';
+  html += '<div>Grupo</div><div>1° Lugar</div><div>2° Lugar</div><div>3° Lugar</div>';
+  html += '</div>';
+
+  GRUPOS_MANUAL.forEach(grupo => {
+    html += `<div style="display:grid; grid-template-columns: 60px 1fr 1fr 1fr; gap:8px; align-items:center;">`;
+    html += `<div style="font-weight:700; color:var(--gold);">Grupo ${grupo}</div>`;
+    html += `<input type="text" id="g1-${grupo}" placeholder="1° del grupo" style="padding:8px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">`;
+    html += `<input type="text" id="g2-${grupo}" placeholder="2° del grupo" style="padding:8px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">`;
+    html += `<input type="text" id="g3-${grupo}" placeholder="3° del grupo" style="padding:8px; background:var(--bg2); border:1px solid var(--border); border-radius:6px; color:var(--text); font-size:13px;">`;
+    html += `</div>`;
+  });
+
+  cont.innerHTML = html;
+}
+
+async function cargarClasificadosExistentes() {
+  try {
+    const { data, error } = await supabase.from('clasificados').select('*');
+    if (error) {
+      mostrarMsgClasificados("❌ Error: " + error.message, "error");
+      return;
+    }
+
+    const clasificados = {};
+    if (data) {
+      data.forEach(c => { clasificados[c.posicion] = c.equipo; });
+    }
+
+    GRUPOS_MANUAL.forEach(grupo => {
+      const g1 = document.getElementById(`g1-${grupo}`);
+      const g2 = document.getElementById(`g2-${grupo}`);
+      const g3 = document.getElementById(`g3-${grupo}`);
+      
+      if (g1) g1.value = clasificados[`1°${grupo}`] || '';
+      if (g2) g2.value = clasificados[`2°${grupo}`] || '';
+      if (g3) g3.value = clasificados[`3°${grupo}`] || '';
+    });
+
+    mostrarMsgClasificados("✅ Datos cargados desde la base de datos", "ok");
+  } catch (err) {
+    mostrarMsgClasificados("❌ Error: " + err.message, "error");
+  }
+}
+
+async function guardarClasificados() {
+  const registros = [];
+
+  GRUPOS_MANUAL.forEach(grupo => {
+    const g1 = document.getElementById(`g1-${grupo}`)?.value.trim();
+    const g2 = document.getElementById(`g2-${grupo}`)?.value.trim();
+    const g3 = document.getElementById(`g3-${grupo}`)?.value.trim();
+
+    if (g1) registros.push({ posicion: `1°${grupo}`, equipo: g1, grupo });
+    if (g2) registros.push({ posicion: `2°${grupo}`, equipo: g2, grupo });
+    if (g3) registros.push({ posicion: `3°${grupo}`, equipo: g3, grupo });
+  });
+
+  if (registros.length === 0) {
+    mostrarMsgClasificados("⚠️ Completá al menos un clasificado", "error");
+    return;
+  }
+
+  if (!confirm(`¿Guardar ${registros.length} clasificados y actualizar los cruces de 16avos?`)) {
+    return;
+  }
+
+  try {
+    // Borrar clasificados existentes
+    await supabase.from('clasificados').delete().neq('posicion', '');
+
+    // Insertar nuevos
+    const { error } = await supabase.from('clasificados').insert(registros);
+    if (error) throw error;
+
+    mostrarMsgClasificados(`✅ ${registros.length} clasificados guardados. Los cruces se actualizarán automáticamente en prode.html`, "ok");
+  } catch (err) {
+    mostrarMsgClasificados("❌ Error: " + err.message, "error");
+  }
+}
+
+function mostrarMsgClasificados(msg, tipo) {
+  const el = document.getElementById("msgClasificados");
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = tipo === "ok" ? "var(--green)" : "var(--red)";
+  el.style.display = "block";
+  setTimeout(() => { el.style.display = "none"; }, 5000);
 }
 
 // ═══════════════════════════════════════════════════════
