@@ -4,8 +4,9 @@ import {
   calcularPuntos, SELECCIONES, obtenerPuntosCampeonDisponibles,
   calcularPuntosCampeon, msHastaBloqueo, formatearTiempo, partidoBloqueado
 } from "../datos-partidos.js";
+import { obtenerPartidosConEquiposReales, tieneEquiposReales } from "./clasificaciones.js";
 
-console.log(" app-prode.js cargado");
+console.log("📋 app-prode.js cargado");
 
 let usuarioId = null;
 let predicciones = {};
@@ -14,33 +15,30 @@ let prediccionCampeon = null;
 let resultadoFinal = null;
 let faseActiva = "j1";
 let intervalosCrono = [];
+let partidosConEquiposReales = TODOS_PARTIDOS;
 
 // ═══════════════════════════════════════════════════════
 // INICIALIZACIÓN
 // ═══════════════════════════════════════════════════════
 
 async function init() {
-  console.log(" Iniciando prode...");
+  console.log("🚀 Iniciando prode...");
   
   try {
-    // Verificar sesión
-    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+    const { data: { session }, error } = await supabase.auth.getSession();
     
-    if (sessionError || !session) {
-      console.log("️ No hay sesión, redirigiendo a login");
+    if (error || !session) {
       window.location.href = "login.html";
       return;
     }
 
-    // Buscar perfil del usuario
-    const { data: usuario, error: userError } = await supabase
+    const { data: usuario } = await supabase
       .from('usuarios')
       .select('*')
       .eq('id', session.user.id)
       .single();
 
-    if (userError || !usuario) {
-      console.error("❌ No se encontró el perfil:", userError);
+    if (!usuario) {
       window.location.href = "login.html";
       return;
     }
@@ -48,7 +46,6 @@ async function init() {
     usuarioId = usuario.id;
     console.log("✅ Autenticado como:", usuario.nombre);
 
-    // Actualizar UI del header
     const userNameEl = document.getElementById("userName");
     if (userNameEl) userNameEl.textContent = usuario.nombre;
 
@@ -59,11 +56,12 @@ async function init() {
       if (linkAdmin) linkAdmin.style.display = "inline-block";
     }
 
-    // Cargar datos
+    // Cargar equipos reales de eliminatorias
+    partidosConEquiposReales = await obtenerPartidosConEquiposReales();
+    console.log("✅ Equipos reales cargados");
+
     await cargarDatos();
     await cargarCampeon();
-    
-    // Renderizar UI
     renderTabs();
     renderPartidos();
     renderCampeon();
@@ -190,11 +188,20 @@ function renderTabs() {
 }
 
 function getPartidosFase() {
+  let partidos;
   if (faseActiva.startsWith("j")) {
     const j = parseInt(faseActiva[1]);
-    return PARTIDOS_GRUPOS.filter(p => p.j === j);
+    partidos = PARTIDOS_GRUPOS.filter(p => p.j === j);
+  } else {
+    partidos = PARTIDOS_ELIM.filter(p => p.fase === faseActiva);
   }
-  return PARTIDOS_ELIM.filter(p => p.fase === faseActiva);
+  
+  // Para eliminatorias, solo mostrar partidos con equipos reales
+  if (!faseActiva.startsWith("j")) {
+    partidos = partidos.filter(p => tieneEquiposReales(p));
+  }
+  
+  return partidos;
 }
 
 // ═══════════════════════════════════════════════════════
@@ -216,10 +223,10 @@ function renderPartidos() {
   grid.style.display = "grid";
 
   const partidos = getPartidosFase();
-  console.log(` Partidos en fase ${faseActiva}:`, partidos.length);
+  console.log(`📋 Partidos en fase ${faseActiva}:`, partidos.length);
 
   if (partidos.length === 0) {
-    grid.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px; grid-column:1/-1;">No hay partidos</p>';
+    grid.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px; grid-column:1/-1;">No hay partidos disponibles en esta fase aún. Esperá a que se definan los equipos clasificados.</p>';
     return;
   }
 
@@ -264,8 +271,13 @@ function renderTarjeta(p) {
   const esElim = !p.j || p.fase;
   const bloqueado = partidoBloqueado(p);
 
-  const flagL = FLAGS[p.local] || "️";
-  const flagV = FLAGS[p.visit] || "🏳️";
+  // Usar equipo real si está disponible
+  const partidoReal = partidosConEquiposReales.find(x => x.id === p.id) || p;
+  const flagL = FLAGS[partidoReal.local] || "🏳️";
+  const flagV = FLAGS[partidoReal.visit] || "🏳️";
+  const nombreLocal = partidoReal.local;
+  const nombreVisit = partidoReal.visit;
+  
   const pts = guardado && res ? calcularPuntos(pred, res) : null;
 
   let marcadorHTML;
@@ -321,13 +333,13 @@ function renderTarjeta(p) {
       <div class="partido-equipos">
         <div class="equipo">
           <span class="flag">${flagL}</span>
-          <span>${p.local}</span>
+          <span>${nombreLocal}</span>
         </div>
         <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
           ${marcadorHTML}
         </div>
         <div class="equipo visitante">
-          <span>${p.visit}</span>
+          <span>${nombreVisit}</span>
           <span class="flag">${flagV}</span>
         </div>
       </div>
@@ -357,7 +369,7 @@ function renderTarjeta(p) {
   `;
 }
 
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 // EVENT LISTENER PARA INPUTS
 // ═══════════════════════════════════════════════════════
 
@@ -410,7 +422,10 @@ async function guardarPrediccion(id) {
     return;
   }
 
-  if (!confirm(`¿Confirmás tu pronóstico?\n\n${p.local} ${gL} - ${gV} ${p.visit}\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
+  // Usar nombres reales para el mensaje de confirmación
+  const partidoReal = partidosConEquiposReales.find(x => x.id === id) || p;
+
+  if (!confirm(`¿Confirmás tu pronóstico?\n\n${partidoReal.local} ${gL} - ${gV} ${partidoReal.visit}\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
     return;
   }
 
@@ -512,7 +527,7 @@ function renderCampeon() {
       "pre-final": "ANTES DE LA FINAL (jugando Semis)",
       "cerrado": "CERRADO"
     };
-    campeonFaseActual.textContent = " Estado actual: " + (nombresFase[info.fase] || info.fase);
+    campeonFaseActual.textContent = "📍 Estado actual: " + (nombresFase[info.fase] || info.fase);
   }
 
   if (prediccionCampeon && prediccionCampeon.bloqueado) {
@@ -639,7 +654,7 @@ async function guardarCampeon() {
 
   const pts = info.puntos;
 
-  if (!confirm(`¿Confirmás tu pronóstico del campeón?\n\n Opción 1: ${v1} (+${pts[0]} pts)\n🥈 Opción 2: ${v2} (+${pts[1]} pts)\n🥉 Opción 3: ${v3} (+${pts[2]} pts)\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
+  if (!confirm(`¿Confirmás tu pronóstico del campeón?\n\n🥇 Opción 1: ${v1} (+${pts[0]} pts)\n🥈 Opción 2: ${v2} (+${pts[1]} pts)\n🥉 Opción 3: ${v3} (+${pts[2]} pts)\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
     return;
   }
 
@@ -679,6 +694,6 @@ async function guardarCampeon() {
 
 // ═══════════════════════════════════════════════════════
 // INICIAR
-// ══════════════════════════════════════════════════════
+// ═══════════════════════════════════════════════════════
 
 init();

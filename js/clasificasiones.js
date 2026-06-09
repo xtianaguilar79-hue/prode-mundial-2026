@@ -1,5 +1,5 @@
 // ═══════════════════════════════════════════════════════
-// SISTEMA DE CLASIFICACIÓN AUTOMÁTICA
+// 🏆 SISTEMA DE CLASIFICADOS Y CRUCES AUTOMÁTICOS
 // ═══════════════════════════════════════════════════════
 
 import { supabase } from "./supabase-config.js";
@@ -7,24 +7,9 @@ import { PARTIDOS_GRUPOS, PARTIDOS_ELIM, TODOS_PARTIDOS } from "../datos-partido
 
 const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
 
-export const CRUCES_16AVOS = [
-  { id: "M073", local: "2°A", visit: "2°B" },
-  { id: "M074", local: "1°E", visit: "3° mejor" },
-  { id: "M075", local: "1°F", visit: "2°C" },
-  { id: "M076", local: "1°C", visit: "2°F" },
-  { id: "M077", local: "1°I", visit: "3° mejor" },
-  { id: "M078", local: "2°E", visit: "2°I" },
-  { id: "M079", local: "1°A", visit: "3° mejor" },
-  { id: "M080", local: "1°L", visit: "3° mejor" },
-  { id: "M081", local: "1°D", visit: "3° mejor" },
-  { id: "M082", local: "1°G", visit: "3° mejor" },
-  { id: "M083", local: "2°K", visit: "2°L" },
-  { id: "M084", local: "1°H", visit: "2°J" },
-  { id: "M085", local: "1°B", visit: "3° mejor" },
-  { id: "M086", local: "1°J", visit: "2°H" },
-  { id: "M087", local: "1°K", visit: "3° mejor" },
-  { id: "M088", local: "2°D", visit: "2°G" },
-];
+// ═══════════════════════════════════════════════════════
+// 1. CALCULAR TABLA DE UN GRUPO
+// ═══════════════════════════════════════════════════════
 
 export function calcularTablaGrupo(grupo, resultados) {
   const partidosGrupo = PARTIDOS_GRUPOS.filter(p => p.grupo === grupo);
@@ -41,7 +26,7 @@ export function calcularTablaGrupo(grupo, resultados) {
 
   partidosGrupo.forEach(p => {
     const res = resultados[p.id];
-    if (!res) return;
+    if (!res || res.local === null || res.visit === null) return;
 
     const l = tabla[p.local];
     const v = tabla[p.visit];
@@ -74,10 +59,9 @@ export function calcularTablaGrupo(grupo, resultados) {
   });
 }
 
-export function faseGruposCompleta(resultados) {
-  const partidosJugados = PARTIDOS_GRUPOS.filter(p => resultados[p.id]).length;
-  return partidosJugados === PARTIDOS_GRUPOS.length;
-}
+// ═══════════════════════════════════════════════════════
+// 2. CALCULAR MEJORES TERCEROS
+// ═══════════════════════════════════════════════════════
 
 export function calcularMejoresTerceros(resultados) {
   const terceros = [];
@@ -97,318 +81,224 @@ export function calcularMejoresTerceros(resultados) {
   }).slice(0, 8);
 }
 
-export function calcularClasificados16avos(resultados) {
-  if (!faseGruposCompleta(resultados)) {
-    return { completo: false, clasificados: [] };
-  }
+// ═══════════════════════════════════════════════════════
+// 3. OBTENER CLASIFICADOS DE FASE DE GRUPOS
+// ═══════════════════════════════════════════════════════
 
+export function obtenerClasificadosGrupos(resultados) {
   const clasificados = {};
+  const mejoresTerceros = calcularMejoresTerceros(resultados);
 
   GRUPOS.forEach(grupo => {
     const tabla = calcularTablaGrupo(grupo, resultados);
-    clasificados[`1°${grupo}`] = tabla[0].equipo;
-    clasificados[`2°${grupo}`] = tabla[1].equipo;
+    if (tabla[0]) clasificados[`1°${grupo}`] = tabla[0].equipo;
+    if (tabla[1]) clasificados[`2°${grupo}`] = tabla[1].equipo;
   });
 
-  const mejoresTerceros = calcularMejoresTerceros(resultados);
-  
-  mejoresTerceros.forEach((tercero, idx) => {
-    clasificados[`3°mejor-${idx}`] = tercero.equipo;
-    clasificados[`3°mejor-${idx}-grupo`] = tercero.grupo;
+  mejoresTerceros.forEach((t, i) => {
+    clasificados[`3°${i + 1}`] = t.equipo;
+    clasificados[`3°${i + 1}-grupo`] = t.grupo;
   });
 
-  return { completo: true, clasificados };
+  return { clasificados, mejoresTerceros };
 }
 
-export function resolverCruces16avos(clasificados) {
-  const mejoresTerceros = Object.entries(clasificados)
-    .filter(([k]) => k.startsWith("3°mejor-") && !k.endsWith("-grupo"))
-    .map(([k, equipo]) => ({
-      equipo,
-      grupo: clasificados[`${k}-grupo`]
-    }));
-
-  const partidos16 = CRUCES_16AVOS.map(cruce => {
-    let local = cruce.local;
-    let visit = cruce.visit;
-
-    if (local === "3° mejor" && mejoresTerceros.length > 0) {
-      local = mejoresTerceros.shift().equipo;
-    }
-    if (visit === "3° mejor" && mejoresTerceros.length > 0) {
-      visit = mejoresTerceros.shift().equipo;
-    }
-
-    if (clasificados[local]) local = clasificados[local];
-    if (clasificados[visit]) visit = clasificados[visit];
-
-    return {
-      id: cruce.id,
-      local,
-      visit
-    };
-  });
-
-  return partidos16;
-}
+// ═══════════════════════════════════════════════════════
+// 4. RESOLVER GANADOR DE UN PARTIDO
+// ═══════════════════════════════════════════════════════
 
 export function resolverGanador(partidoId, resultados) {
   const res = resultados[partidoId];
-  if (!res) return null;
+  if (!res || res.local === null || res.visit === null) return null;
 
   const gL = parseInt(res.local);
   const gV = parseInt(res.visit);
 
-  if (gL === gV) {
-    if (res.alargue_local !== null && res.alargue_visit !== null && 
-        res.alargue_local !== undefined && res.alargue_visit !== undefined) {
-      const alL = parseInt(res.alargue_local);
-      const alV = parseInt(res.alargue_visit);
-      if (alL > alV) return "local";
-      if (alV > alL) return "visit";
-      
-      if (res.penales_local !== null && res.penales_visit !== null &&
-          res.penales_local !== undefined && res.penales_visit !== undefined) {
-        const penL = parseInt(res.penales_local);
-        const penV = parseInt(res.penales_visit);
-        if (penL > penV) return "local";
-        if (penV > penL) return "visit";
-      }
+  if (gL > gV) return "local";
+  if (gV > gL) return "visit";
+
+  if (res.alargue_local !== null && res.alargue_visit !== null) {
+    const alL = parseInt(res.alargue_local);
+    const alV = parseInt(res.alargue_visit);
+    if (alL > alV) return "local";
+    if (alV > alL) return "visit";
+
+    if (res.penales_local !== null && res.penales_visit !== null) {
+      const penL = parseInt(res.penales_local);
+      const penV = parseInt(res.penales_visit);
+      if (penL > penV) return "local";
+      if (penV > penL) return "visit";
     }
-    return null;
   }
 
-  return gL > gV ? "local" : "visit";
+  return null;
 }
 
-export function resolverCrucesEliminatorios(resultados) {
-  const partidosActualizados = {};
+// ═══════════════════════════════════════════════════════
+// 5. RESOLVER CRUCES DE 16AVOS
+// ═══════════════════════════════════════════════════════
+
+export function resolver16avos(clasificados) {
+  const cruces = [
+    { id: "M073", local: "2°A", visit: "2°B" },
+    { id: "M074", local: "1°E", visit: "3°1" },
+    { id: "M075", local: "1°F", visit: "2°C" },
+    { id: "M076", local: "1°C", visit: "2°F" },
+    { id: "M077", local: "1°I", visit: "3°2" },
+    { id: "M078", local: "2°E", visit: "2°I" },
+    { id: "M079", local: "1°A", visit: "3°3" },
+    { id: "M080", local: "1°L", visit: "3°4" },
+    { id: "M081", local: "1°D", visit: "3°5" },
+    { id: "M082", local: "1°G", visit: "3°6" },
+    { id: "M083", local: "2°K", visit: "2°L" },
+    { id: "M084", local: "1°H", visit: "2°J" },
+    { id: "M085", local: "1°B", visit: "3°7" },
+    { id: "M086", local: "1°J", visit: "2°H" },
+    { id: "M087", local: "1°K", visit: "3°8" },
+    { id: "M088", local: "2°D", visit: "2°G" },
+  ];
+
+  return cruces.map(c => {
+    let local = clasificados[c.local] || c.local;
+    let visit = clasificados[c.visit] || c.visit;
+    return { id: c.id, local, visit };
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// 6. RESOLVER TODAS LAS FASES ELIMINATORIAS
+// ═══════════════════════════════════════════════════════
+
+export function resolverEliminatorias(resultados, clasificadosGrupos) {
+  const equipos = {};
+  const partidosResueltos = {};
+
+  // 16avos
+  const cruces16 = resolver16avos(clasificadosGrupos);
+  cruces16.forEach(c => {
+    equipos[c.id] = { local: c.local, visit: c.visit };
+    const ganador = resolverGanador(c.id, resultados);
+    if (ganador) {
+      partidosResueltos[c.id] = c[ganador === "local" ? "local" : "visit"];
+    }
+  });
 
   // Octavos
-  PARTIDOS_ELIM.filter(p => p.fase === "octavos").forEach(p => {
-    const idLocal = p.local.replace("G", "");
-    const idVisit = p.visit.replace("G", "");
-    const ganLocal = resolverGanador(idLocal, resultados);
-    const ganVisit = resolverGanador(idVisit, resultados);
-    
-    if (ganLocal && ganVisit) {
-      const partidoOrigLocal = TODOS_PARTIDOS.find(x => x.id === idLocal);
-      const partidoOrigVisit = TODOS_PARTIDOS.find(x => x.id === idVisit);
-      
-      if (partidoOrigLocal && partidoOrigVisit) {
-        const equipoLocal = ganLocal === "local" ? partidoOrigLocal.local : partidoOrigLocal.visit;
-        const equipoVisit = ganVisit === "local" ? partidoOrigVisit.local : partidoOrigVisit.visit;
-        partidosActualizados[p.id] = { local: equipoLocal, visit: equipoVisit };
-      }
+  const crucesOctavos = [
+    { id: "M089", local: "M074", visit: "M077" },
+    { id: "M090", local: "M073", visit: "M075" },
+    { id: "M091", local: "M076", visit: "M078" },
+    { id: "M092", local: "M079", visit: "M080" },
+    { id: "M093", local: "M083", visit: "M084" },
+    { id: "M094", local: "M081", visit: "M082" },
+    { id: "M095", local: "M086", visit: "M088" },
+    { id: "M096", local: "M085", visit: "M087" },
+  ];
+
+  crucesOctavos.forEach(c => {
+    const local = partidosResueltos[c.local] || c.local;
+    const visit = partidosResueltos[c.visit] || c.visit;
+    equipos[c.id] = { local, visit };
+    const ganador = resolverGanador(c.id, resultados);
+    if (ganador) {
+      partidosResueltos[c.id] = equipos[c.id][ganador === "local" ? "local" : "visit"];
     }
   });
 
   // Cuartos
-  PARTIDOS_ELIM.filter(p => p.fase === "cuartos").forEach(p => {
-    const idLocal = p.local.replace("G", "");
-    const idVisit = p.visit.replace("G", "");
-    const ganLocal = resolverGanador(idLocal, resultados);
-    const ganVisit = resolverGanador(idVisit, resultados);
-    
-    if (ganLocal && ganVisit) {
-      const origLocal = partidosActualizados[idLocal] || 
-                       TODOS_PARTIDOS.find(x => x.id === idLocal);
-      const origVisit = partidosActualizados[idVisit] || 
-                       TODOS_PARTIDOS.find(x => x.id === idVisit);
-      
-      if (origLocal && origVisit) {
-        const equipoLocal = ganLocal === "local" ? origLocal.local : origLocal.visit;
-        const equipoVisit = ganVisit === "local" ? origVisit.local : origVisit.visit;
-        partidosActualizados[p.id] = { local: equipoLocal, visit: equipoVisit };
-      }
+  const crucesCuartos = [
+    { id: "M097", local: "M089", visit: "M090" },
+    { id: "M098", local: "M093", visit: "M094" },
+    { id: "M099", local: "M091", visit: "M092" },
+    { id: "M100", local: "M095", visit: "M096" },
+  ];
+
+  crucesCuartos.forEach(c => {
+    const local = partidosResueltos[c.local] || c.local;
+    const visit = partidosResueltos[c.visit] || c.visit;
+    equipos[c.id] = { local, visit };
+    const ganador = resolverGanador(c.id, resultados);
+    if (ganador) {
+      partidosResueltos[c.id] = equipos[c.id][ganador === "local" ? "local" : "visit"];
     }
   });
 
   // Semis
-  PARTIDOS_ELIM.filter(p => p.fase === "semis").forEach(p => {
-    const idLocal = p.local.replace("G", "");
-    const idVisit = p.visit.replace("G", "");
-    const ganLocal = resolverGanador(idLocal, resultados);
-    const ganVisit = resolverGanador(idVisit, resultados);
-    
-    if (ganLocal && ganVisit) {
-      const origLocal = partidosActualizados[idLocal] || 
-                       TODOS_PARTIDOS.find(x => x.id === idLocal);
-      const origVisit = partidosActualizados[idVisit] || 
-                       TODOS_PARTIDOS.find(x => x.id === idVisit);
-      
-      if (origLocal && origVisit) {
-        const equipoLocal = ganLocal === "local" ? origLocal.local : origLocal.visit;
-        const equipoVisit = ganVisit === "local" ? origVisit.local : origVisit.visit;
-        partidosActualizados[p.id] = { local: equipoLocal, visit: equipoVisit };
-      }
+  const crucesSemis = [
+    { id: "M101", local: "M097", visit: "M098" },
+    { id: "M102", local: "M099", visit: "M100" },
+  ];
+
+  crucesSemis.forEach(c => {
+    const local = partidosResueltos[c.local] || c.local;
+    const visit = partidosResueltos[c.visit] || c.visit;
+    equipos[c.id] = { local, visit };
+    const ganador = resolverGanador(c.id, resultados);
+    if (ganador) {
+      partidosResueltos[c.id] = equipos[c.id][ganador === "local" ? "local" : "visit"];
     }
   });
 
+  // 3er Puesto
+  const perdedorSF1 = resolverGanador("M101", resultados) === "local" 
+    ? equipos["M101"]?.visit : equipos["M101"]?.local;
+  const perdedorSF2 = resolverGanador("M102", resultados) === "local"
+    ? equipos["M102"]?.visit : equipos["M102"]?.local;
+  
+  equipos["M103"] = { 
+    local: perdedorSF1 || "Perdedor SF1", 
+    visit: perdedorSF2 || "Perdedor SF2" 
+  };
+
   // Final
-  const final = PARTIDOS_ELIM.find(p => p.fase === "final");
-  if (final) {
-    const idLocal = final.local.replace("G", "");
-    const idVisit = final.visit.replace("G", "");
-    const ganLocal = resolverGanador(idLocal, resultados);
-    const ganVisit = resolverGanador(idVisit, resultados);
-    
-    if (ganLocal && ganVisit) {
-      const origLocal = partidosActualizados[idLocal] || 
-                       TODOS_PARTIDOS.find(x => x.id === idLocal);
-      const origVisit = partidosActualizados[idVisit] || 
-                       TODOS_PARTIDOS.find(x => x.id === idVisit);
-      
-      if (origLocal && origVisit) {
-        const equipoLocal = ganLocal === "local" ? origLocal.local : origLocal.visit;
-        const equipoVisit = ganVisit === "local" ? origVisit.local : origVisit.visit;
-        partidosActualizados[final.id] = { local: equipoLocal, visit: equipoVisit };
-      }
-    }
-  }
+  const ganadorSF1 = partidosResueltos["M101"] || "Ganador SF1";
+  const ganadorSF2 = partidosResueltos["M102"] || "Ganador SF2";
+  equipos["M104"] = { local: ganadorSF1, visit: ganadorSF2 };
 
-  // 3er puesto
-  const tercerPuesto = PARTIDOS_ELIM.find(p => p.fase === "3er");
-  if (tercerPuesto) {
-    const semis = PARTIDOS_ELIM.filter(p => p.fase === "semis");
-    const perdedores = [];
-    
-    semis.forEach(semi => {
-      const ganador = resolverGanador(semi.id, resultados);
-      if (ganador) {
-        const origSemi = partidosActualizados[semi.id] || semi;
-        const equipoPerdedor = ganador === "local" ? origSemi.visit : origSemi.local;
-        if (equipoPerdedor) perdedores.push(equipoPerdedor);
-      }
-    });
-    
-    if (perdedores.length === 2) {
-      partidosActualizados[tercerPuesto.id] = { local: perdedores[0], visit: perdedores[1] };
-    }
-  }
-
-  return partidosActualizados;
+  return equipos;
 }
 
 // ═══════════════════════════════════════════════════════
-// FUNCIÓN PRINCIPAL: ACTUALIZAR Y GUARDAR EN SUPABASE
-// ═══════════════════════════════════════════════════════
-
-export async function actualizarEquiposEliminatorias() {
-  try {
-    const { data: resData, error } = await supabase
-      .from('resultados')
-      .select('*');
-
-    if (error) throw error;
-
-    const resultados = {};
-    resData.forEach(r => { resultados[r.partido_id] = r; });
-
-    let partidosActualizados = {};
-
-    // Si fase de grupos está completa, calcular clasificados a 16avos
-    if (faseGruposCompleta(resultados)) {
-      const { completo, clasificados } = calcularClasificados16avos(resultados);
-      
-      if (completo) {
-        // Guardar en tabla clasificados
-        const registros = Object.entries(clasificados)
-          .filter(([k]) => !k.endsWith("-grupo"))
-          .map(([posicion, equipo]) => ({
-            posicion,
-            equipo,
-            grupo: clasificados[`${posicion}-grupo`] || posicion.slice(-1)
-          }));
-
-        if (registros.length > 0) {
-          const { error: upsertError } = await supabase
-            .from('clasificados')
-            .upsert(registros, { onConflict: 'posicion' });
-          
-          if (upsertError) {
-            console.error("Error al guardar clasificados:", upsertError);
-          } else {
-            console.log("✅ Clasificados guardados en Supabase");
-          }
-        }
-
-        // Resolver cruces de 16avos
-        const cruces16 = resolverCruces16avos(clasificados);
-        partidosActualizados = Object.fromEntries(
-          cruces16.map(p => [p.id, { local: p.local, visit: p.visit }])
-        );
-        
-        console.log("✅ Cruces de 16avos resueltos:", partidosActualizados);
-      }
-    }
-
-    // Resolver cruces de octavos en adelante
-    const partidosElim = resolverCrucesEliminatorios(resultados);
-    partidosActualizados = { ...partidosActualizados, ...partidosElim };
-    
-    if (Object.keys(partidosElim).length > 0) {
-      console.log("✅ Partidos eliminatorios actualizados:", partidosElim);
-    }
-
-    return {
-      fase: faseGruposCompleta(resultados) ? "16avos" : "grupos",
-      partidosActualizados
-    };
-
-  } catch (err) {
-    console.error("❌ Error al actualizar equipos:", err);
-    throw err;
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// LEER EQUIPOS DESDE SUPABASE (PARA VISTAS)
+// 7. FUNCIÓN PRINCIPAL: OBTENER PARTIDOS CON EQUIPOS REALES
 // ═══════════════════════════════════════════════════════
 
 export async function obtenerPartidosConEquiposReales() {
   try {
-    // Primero intentar leer desde la tabla clasificados
-    const { data: clasificadosData, error: clasError } = await supabase
-      .from('clasificados')
-      .select('*');
-
-    let clasificados = {};
-    if (!clasError && clasificadosData && clasificadosData.length > 0) {
-      clasificadosData.forEach(c => {
-        clasificados[c.posicion] = c.equipo;
-      });
-      console.log("✅ Clasificados leídos desde Supabase:", clasificados);
-    }
-
-    // Cargar resultados
-    const { data: resData, error: resError } = await supabase
+    const { data: resData } = await supabase
       .from('resultados')
-      .select('*');
-
-    if (resError) throw resError;
+      .select('*')
+      .eq('es_prueba', false);
 
     const resultados = {};
-    resData.forEach(r => { resultados[r.partido_id] = r; });
+    if (resData) resData.forEach(r => { resultados[r.partido_id] = r; });
 
-    let partidosActualizados = {};
+    const partidosJugados = PARTIDOS_GRUPOS.filter(p => resultados[p.id]).length;
+    const faseGruposCompleta = partidosJugados === PARTIDOS_GRUPOS.length;
 
-    // Si hay clasificados, resolver cruces de 16avos
-    if (Object.keys(clasificados).length > 0) {
-      const cruces16 = resolverCruces16avos(clasificados);
-      partidosActualizados = Object.fromEntries(
-        cruces16.map(p => [p.id, { local: p.local, visit: p.visit }])
-      );
+    let equiposElim = {};
+
+    if (faseGruposCompleta) {
+      const { clasificados } = obtenerClasificadosGrupos(resultados);
+      equiposElim = resolverEliminatorias(resultados, clasificados);
+    } else {
+      const { data: clasData } = await supabase
+        .from('clasificados')
+        .select('*');
+
+      if (clasData && clasData.length > 0) {
+        const clasificados = {};
+        clasData.forEach(c => { clasificados[c.posicion] = c.equipo; });
+        equiposElim = resolverEliminatorias(resultados, clasificados);
+      }
     }
 
-    // Resolver cruces de octavos en adelante
-    const partidosElim = resolverCrucesEliminatorios(resultados);
-    partidosActualizados = { ...partidosActualizados, ...partidosElim };
-
-    // Reemplazar en TODOS_PARTIDOS
     return TODOS_PARTIDOS.map(p => {
-      if (partidosActualizados[p.id]) {
-        return { ...p, ...partidosActualizados[p.id] };
+      if (equiposElim[p.id]) {
+        return {
+          ...p,
+          local: equiposElim[p.id].local || p.local,
+          visit: equiposElim[p.id].visit || p.visit
+        };
       }
       return p;
     });
@@ -416,4 +306,18 @@ export async function obtenerPartidosConEquiposReales() {
     console.error("❌ Error al obtener partidos con equipos reales:", err);
     return TODOS_PARTIDOS;
   }
+}
+
+// ═══════════════════════════════════════════════════════
+// 8. VERIFICAR SI UN PARTIDO TIENE EQUIPOS REALES
+// ═══════════════════════════════════════════════════════
+
+export function tieneEquiposReales(partido) {
+  if (partido.j) return true;
+  
+  const esPlaceholder = (equipo) => {
+    return /°|G\d+|Ganador|Perdedor|Camp\.|3er|mejor|\d°/.test(equipo);
+  };
+  
+  return !esPlaceholder(partido.local) && !esPlaceholder(partido.visit);
 }
