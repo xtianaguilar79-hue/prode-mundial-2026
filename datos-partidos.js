@@ -2,58 +2,27 @@
 // 🏆 PRODE MUNDIAL 2026 - FIXTURE OFICIAL FIFA
 // Horarios en HORA ARGENTINA (UTC-3)
 // Bloqueo: 5 minutos antes del kickoff
+// 
+// SISTEMA DE PUNTOS UNIFICADO:
+// - Cada capa (90', alargue, penales) vale 14 pts máximo.
+// - Fórmula: Signo(3) + Gol L(3) + Gol V(3) + Exacto(5) = 14
+// - Total máximo eliminatoria: 42 pts (14+14+14)
 // ═══════════════════════════════════════════════════════
 
-// ─── BANDERAS DE LAS 48 SELECCIONES (TODAS CORRECTAS) ───
+// ─── BANDERAS DE LAS 48 SELECCIONES ───
 export const FLAGS = {
-  "México": "🇲🇽",
-  "Sudáfrica": "🇿🇦",
-  "Corea del Sur": "🇰🇷",
-  "Rep. Checa": "🇨🇿",
-  "Canadá": "🇨🇦",
-  "Bosnia-Herzegovina": "🇧🇦",
-  "Qatar": "🇶🇦",
-  "Suiza": "🇨🇭",
-  "Brasil": "🇧🇷",
-  "Marruecos": "🇲🇦",
-  "Haití": "🇭🇹",
-  "Escocia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "Estados Unidos": "🇺🇸",
-  "Paraguay": "🇵🇾",
-  "Australia": "🇦🇺",
-  "Turquía": "🇹🇷",
-  "Alemania": "🇩🇪",
-  "Curazao": "🇨🇼",
-  "Costa de Marfil": "🇨🇮",
-  "Ecuador": "🇪🇨",
-  "Países Bajos": "🇳🇱",
-  "Japón": "🇯🇵",
-  "Suecia": "🇸🇪",
-  "Túnez": "🇹🇳",
-  "Bélgica": "🇧🇪",
-  "Egipto": "🇪🇬",
-  "Irán": "🇮🇷",
-  "Nueva Zelanda": "🇳🇿",
-  "España": "🇪🇸",
-  "Cabo Verde": "🇨🇻",
-  "Arabia Saudita": "🇸🇦",
-  "Uruguay": "🇺🇾",
-  "Francia": "🇫🇷",
-  "Senegal": "🇸🇳",
-  "Irak": "🇮🇶",
-  "Noruega": "🇳🇴",
-  "Argentina": "🇦🇷",
-  "Argelia": "🇩🇿",
-  "Austria": "🇦🇹",
-  "Jordania": "🇯🇴",
-  "Portugal": "🇵🇹",
-  "RD Congo": "🇨🇩",
-  "Uzbekistán": "🇺🇿",
-  "Colombia": "🇨🇴",
-  "Inglaterra": "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
-  "Croacia": "🇭🇷",
-  "Ghana": "🇬🇭",
-  "Panamá": "🇵🇦"
+  "México":"🇽","Sudáfrica":"🇦","Corea del Sur":"🇷","Rep. Checa":"🇿",
+  "Canadá":"🇦","Bosnia-Herzegovina":"🇧🇦","Qatar":"🇶","Suiza":"🇨🇭",
+  "Brasil":"🇧🇷","Marruecos":"🇲🇦","Haití":"🇭","Escocia":"🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+  "Estados Unidos":"🇺","Paraguay":"🇵🇾","Australia":"🇦🇺","Turquía":"🇹🇷",
+  "Alemania":"🇩🇪","Curazao":"🇨🇼","Costa de Marfil":"🇨","Ecuador":"🇪🇨",
+  "Países Bajos":"🇳","Japón":"🇯","Suecia":"🇸🇪","Túnez":"🇹🇳",
+  "Bélgica":"🇧🇪","Egipto":"🇪🇬","Irán":"🇮","Nueva Zelanda":"🇳",
+  "España":"🇪","Cabo Verde":"🇨🇻","Arabia Saudita":"🇸🇦","Uruguay":"🇺🇾",
+  "Francia":"🇫🇷","Senegal":"🇸🇳","Irak":"🇮🇶","Noruega":"🇳🇴",
+  "Argentina":"🇦🇷","Argelia":"🇿","Austria":"🇦🇹","Jordania":"🇯",
+  "Portugal":"🇵","RD Congo":"🇨🇩","Uzbekistán":"🇺🇿","Colombia":"🇨🇴",
+  "Inglaterra":"🏴󠁢󠁥󠁧󠁿","Croacia":"🇭🇷","Ghana":"🇭","Panamá":"🇵🇦",
 };
 
 export const SELECCIONES = Object.keys(FLAGS);
@@ -62,7 +31,7 @@ export function getFlag(equipo) {
   return FLAGS[equipo] || "🏳️";
 }
 
-// ─── PARTIDOS FASE DE GRUPOS (72 partidos) ───
+// ── PARTIDOS FASE DE GRUPOS (72 partidos) ───
 export const PARTIDOS_GRUPOS = [
   // ═══ JORNADA 1 ═══
   { id:"M001", j:1, grupo:"A", local:"México", visit:"Sudáfrica", fecha:"11/06", hora:"16:00", sede:"Azteca, CDMX" },
@@ -145,7 +114,7 @@ export const PARTIDOS_GRUPOS = [
 
 // ─── PARTIDOS ELIMINATORIOS (32 partidos) ───
 export const PARTIDOS_ELIM = [
-  // ═══ DIECISEISAVOS DE FINAL ═══
+  // ══ DIECISEISAVOS DE FINAL ═══
   { id:"M073", fase:"16avos", local:"2°A", visit:"2°B", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M076", fase:"16avos", local:"1°C", visit:"2°F", fecha:"29/06", hora:"14:00", sede:"Houston, USA" },
   { id:"M074", fase:"16avos", local:"1°E", visit:"3° A/B/C/D/F", fecha:"29/06", hora:"17:30", sede:"Boston, USA" },
@@ -192,15 +161,18 @@ export const PARTIDOS_ELIM = [
 
 export const TODOS_PARTIDOS = [...PARTIDOS_GRUPOS, ...PARTIDOS_ELIM];
 
-// ─── SISTEMA DE PUNTOS UNIFICADO ───
+// ─── SISTEMA DE PUNTOS UNIFICADO (ACTUALIZADO FINAL) ───
+// Lógica: 3 (Signo) + 3 (Gol L) + 3 (Gol V) + 5 (Exacto) = 14 pts por capa
+// Grupos: 14 pts máx
+// Eliminatorias: 42 pts máx (14 90' + 14 Alargue + 14 Penales)
 export const PUNTOS = {
-  grupos:    { signo: 2,  golL: 2,  golV: 2,  exacto: 5,  alargue: 0,  penales: 0  },
-  "16avos":  { signo: 3,  golL: 3,  golV: 3,  exacto: 8,  alargue: 3,  penales: 2  },
-  octavos:   { signo: 3,  golL: 3,  golV: 3,  exacto: 8,  alargue: 3,  penales: 2  },
-  cuartos:   { signo: 3,  golL: 3,  golV: 3,  exacto: 8,  alargue: 3,  penales: 2  },
-  semis:     { signo: 3,  golL: 3,  golV: 3,  exacto: 8,  alargue: 3,  penales: 2  },
-  "3er":     { signo: 3,  golL: 3,  golV: 3,  exacto: 8,  alargue: 3,  penales: 2  },
-  final:     { signo: 3,  golL: 3,  golV: 3,  exacto: 8,  alargue: 3,  penales: 2  },
+  grupos:    { signo: 3,  golL: 3,  golV: 3,  exacto: 5,  alargue: 0,  penales: 0  },
+  "16avos":  { signo: 3,  golL: 3,  golV: 3,  exacto: 5,  alargue: 3,  penales: 3  },
+  octavos:   { signo: 3,  golL: 3,  golV: 3,  exacto: 5,  alargue: 3,  penales: 3  },
+  cuartos:   { signo: 3,  golL: 3,  golV: 3,  exacto: 5,  alargue: 3,  penales: 3  },
+  semis:     { signo: 3,  golL: 3,  golV: 3,  exacto: 5,  alargue: 3,  penales: 3  },
+  "3er":     { signo: 3,  golL: 3,  golV: 3,  exacto: 5,  alargue: 3,  penales: 3  },
+  final:     { signo: 3,  golL: 3,  golV: 3,  exacto: 5,  alargue: 3,  penales: 3  },
 };
 
 // ─── CÁLCULO DE PUNTOS ───
@@ -215,39 +187,72 @@ export function calcularPuntos(pred, resultado) {
   const pts = PUNTOS[fase];
   let total = 0;
 
+  // ══ CAPA 1: SIGNO (90') ═══
   const signoR = rL > rV ? "L" : rL < rV ? "V" : "E";
   const signoP = pL > pV ? "L" : pL < pV ? "V" : "E";
   if (signoP === signoR) total += pts.signo;
 
+  // ══ CAPA 2: GOLES EXACTOS (90') ═══
   if (pL === rL) total += pts.golL;
   if (pV === rV) total += pts.golV;
 
+  // ═══ CAPA 3: RESULTADO EXACTO (90') ═══
   if (pL === rL && pV === rV) total += pts.exacto;
 
+  // ═══ CAPA 4 y 5: ELIMINATORIAS - ALARGUE Y PENALES ═══
+  // Solo si hubo empate en 90' y es fase eliminatoria
   if (fase !== "grupos" && signoP === "E" && signoR === "E") {
+    
+    // ── ALARGUE ──
     const pAL = pred.alargue_local !== null && pred.alargue_local !== undefined ? parseInt(pred.alargue_local) : null;
     const pAV = pred.alargue_visit !== null && pred.alargue_visit !== undefined ? parseInt(pred.alargue_visit) : null;
     const rAL = resultado.alargue_local !== null && resultado.alargue_local !== undefined ? parseInt(resultado.alargue_local) : null;
     const rAV = resultado.alargue_visit !== null && resultado.alargue_visit !== undefined ? parseInt(resultado.alargue_visit) : null;
 
+    // Si ambos tienen datos de alargue
     if (pAL !== null && pAV !== null && rAL !== null && rAV !== null) {
+      
+      // CAPA 4a: Signo del alargue
       const signoAlR = rAL > rAV ? "L" : rAL < rAV ? "V" : "E";
       const signoAlP = pAL > pAV ? "L" : pAL < pAV ? "V" : "E";
       
       if (signoAlP === signoAlR) {
-        total += pts.alargue;
+        total += pts.alargue; // 3 pts
+      }
+      
+      // CAPA 4b: Goles exactos del alargue
+      if (pAL === rAL) total += pts.golL; // 3 pts
+      if (pAV === rAV) total += pts.golV; // 3 pts
+      
+      // CAPA 4c: Resultado exacto del alargue
+      if (pAL === rAL && pAV === rAV) {
+        total += pts.exacto; // 5 pts
         
-        if (pAL === rAL && pAV === rAV) {
+        // ── PENALES (solo si el alargue también fue empate) ──
+        if (signoAlR === "E") {
           const pPL = pred.penales_local !== null && pred.penales_local !== undefined ? parseInt(pred.penales_local) : null;
           const pPV = pred.penales_visit !== null && pred.penales_visit !== undefined ? parseInt(pred.penales_visit) : null;
           const rPL = resultado.penales_local !== null && resultado.penales_local !== undefined ? parseInt(resultado.penales_local) : null;
           const rPV = resultado.penales_visit !== null && resultado.penales_visit !== undefined ? parseInt(resultado.penales_visit) : null;
 
-          if (signoAlR === "E" && pPL !== null && pPV !== null && rPL !== null && rPV !== null) {
+          // Si ambos tienen datos de penales
+          if (pPL !== null && pPV !== null && rPL !== null && rPV !== null) {
+            
+            // CAPA 5a: Signo de penales (quién gana)
             const ganadorPenR = rPL > rPV ? "L" : "V";
             const ganadorPenP = pPL > pPV ? "L" : "V";
+            
             if (ganadorPenP === ganadorPenR) {
-              total += pts.penales;
+              total += pts.penales; // 3 pts
+            }
+            
+            // CAPA 5b: Goles exactos de penales
+            if (pPL === rPL) total += pts.golL; // 3 pts
+            if (pPV === rPV) total += pts.golV; // 3 pts
+            
+            // CAPA 5c: Resultado exacto de penales
+            if (pPL === rPL && pPV === rPV) {
+              total += pts.exacto; // 5 pts
             }
           }
         }
@@ -258,7 +263,7 @@ export function calcularPuntos(pred, resultado) {
   return total;
 }
 
-// ─── PRONÓSTICO DEL CAMPEÓN ───
+// ── PRONÓSTICO DEL CAMPEÓN ──
 export const PUNTOS_CAMPEON_POR_FASE = {
   "pre-inicio":  [100, 80, 60],
   "pre-fecha2":  [90, 70, 50],
