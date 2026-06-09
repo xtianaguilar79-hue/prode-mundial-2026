@@ -1,21 +1,21 @@
 // ═══════════════════════════════════════════════════════
-//  PRODE MUNDIAL 2026 - BASE DE DATOS COMPLETA
+// 🏆 PRODE MUNDIAL 2026 - BASE DE DATOS COMPLETA
 // ═══════════════════════════════════════════════════════
 
 // ─── BANDERAS DE LAS 48 SELECCIONES ───
 export const FLAGS = {
-  "México":"🇽","Sudáfrica":"🇦","Corea del Sur":"🇷","Rep. Checa":"🇿",
-  "Canadá":"🇨🇦","Bosnia-Herzegovina":"🇧🇦","Qatar":"🇶","Suiza":"🇨🇭",
-  "Brasil":"🇧🇷","Marruecos":"🇲🇦","Haití":"🇭","Escocia":"🏴󠁢󠁳󠁴󠁿",
-  "Estados Unidos":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇦🇺","Turquía":"🇷",
-  "Alemania":"🇩🇪","Curazao":"🇼","Costa de Marfil":"🇨🇮","Ecuador":"🇨",
-  "Países Bajos":"🇳🇱","Japón":"🇯🇵","Suecia":"🇸🇪","Túnez":"🇳",
+  "México":"🇲🇽","Sudáfrica":"🇿🇦","Corea del Sur":"🇰🇷","Rep. Checa":"🇨🇿",
+  "Canadá":"🇨","Bosnia-Herzegovina":"🇧🇦","Qatar":"🇶🇦","Suiza":"🇨🇭",
+  "Brasil":"🇧🇷","Marruecos":"🇲🇦","Haití":"🇭🇹","Escocia":"🏴󠁢󠁳󠁣󠁴󠁿",
+  "Estados Unidos":"🇺🇸","Paraguay":"🇵🇾","Australia":"🇦🇺","Turquía":"🇹",
+  "Alemania":"🇩🇪","Curazao":"🇨","Costa de Marfil":"🇨🇮","Ecuador":"🇪",
+  "Países Bajos":"🇳🇱","Japón":"🇯🇵","Suecia":"🇸🇪","Túnez":"🇹",
   "Bélgica":"🇧🇪","Egipto":"🇪🇬","Irán":"🇮🇷","Nueva Zelanda":"🇳🇿",
-  "España":"🇪🇸","Cabo Verde":"🇨🇻","Arabia Saudita":"🇸🇦","Uruguay":"🇺🇾",
-  "Francia":"🇫🇷","Senegal":"🇳","Irak":"🇮🇶","Noruega":"🇳",
+  "España":"🇪","Cabo Verde":"🇻","Arabia Saudita":"🇸🇦","Uruguay":"🇺🇾",
+  "Francia":"🇫","Senegal":"🇳","Irak":"🇮🇶","Noruega":"🇳🇴",
   "Argentina":"🇦","Argelia":"🇩🇿","Austria":"🇦🇹","Jordania":"🇯🇴",
   "Portugal":"🇵🇹","RD Congo":"🇨🇩","Uzbekistán":"🇺🇿","Colombia":"🇨🇴",
-  "Inglaterra":"🏴󠁧󠁥󠁮󠁿","Croacia":"🇭🇷","Ghana":"🇬","Panamá":"🇵🇦",
+  "Inglaterra":"🏴󠁢󠁮󠁿","Croacia":"🇭🇷","Ghana":"🇬🇭","Panamá":"🇵🇦",
 };
 
 export const SELECCIONES = Object.keys(FLAGS);
@@ -145,18 +145,18 @@ export const PARTIDOS_ELIM = [
 
 export const TODOS_PARTIDOS = [...PARTIDOS_GRUPOS, ...PARTIDOS_ELIM];
 
-// ─── SISTEMA DE PUNTOS POR FASE ───
+// ─── SISTEMA DE PUNTOS BALANCEADO (diferencias progresivas) ───
 export const PUNTOS = {
-  grupos:    { signo: 1,  golL: 1,  golV: 1,  exacto: 3,  alargue: 0,  penales: 0  },
-  "16avos":  { signo: 3,  golL: 2,  golV: 2,  exacto: 9,  alargue: 3,  penales: 2  },
-  octavos:   { signo: 6,  golL: 3,  golV: 3,  exacto: 15, alargue: 6,  penales: 3  },
-  cuartos:   { signo: 10, golL: 5,  golV: 5,  exacto: 25, alargue: 10, penales: 5  },
-  semis:     { signo: 15, golL: 7,  golV: 7,  exacto: 40, alargue: 15, penales: 8  },
-  "3er":     { signo: 20, golL: 10, golV: 10, exacto: 50, alargue: 20, penales: 10 },
-  final:     { signo: 30, golL: 15, golV: 15, exacto: 80, alargue: 30, penales: 15 },
+  grupos:    { signo: 2,  golL: 2,  golV: 2,  exacto: 5,  alargue: 2,  penales: 1  },
+  "16avos":  { signo: 3,  golL: 3,  golV: 3,  exacto: 8,  alargue: 3,  penales: 2  },
+  octavos:   { signo: 5,  golL: 4,  golV: 4,  exacto: 12, alargue: 5,  penales: 3  },
+  cuartos:   { signo: 7,  golL: 5,  golV: 5,  exacto: 18, alargue: 7,  penales: 4  },
+  semis:     { signo: 10, golL: 7,  golV: 7,  exacto: 25, alargue: 10, penales: 5  },
+  "3er":     { signo: 12, golL: 8,  golV: 8,  exacto: 30, alargue: 12, penales: 6  },
+  final:     { signo: 15, golL: 10, golV: 10, exacto: 40, alargue: 15, penales: 8  },
 };
 
-// ── CÁLCULO DE PUNTOS (CORREGIDO para marcador real) ───
+// ─── CÁLCULO DE PUNTOS ───
 export function calcularPuntos(pred, resultado) {
   if (!resultado || resultado.local === undefined || pred.local === undefined) return 0;
   
@@ -168,19 +168,19 @@ export function calcularPuntos(pred, resultado) {
   const pts = PUNTOS[fase];
   let total = 0;
 
-  // CAPA 1: Signo (90')
+  // Signo (90')
   const signoR = rL > rV ? "L" : rL < rV ? "V" : "E";
   const signoP = pL > pV ? "L" : pL < pV ? "V" : "E";
   if (signoP === signoR) total += pts.signo;
 
-  // CAPA 2: Goles exactos (90')
+  // Goles exactos
   if (pL === rL) total += pts.golL;
   if (pV === rV) total += pts.golV;
 
-  // CAPA 3: Resultado exacto (90')
+  // Resultado exacto
   if (pL === rL && pV === rV) total += pts.exacto;
 
-  // CAPA 4 y 5: Eliminatorias - Alargue y Penales (solo si hubo empate en 90')
+  // Eliminatorias: alargue y penales
   if (fase !== "grupos" && signoP === "E" && signoR === "E") {
     const pAL = pred.alargue_local !== null && pred.alargue_local !== undefined ? parseInt(pred.alargue_local) : null;
     const pAV = pred.alargue_visit !== null && pred.alargue_visit !== undefined ? parseInt(pred.alargue_visit) : null;
