@@ -1,4 +1,5 @@
 import { supabase } from "./supabase-config.js";
+import { protegerPagina } from "./auth-guard.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, PUNTOS, 
   calcularPuntos, SELECCIONES, obtenerPuntosCampeonDisponibles,
@@ -15,16 +16,26 @@ let resultadoFinal = null;
 let faseActiva = "j1";
 let intervalosCrono = [];
 
-window.addEventListener("usuarioListo", async (e) => {
-  console.log("✅ Usuario listo:", e.detail.perfil.nombre);
-  usuarioId = e.detail.user.uid;
+async function init() {
+  console.log("🚀 Iniciando prode...");
+  
+  const user = await protegerPagina(false);
+  if (!user) {
+    console.error("❌ No se pudo autenticar");
+    return;
+  }
+  
+  console.log("✅ Autenticado como:", user.nombre);
+  usuarioId = user.uid;
   
   await cargarDatos();
   await cargarCampeon();
   renderTabs();
   renderPartidos();
   renderCampeon();
-});
+  
+  console.log("✅ Prode iniciado correctamente");
+}
 
 async function cargarDatos() {
   try {
@@ -138,6 +149,8 @@ function getPartidosFase() {
 }
 
 function renderPartidos() {
+  console.log("⚽ Renderizando partidos, fase:", faseActiva);
+  
   const loader = document.getElementById("partidosLoader");
   const grid = document.getElementById("partidosGrid");
   
@@ -150,6 +163,7 @@ function renderPartidos() {
   grid.style.display = "grid";
 
   const partidos = getPartidosFase();
+  console.log(`📋 Partidos en fase ${faseActiva}:`, partidos.length);
 
   if (partidos.length === 0) {
     grid.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px; grid-column:1/-1;">No hay partidos</p>';
@@ -167,6 +181,8 @@ function renderPartidos() {
       iniciarCronometro(p);
     }
   });
+  
+  console.log("✅ Partidos renderizados");
 }
 
 function iniciarCronometro(partido) {
@@ -441,3 +457,6 @@ function renderCampeon() {
     if (verCamp3) verCamp3.textContent = `${FLAGS[prediccionCampeon.opcion3] || "🏳️"} ${prediccionCampeon.opcion3}`;
   }
 }
+
+// INICIALIZACIÓN
+init();

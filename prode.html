@@ -22,7 +22,7 @@
   <nav class="nav">
     <a href="index.html">🏠 Inicio</a>
     <a href="instructivo.html">📘 Reglamento</a>
-    <a href="index.html#ranking">🏅 Ranking</a>
+    <a href="index.html#ranking"> Ranking</a>
     <a href="admin.html" id="linkAdmin" style="display:none">🔐 Admin</a>
     <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
   </nav>
@@ -105,7 +105,7 @@
           </div>
           <div>
             <label style="display:block; font-size:12px; color:var(--accent); font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
-               Opción 3 — Tercer favorito
+              🥉 Opción 3 — Tercer favorito
             </label>
             <select id="camp3" class="sel" style="width:100%; padding:12px; font-size:14px;">
               <option value="">-- Seleccionar --</option>
@@ -122,7 +122,7 @@
 
       <div id="campeonCerrado" style="display:none">
         <div style="background: var(--red-soft); border: 1px solid var(--red); border-radius: var(--r); padding: 24px; text-align: center;">
-          <div style="font-size: 40px; margin-bottom: 8px;">🔒</div>
+          <div style="font-size: 40px; margin-bottom: 8px;"></div>
           <div style="color: var(--red); font-weight: 700; font-size: 16px;">El pronóstico del campeón está cerrado</div>
           <div style="color: var(--text2); font-size: 13px; margin-top: 6px;">Ya no se puede pronosticar al campeón</div>
         </div>
@@ -135,7 +135,7 @@
           </div>
           <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:12px;">
             <div style="background:var(--bg); padding:14px 8px; border-radius:var(--r-sm); border:1px solid var(--border);">
-              <div style="font-size:32px;">🥇</div>
+              <div style="font-size:32px;"></div>
               <div id="verCamp1" style="font-size:15px; font-weight:700; margin-top:6px; color:var(--text);">—</div>
               <div id="verCamp1Pts" style="font-size:11px; color:var(--text2); margin-top:4px;">—</div>
             </div>
@@ -173,9 +173,8 @@
 </main>
 
 <script type="module">
-  import { protegerPagina, cerrarSesion } from "./js/auth-guard.js";
+  import { cerrarSesion } from "./js/auth-guard.js";
   window.cerrarSesion = cerrarSesion;
-  protegerPagina(false);
 </script>
 <script type="module" src="./js/app-prode.js"></script>
 </body>

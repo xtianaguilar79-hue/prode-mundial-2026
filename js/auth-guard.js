@@ -3,7 +3,6 @@ import { supabase, ADMIN_EMAIL } from "./supabase-config.js";
 let usuarioGuardado = null;
 
 export async function protegerPagina(requiereAdmin = false) {
-  // Si ya está protegido, retornar cacheado
   if (usuarioGuardado) return usuarioGuardado;
 
   try {
@@ -33,7 +32,6 @@ export async function protegerPagina(requiereAdmin = false) {
       return null;
     }
 
-    // Guardar en variables globales
     usuarioGuardado = {
       uid: usuario.id,
       id: usuario.id,
@@ -43,7 +41,6 @@ export async function protegerPagina(requiereAdmin = false) {
       es_admin: usuario.es_admin
     };
 
-    // Actualizar UI
     const userNameEl = document.getElementById("userName");
     if (userNameEl) userNameEl.textContent = usuario.nombre;
 
