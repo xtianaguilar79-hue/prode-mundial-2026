@@ -4,7 +4,6 @@ import {
   calcularPuntos, SELECCIONES, obtenerPuntosCampeonDisponibles,
   calcularPuntosCampeon, msHastaBloqueo, formatearTiempo, partidoBloqueado
 } from "../datos-partidos.js";
-import { obtenerPartidosConEquiposReales, tieneEquiposReales } from "./clasificaciones.js";
 
 console.log("📋 app-prode.js cargado");
 
@@ -16,6 +15,7 @@ let resultadoFinal = null;
 let faseActiva = "j1";
 let intervalosCrono = [];
 let partidosConEquiposReales = TODOS_PARTIDOS;
+let clasificacionesModule = null;
 
 // ═══════════════════════════════════════════════════════
 // INICIALIZACIÓN
@@ -28,17 +28,19 @@ async function init() {
     const { data: { session }, error } = await supabase.auth.getSession();
     
     if (error || !session) {
+      console.log("⚠️ No hay sesión");
       window.location.href = "login.html";
       return;
     }
 
-    const { data: usuario } = await supabase
+    const { data: usuario, error: userError } = await supabase
       .from('usuarios')
       .select('*')
       .eq('id', session.user.id)
       .single();
 
-    if (!usuario) {
+    if (userError || !usuario) {
+      console.error("❌ No se encontró el perfil:", userError);
       window.location.href = "login.html";
       return;
     }
@@ -56,9 +58,16 @@ async function init() {
       if (linkAdmin) linkAdmin.style.display = "inline-block";
     }
 
-    // Cargar equipos reales de eliminatorias
-    partidosConEquiposReales = await obtenerPartidosConEquiposReales();
-    console.log("✅ Equipos reales cargados");
+    // Intentar cargar clasificaciones (no crítico)
+    try {
+      const module = await import("./clasificaciones.js");
+      clasificacionesModule = module;
+      partidosConEquiposReales = await module.obtenerPartidosConEquiposReales();
+      console.log("✅ Equipos reales cargados");
+    } catch (clasErr) {
+      console.warn("⚠️ No se pudo cargar clasificaciones, usando valores por defecto:", clasErr.message);
+      partidosConEquiposReales = TODOS_PARTIDOS;
+    }
 
     await cargarDatos();
     await cargarCampeon();
@@ -69,6 +78,7 @@ async function init() {
     console.log("✅ Prode iniciado correctamente");
   } catch (err) {
     console.error("❌ Error en init:", err);
+    alert("Error al iniciar: " + err.message);
   }
 }
 
@@ -78,25 +88,43 @@ async function init() {
 
 async function cargarDatos() {
   try {
-    const { data: predsData } = await supabase
+    console.log("📥 Cargando predicciones...");
+    const { data: predsData, error: predsError } = await supabase
       .from('predicciones')
       .select('*')
       .eq('user_id', usuarioId);
 
-    predicciones = {};
-    if (predsData) predsData.forEach(p => { predicciones[p.partido_id] = p; });
+    if (predsError) {
+      console.error("❌ Error cargando predicciones:", predsError);
+      return;
+    }
 
-    const { data: resData } = await supabase
+    predicciones = {};
+    if (predsData) {
+      predsData.forEach(p => { predicciones[p.partido_id] = p; });
+      console.log(`✅ ${predsData.length} predicciones cargadas`);
+    }
+
+    console.log("📥 Cargando resultados...");
+    const { data: resData, error: resError } = await supabase
       .from('resultados')
       .select('*')
       .eq('es_prueba', false);
 
+    if (resError) {
+      console.error("❌ Error cargando resultados:", resError);
+      return;
+    }
+
     resultados = {};
-    if (resData) resData.forEach(r => { resultados[r.partido_id] = r; });
+    if (resData) {
+      resData.forEach(r => { resultados[r.partido_id] = r; });
+      console.log(`✅ ${resData.length} resultados cargados`);
+    }
 
     actualizarStats();
   } catch (err) {
-    console.error("Error cargando datos:", err);
+    console.error("❌ Error en cargarDatos:", err);
   }
 }
 
@@ -196,9 +224,13 @@ function getPartidosFase() {
     partidos = PARTIDOS_ELIM.filter(p => p.fase === faseActiva);
   }
   
-  // Para eliminatorias, solo mostrar partidos con equipos reales
-  if (!faseActiva.startsWith("j")) {
-    partidos = partidos.filter(p => tieneEquiposReales(p));
+  // Para eliminatorias, filtrar solo partidos con equipos reales
+  if (!faseActiva.startsWith("j") && clasificacionesModule) {
+    try {
+      partidos = partidos.filter(p => clasificacionesModule.tieneEquiposReales(p));
+    } catch (err) {
+      console.error("Error filtrando partidos:", err);
+    }
   }
   
   return partidos;
@@ -226,7 +258,7 @@ function renderPartidos() {
   console.log(`📋 Partidos en fase ${faseActiva}:`, partidos.length);
 
   if (partidos.length === 0) {
-    grid.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px; grid-column:1/-1;">No hay partidos disponibles en esta fase aún. Esperá a que se definan los equipos clasificados.</p>';
+    grid.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px; grid-column:1/-1;">No hay partidos disponibles en esta fase aún.</p>';
     return;
   }
 
@@ -422,7 +454,6 @@ async function guardarPrediccion(id) {
     return;
   }
 
-  // Usar nombres reales para el mensaje de confirmación
   const partidoReal = partidosConEquiposReales.find(x => x.id === id) || p;
 
   if (!confirm(`¿Confirmás tu pronóstico?\n\n${partidoReal.local} ${gL} - ${gV} ${partidoReal.visit}\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
@@ -430,10 +461,7 @@ async function guardarPrediccion(id) {
   }
 
   const esElim = !p.j || p.fase;
-  let alargueLocal = null;
-  let alargueVisit = null;
-  let penalesLocal = null;
-  let penalesVisit = null;
+  let alargueLocal = null, alargueVisit = null, penalesLocal = null, penalesVisit = null;
 
   if (esElim && parseInt(gL) === parseInt(gV)) {
     const alL = document.getElementById("alL-" + id)?.value;
@@ -674,11 +702,8 @@ async function guardarCampeon() {
     if (error) throw error;
 
     prediccionCampeon = { 
-      opcion1: v1, 
-      opcion2: v2, 
-      opcion3: v3, 
-      bloqueado: true, 
-      puntos_otorgados: pts,
+      opcion1: v1, opcion2: v2, opcion3: v3, 
+      bloqueado: true, puntos_otorgados: pts,
       fase_al_pronunciar: info.fase
     };
     
