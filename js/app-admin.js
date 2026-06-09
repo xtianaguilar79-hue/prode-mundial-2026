@@ -1,7 +1,7 @@
 import { supabase } from "./supabase-config.js";
-import { protegerPagina } from "./auth-guard.js";
 import { 
-  TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, SELECCIONES
+  TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, SELECCIONES,
+  getKickoffTimestamp
 } from "../datos-partidos.js";
 
 console.log("📋 app-admin.js cargado");
@@ -9,27 +9,52 @@ console.log("📋 app-admin.js cargado");
 let faseActiva = "todos";
 let resultados = {};
 
+// ═══════════════════════════════════════════════════════
+// INICIALIZACIÓN
+// ═══════════════════════════════════════════════════════
+
 async function init() {
   console.log("🚀 Iniciando admin...");
   
-  // 1. Proteger página (espera la autenticación)
-  const user = await protegerPagina(true);
-  if (!user) {
-    console.error(" No se pudo autenticar");
-    return;
+  try {
+    const { data: { session }, error } = await supabase.auth.getSession();
+    
+    if (error || !session) {
+      console.log("⚠️ No hay sesión");
+      window.location.href = "login.html";
+      return;
+    }
+
+    const { data: usuario } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id', session.user.id)
+      .single();
+
+    if (!usuario) {
+      window.location.href = "login.html";
+      return;
+    }
+
+    const userNameEl = document.getElementById("userName");
+    if (userNameEl) userNameEl.textContent = usuario.nombre;
+
+    if (usuario.es_admin) {
+      const adminTag = document.getElementById("adminTag");
+      if (adminTag) adminTag.style.display = "inline";
+      const linkAdmin = document.getElementById("linkAdmin");
+      if (linkAdmin) linkAdmin.style.display = "inline-block";
+    }
+
+    await cargarResultados();
+    renderTabs();
+    renderPartidos();
+    cargarCampeonReal();
+    
+    console.log("✅ Admin iniciado");
+  } catch (err) {
+    console.error("❌ Error en init:", err);
   }
-  
-  console.log("✅ Autenticado como:", user.nombre);
-  
-  // 2. Cargar datos
-  await cargarResultados();
-  
-  // 3. Renderizar UI
-  renderTabs();
-  renderPartidos();
-  cargarCampeonReal();
-  
-  console.log("✅ Admin iniciado correctamente");
 }
 
 async function cargarResultados() {
@@ -38,25 +63,23 @@ async function cargarResultados() {
     if (error) throw error;
     
     resultados = {};
-    if (data) {
-      data.forEach(r => { resultados[r.partido_id] = r; });
-    }
+    if (data) data.forEach(r => { resultados[r.partido_id] = r; });
     console.log("✅ Resultados cargados:", Object.keys(resultados).length);
   } catch (err) {
     console.error("❌ Error cargando resultados:", err);
   }
 }
 
+// ═══════════════════════════════════════════════════════
+// TABS Y FILTRADO
+// ═══════════════════════════════════════════════════════
+
 function renderTabs() {
-  console.log("📑 Renderizando tabs...");
   const tabsContainer = document.getElementById("faseTabs");
-  if (!tabsContainer) {
-    console.error(" No se encontró #faseTabs");
-    return;
-  }
+  if (!tabsContainer) return;
 
   const tabs = [
-    { id: "todos", label: "📋 Todos los partidos" },
+    { id: "todos", label: "📋 Todos" },
     { id: "j1", label: "Fecha 1" },
     { id: "j2", label: "Fecha 2" },
     { id: "j3", label: "Fecha 3" },
@@ -65,7 +88,7 @@ function renderTabs() {
     { id: "cuartos", label: "Cuartos" },
     { id: "semis", label: "Semis" },
     { id: "3er", label: "3er Puesto" },
-    { id: "final", label: "Final 🏆" },
+    { id: "final", label: "Final " },
   ];
 
   tabsContainer.innerHTML = tabs.map(t => `
@@ -81,14 +104,10 @@ function renderTabs() {
       renderPartidos();
     };
   });
-  
-  console.log("✅ Tabs renderizadas");
 }
 
 function getPartidosFase() {
-  if (faseActiva === "todos") {
-    return TODOS_PARTIDOS;
-  }
+  if (faseActiva === "todos") return TODOS_PARTIDOS;
   if (faseActiva.startsWith("j")) {
     const j = parseInt(faseActiva[1]);
     return PARTIDOS_GRUPOS.filter(p => p.j === j);
@@ -96,11 +115,18 @@ function getPartidosFase() {
   return PARTIDOS_ELIM.filter(p => p.fase === faseActiva);
 }
 
+// ═══════════════════════════════════════════════════════
+// RENDERIZADO DE PARTIDOS
+// ═══════════════════════════════════════════════════════
+
 function renderPartidoCard(p) {
   const res = resultados[p.id];
   const flagL = FLAGS[p.local] || "🏳️";
-  const flagV = FLAGS[p.visit] || "️";
+  const flagV = FLAGS[p.visit] || "🏳️";
   const esElim = !p.j || p.fase;
+  
+  // Estado manual (de la base de datos) o automático por horario
+  const estado = res?.estado || 'proximo';
   
   let showAlargue = false;
   let showPenales = false;
@@ -115,13 +141,43 @@ function renderPartidoCard(p) {
     }
   }
   
+  // Badges y estilos según estado
+  let estadoBadge = "";
+  let estiloCard = "";
+  let botonesEstado = "";
+  
+  if (estado === "vivo") {
+    estadoBadge = `<span style="background:var(--gold); color:#000; padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700;">🔴 EN JUEGO</span>`;
+    estiloCard = "border: 2px solid var(--gold); box-shadow: 0 0 20px rgba(255, 201, 60, 0.3);";
+    botonesEstado = `
+      <button class="btn-estado btn-finalizar" data-id="${p.id}" style="padding:6px 12px; background:var(--green); color:#fff; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px;">
+        ✅ Marcar FINALIZADO
+      </button>
+    `;
+  } else if (estado === "finalizado") {
+    estadoBadge = `<span style="background:var(--green-soft); color:var(--green); padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700;">✅ FINALIZADO</span>`;
+    botonesEstado = `
+      <button class="btn-estado btn-vivo" data-id="${p.id}" style="padding:6px 12px; background:var(--gold); color:#000; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px;">
+        🔄 Marcar EN JUEGO
+      </button>
+    `;
+  } else {
+    estadoBadge = `<span style="background:var(--bg2); color:var(--text2); padding:3px 10px; border-radius:10px; font-size:10px;">⏳ PRÓXIMO</span>`;
+    botonesEstado = `
+      <button class="btn-estado btn-vivo" data-id="${p.id}" style="padding:6px 12px; background:var(--gold); color:#000; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px;">
+        ▶️ Marcar EN JUEGO
+      </button>
+    `;
+  }
+  
   return `
-    <div class="partido-card admin">
+    <div class="partido-card admin" style="${estiloCard}">
       <div class="partido-meta">
         <span class="badge badge-id">${p.id}</span>
         ${p.grupo ? `<span class="badge badge-grupo">Grupo ${p.grupo}</span>` : ""}
         ${p.fase ? `<span class="badge badge-grupo">${p.fase.toUpperCase()}</span>` : ""}
-        <span class="badge badge-fecha">${p.fecha} · ${p.hora} ARG ·  ${p.sede}</span>
+        ${estadoBadge}
+        <span class="badge badge-fecha">${p.fecha} · ${p.hora} ARG · 📍 ${p.sede}</span>
       </div>
 
       <div class="partido-equipos">
@@ -158,26 +214,24 @@ function renderPartidoCard(p) {
         </div>
       </div>
 
-      <div class="partido-footer">
+      <div class="partido-footer" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <button class="btn-guardar btn-res" data-id="${p.id}" style="padding:8px 16px;">
-          ${res ? "✓ Actualizar" : "💾 Cargar resultado"}
+          ${res ? "✓ Actualizar resultado" : "💾 Cargar resultado"}
         </button>
-        ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px; margin-left:8px;">️ Borrar</button>` : ""}
+        ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px;">️ Borrar</button>` : ""}
+        <div style="margin-left:auto; display:flex; gap:6px;">
+          ${botonesEstado}
+        </div>
       </div>
     </div>
   `;
 }
 
 function renderPartidos() {
-  console.log("⚽ Renderizando partidos, fase:", faseActiva);
   const cont = document.getElementById("partidosAdmin");
-  if (!cont) {
-    console.error("❌ No se encontró #partidosAdmin");
-    return;
-  }
+  if (!cont) return;
   
   const partidos = getPartidosFase();
-  console.log(`📋 Cantidad de partidos: ${partidos.length}`);
   
   if (partidos.length === 0) {
     cont.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px;">No hay partidos</p>';
@@ -185,7 +239,6 @@ function renderPartidos() {
   }
   
   if (faseActiva === "todos") {
-    // Agrupar por fecha
     const porFecha = {};
     partidos.forEach(p => {
       const key = `${p.fecha} - ${p.hora}`;
@@ -206,11 +259,9 @@ function renderPartidos() {
     let html = "";
     fechasOrdenadas.forEach(fecha => {
       const partidosDeFecha = porFecha[fecha];
-      html += `<h3 style="color:var(--gold); margin:24px 0 16px; font-family:'Anton'; font-size:18px;">📅 ${fecha} (${partidosDeFecha.length} partidos)</h3>`;
+      html += `<h3 style="color:var(--gold); margin:24px 0 16px; font-family:'Anton'; font-size:18px;"> ${fecha} (${partidosDeFecha.length} partidos)</h3>`;
       html += `<div style="display:grid; gap:12px;">`;
-      partidosDeFecha.forEach(p => {
-        html += renderPartidoCard(p);
-      });
+      partidosDeFecha.forEach(p => { html += renderPartidoCard(p); });
       html += `</div>`;
     });
     
@@ -221,7 +272,7 @@ function renderPartidos() {
       `</div>`;
   }
 
-  // Event listeners
+  // Event listeners para guardar/borrar resultados
   cont.querySelectorAll(".btn-res").forEach(btn => {
     btn.onclick = () => guardarResultado(btn.dataset.id);
   });
@@ -230,6 +281,16 @@ function renderPartidos() {
     btn.onclick = () => borrarResultado(btn.dataset.borrar);
   });
 
+  // Event listeners para cambiar estado (EN JUEGO / FINALIZADO)
+  cont.querySelectorAll(".btn-vivo").forEach(btn => {
+    btn.onclick = () => cambiarEstado(btn.dataset.id, "vivo");
+  });
+  
+  cont.querySelectorAll(".btn-finalizar").forEach(btn => {
+    btn.onclick = () => cambiarEstado(btn.dataset.id, "finalizado");
+  });
+
+  // Event listeners para inputs de alargue/penales
   cont.querySelectorAll(".score-in").forEach(input => {
     input.addEventListener("input", (e) => {
       const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "");
@@ -258,8 +319,44 @@ function renderPartidos() {
       }
     });
   });
-  
-  console.log("✅ Partidos renderizados");
+}
+
+// ══════════════════════════════════════════════════════
+// ACCIONES DE BASE DE DATOS
+// ═══════════════════════════════════════════════════════
+
+async function cambiarEstado(id, nuevoEstado) {
+  const p = TODOS_PARTIDOS.find(x => x.id === id);
+  if (!p) return;
+
+  try {
+    if (!resultados[id]) {
+      const { error } = await supabase.from('resultados').insert({
+        id: id,
+        partido_id: id,
+        local: null,
+        visit: null,
+        estado: nuevoEstado,
+        es_prueba: false
+      });
+      if (error) throw error;
+    } else {
+      const { error } = await supabase
+        .from('resultados')
+        .update({ estado: nuevoEstado })
+        .eq('id', id);
+      if (error) throw error;
+    }
+
+    const mensaje = nuevoEstado === "vivo" ? "🔴 Partido marcado como EN JUEGO" : "✅ Partido marcado como FINALIZADO";
+    mostrarMensaje(mensaje, "ok");
+    
+    await cargarResultados();
+    renderPartidos();
+  } catch (err) {
+    console.error(err);
+    mostrarMensaje("❌ Error: " + err.message, "error");
+  }
 }
 
 async function guardarResultado(id) {
@@ -275,10 +372,7 @@ async function guardarResultado(id) {
   }
 
   const esElim = !p.j || p.fase;
-  let alargueLocal = null;
-  let alargueVisit = null;
-  let penalesLocal = null;
-  let penalesVisit = null;
+  let alargueLocal = null, alargueVisit = null, penalesLocal = null, penalesVisit = null;
 
   if (esElim && parseInt(gL) === parseInt(gV)) {
     const alL = document.getElementById("alL-" + id)?.value;
@@ -320,6 +414,7 @@ async function guardarResultado(id) {
     alargue_visit: alargueVisit,
     penales_local: penalesLocal,
     penales_visit: penalesVisit,
+    estado: "finalizado",
     es_prueba: false
   };
 
@@ -327,7 +422,7 @@ async function guardarResultado(id) {
     const { error } = await supabase.from('resultados').upsert(datos, { onConflict: 'id' });
     if (error) throw error;
 
-    mostrarMensaje("✅ Resultado guardado", "ok");
+    mostrarMensaje("✅ Resultado guardado y marcado como FINALIZADO", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
@@ -349,6 +444,76 @@ async function borrarResultado(id) {
   }
 }
 
+// ═══════════════════════════════════════════════════════
+// ACTUALIZACIÓN AUTOMÁTICA DE EQUIPOS (16AVOS)
+// ═══════════════════════════════════════════════════════
+
+window.actualizarEquipos = async () => {
+  if (!confirm("¿Actualizar los equipos de las fases eliminatorias?\n\nSe calcularán los clasificados de la fase de grupos y se guardarán en la base de datos.")) return;
+
+  try {
+    const { data: resData } = await supabase.from('resultados').select('*');
+    const resultadosTemp = {};
+    if (resData) resData.forEach(r => { resultadosTemp[r.partido_id] = r; });
+
+    const partidosJugados = PARTIDOS_GRUPOS.filter(p => resultadosTemp[p.id]).length;
+    
+    if (partidosJugados < PARTIDOS_GRUPOS.length) {
+      alert(`⚠️ La fase de grupos no está completa. Faltan ${PARTIDOS_GRUPOS.length - partidosJugados} partidos.`);
+      return;
+    }
+
+    const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+    const clasificados = {};
+
+    GRUPOS.forEach(grupo => {
+      const partidosGrupo = PARTIDOS_GRUPOS.filter(p => p.grupo === grupo);
+      const tabla = {};
+
+      partidosGrupo.forEach(p => {
+        if (!tabla[p.local]) tabla[p.local] = { equipo: p.local, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, pts: 0 };
+        if (!tabla[p.visit]) tabla[p.visit] = { equipo: p.visit, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, pts: 0 };
+
+        const res = resultadosTemp[p.id];
+        if (res) {
+          const l = tabla[p.local], v = tabla[p.visit];
+          const gL = parseInt(res.local), gV = parseInt(res.visit);
+          l.pj++; v.pj++;
+          l.gf += gL; l.gc += gV;
+          v.gf += gV; v.gc += gL;
+          if (gL > gV) { l.pg++; l.pts += 3; v.pp++; }
+          else if (gL < gV) { v.pg++; v.pts += 3; l.pp++; }
+          else { l.pe++; v.pe++; l.pts += 1; v.pts += 1; }
+        }
+      });
+
+      Object.values(tabla).forEach(t => { t.dg = t.gf - t.gc; });
+      const ordenados = Object.values(tabla).sort((a, b) => b.pts - a.pts || b.dg - a.dg || b.gf - a.gf);
+      
+      if (ordenados[0]) clasificados[`1°${grupo}`] = ordenados[0].equipo;
+      if (ordenados[1]) clasificados[`2°${grupo}`] = ordenados[1].equipo;
+    });
+
+    const registros = Object.entries(clasificados).map(([posicion, equipo]) => ({
+      posicion,
+      equipo,
+      grupo: posicion.slice(-1)
+    }));
+
+    const { error } = await supabase.from('clasificados').upsert(registros, { onConflict: 'posicion' });
+    if (error) throw error;
+
+    alert("✅ Equipos de 16avos actualizados correctamente en la base de datos");
+  } catch (err) {
+    console.error(err);
+    alert("❌ Error: " + err.message);
+  }
+};
+
+// ═══════════════════════════════════════════════════════
+// OTRAS ACCIONES DE ADMIN
+// ═══════════════════════════════════════════════════════
+
 window.generarPrueba = async () => {
   if (!confirm("¿Generar resultados de PRUEBA?\n\n⚠️ Los usuarios NO los verán")) return;
 
@@ -362,6 +527,7 @@ window.generarPrueba = async () => {
       alargue_visit: null,
       penales_local: null,
       penales_visit: null,
+      estado: "finalizado",
       es_prueba: true
     }));
 
@@ -383,6 +549,27 @@ window.limpiarPrueba = async () => {
     await cargarResultados();
     renderPartidos();
   } catch (err) {
+    mostrarMensaje(" Error: " + err.message, "error");
+  }
+};
+
+window.borrarMisPronosticos = async () => {
+  if (!confirm("¿Borrar TODOS tus pronósticos?\n\nEsta acción no se puede deshacer.")) return;
+  if (!confirm("¿ESTÁS SEGURO? Se borrarán todos tus pronósticos.")) return;
+
+  try {
+    const { data: { session } } = await supabase.auth.getSession();
+    const { error } = await supabase
+      .from('predicciones')
+      .delete()
+      .eq('user_id', session.user.id);
+
+    if (error) throw error;
+
+    mostrarMensaje("🗑️ Tus pronósticos fueron borrados", "ok");
+    setTimeout(() => location.reload(), 1500);
+  } catch (err) {
+    console.error(err);
     mostrarMensaje("❌ Error: " + err.message, "error");
   }
 };
@@ -398,7 +585,7 @@ window.reiniciar = async () => {
     await supabase.from('config').delete().neq('id', '');
     await supabase.from('clasificados').delete().neq('posicion', '');
 
-    mostrarMensaje("️ Prode reiniciado", "ok");
+    mostrarMensaje("⚠️ Prode reiniciado", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
@@ -420,10 +607,6 @@ window.guardarCampeonReal = async () => {
   } catch (err) {
     mostrarMensaje("❌ Error: " + err.message, "error");
   }
-};
-
-window.actualizarEquipos = async () => {
-  alert("Función temporalmente deshabilitada. Se implementará después del Mundial.");
 };
 
 async function cargarCampeonReal() {
@@ -449,5 +632,8 @@ function mostrarMensaje(msg, tipo) {
   setTimeout(() => { el.style.display = "none"; }, 4000);
 }
 
-// INICIALIZACIÓN DIRECTA - SIN EVENTOS
+// ═══════════════════════════════════════════════════════
+// INICIAR
+// ═══════════════════════════════════════════════════════
+
 init();
