@@ -6,54 +6,77 @@
 
 // ─── BANDERAS DE LAS 48 SELECCIONES (VERIFICADAS Y CORRECTAS) ───
 export const FLAGS = {
-  "México": "🇲🇽",
-  "Sudáfrica": "🇿🇦",
-  "Corea del Sur": "🇰🇷",
-  "Rep. Checa": "🇨🇿",
-  "Canadá": "🇨🇦",
-  "Bosnia-Herzegovina": "🇧🇦",
-  "Qatar": "🇶🇦",
-  "Suiza": "🇨🇭",
-  "Brasil": "🇧",
-  "Marruecos": "🇦",
-  "Haití": "🇭🇹",
-  "Escocia": "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
-  "Estados Unidos": "🇺🇸",
-  "Paraguay": "🇵",
-  "Australia": "🇦",
-  "Turquía": "🇷",
-  "Alemania": "🇩🇪",
-  "Curazao": "🇨🇼",
-  "Costa de Marfil": "🇨🇮",
-  "Ecuador": "🇪🇨",
-  "Países Bajos": "🇳🇱",
-  "Japón": "🇯",
-  "Suecia": "🇪",
-  "Túnez": "🇹🇳",
-  "Bélgica": "🇧🇪",
-  "Egipto": "🇪",
-  "Irán": "🇷",
-  "Nueva Zelanda": "🇳🇿",
-  "España": "🇪🇸",
-  "Cabo Verde": "🇨🇻",
-  "Arabia Saudita": "🇦",
-  "Uruguay": "🇺🇾",
-  "Francia": "🇫🇷",
-  "Senegal": "🇸🇳",
-  "Irak": "🇮🇶",
-  "Noruega": "🇳🇴",
-  "Argentina": "🇦🇷",
-  "Argelia": "🇿",
-  "Austria": "🇦🇹",
-  "Jordania": "🇯🇴",
-  "Portugal": "🇵🇹",
-  "RD Congo": "🇨",
-  "Uzbekistán": "🇿",
-  "Colombia": "🇨🇴",
-  "Inglaterra": "🏴󠁧󠁥󠁮󠁿",
-  "Croacia": "🇭🇷",
-  "Ghana": "🇬🇭",
-  "Panamá": "🇵🇦",
+  // GRUPO A
+  "México":               "🇲🇽",
+  "Sudáfrica":            "🇿🇦",
+  "Corea del Sur":        "🇰🇷",
+  "República Checa":      "🇨🇿",
+ 
+  // GRUPO B
+  "Canadá":               "🇨🇦",
+  "Bosnia-Herzegovina":   "🇧🇦",
+  "Qatar":                "🇶🇦",
+  "Suiza":                "🇨🇭",
+ 
+  // GRUPO C
+  "Brasil":               "🇧🇷",
+  "Marruecos":            "🇲🇦",
+  "Haití":                "🇭🇹",
+  "Escocia":              "🏴󠁧󠁢󠁳󠁣󠁴󠁿",
+ 
+  // GRUPO D
+  "Estados Unidos":       "🇺🇸",
+  "Paraguay":             "🇵🇾",
+  "Australia":            "🇦🇺",
+  "Turquía":              "🇹🇷",
+ 
+  // GRUPO E
+  "Alemania":             "🇩🇪",
+  "Curazao":              "🇨🇼",
+  "Costa de Marfil":      "🇨🇮",
+  "Ecuador":              "🇪🇨",
+ 
+  // GRUPO F
+  "Países Bajos":         "🇳🇱",
+  "Japón":                "🇯🇵",
+  "Suecia":               "🇸🇪",
+  "Túnez":                "🇹🇳",
+ 
+  // GRUPO G
+  "Bélgica":              "🇧🇪",
+  "Egipto":               "🇪🇬",
+  "Irán":                 "🇮🇷",
+  "Nueva Zelanda":        "🇳🇿",
+ 
+  // GRUPO H
+  "España":               "🇪🇸",
+  "Cabo Verde":           "🇨🇻",
+  "Arabia Saudita":       "🇸🇦",
+  "Uruguay":              "🇺🇾",
+ 
+  // GRUPO I
+  "Francia":              "🇫🇷",
+  "Senegal":              "🇸🇳",
+  "Irak":                 "🇮🇶",
+  "Noruega":              "🇳🇴",
+ 
+  // GRUPO J
+  "Argentina":            "🇦🇷",
+  "Argelia":              "🇩🇿",
+  "Austria":              "🇦🇹",
+  "Jordania":             "🇯🇴",
+ 
+  // GRUPO K
+  "Portugal":             "🇵🇹",
+  "RD Congo":             "🇨🇩",
+  "Uzbekistán":           "🇺🇿",
+  "Colombia":             "🇨🇴",
+ 
+  // GRUPO L
+  "Inglaterra":           "🏴󠁧󠁢󠁥󠁮󠁧󠁿",
+  "Croacia":              "🇭🇷",
+  "Ghana":                "🇬🇭",
+  "Panamá":               "🇵🇦",
 };
 
 export const SELECCIONES = Object.keys(FLAGS);
