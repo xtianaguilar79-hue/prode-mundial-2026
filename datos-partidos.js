@@ -10,7 +10,7 @@ export const FLAGS = {
   "México":               "🇲🇽",
   "Sudáfrica":            "🇿🇦",
   "Corea del Sur":        "🇰🇷",
-  "República Checa":     "🇨🇿",
+  "Rep. Checa": "🇨🇿",
  
   // GRUPO B
   "Canadá":               "🇨🇦",
