@@ -98,11 +98,11 @@
         </label>
         <div id="gruposList" class="grupos-list"></div>
         <div class="grupo-input-row">
-          <input type="text" id="grupoInput" placeholder="Ej: Empresa X, Colegio Y, Amigos del barrio">
+          <input type="text" id="grupoInput" placeholder="Ej: Empresa X, Colegio Y">
           <button type="button" id="btnAgregarGrupo">+ Agregar</button>
         </div>
         <div class="grupo-hint">
-          💡 Podés agregar varios grupos. Competirás en el ranking general y también contra los miembros de cada grupo.
+          💡 Podés agregar varios grupos para competir en rankings paralelos.
         </div>
       </div>
 
@@ -119,7 +119,7 @@
     </p>
 
     <p style="margin-top:8px; font-size:12px">
-      <a href="instructivo.html">📘 Leer reglamento completo</a>
+      <a href="instructivo.html"> Leer reglamento completo</a>
     </p>
 
     <p style="margin-top:8px; font-size:12px">
@@ -136,11 +136,12 @@
 
   const $ = id => document.getElementById(id);
 
-  console.log("🔥 Supabase inicializado");
+  console.log("🔥 Login inicializado");
 
   // Verificar si ya está logueado
   const { data: { session } } = await supabase.auth.getSession();
   if (session) {
+    console.log("✅ Sesión activa, redirigiendo a prode.html");
     window.location.href = "prode.html";
   }
 
@@ -167,7 +168,7 @@
       return;
     }
     if (gruposAgregados.length >= 10) {
-      alert("Máximo 10 grupos por usuario");
+      alert("Máximo 10 grupos");
       return;
     }
     gruposAgregados.push(valor);
@@ -190,6 +191,8 @@
 
   $("btnCambiar").onclick = () => {
     modo = modo === "login" ? "registro" : "login";
+    console.log("🔄 Modo:", modo);
+    
     $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
     $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
     $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";
@@ -224,32 +227,50 @@
     const password = $("password").value;
     const btn = $("btnSubmit");
 
+    console.log(" Form enviado - Modo:", modo, "Email:", email);
+
     if (modo === "registro") {
       const nombre = $("nombre").value.trim();
       const apellido = $("apellido").value.trim();
       const apodo = $("apodo").value.trim();
-
-      if (!nombre) { mostrarError("Ingresá tu nombre"); return; }
-      if (!apellido) { mostrarError("Ingresá tu apellido"); return; }
+      
+      console.log("📋 Datos registro:", { nombre, apellido, apodo, email, grupos: gruposAgregados });
+      
+      if (!nombre) {
+        mostrarError("Ingresá tu nombre");
+        return;
+      }
+      if (!apellido) {
+        mostrarError("Ingresá tu apellido");
+        return;
+      }
 
       btn.disabled = true;
       btn.textContent = "Procesando...";
 
       try {
-        console.log("🔐 Creando usuario en Supabase...");
-        
-        // 1. Crear usuario en Authentication
+        console.log("🔐 PASO 1: Creando usuario en Auth...");
         const { data: authData, error: authError } = await supabase.auth.signUp({
           email,
           password,
         });
 
-        if (authError) throw authError;
-        if (!authData.user) throw new Error("No se creó el usuario");
+        if (authError) {
+          console.error("❌ Error Auth:", authError);
+          throw authError;
+        }
+        
+        if (!authData.user) {
+          console.error("❌ No se creó el usuario");
+          throw new Error("No se creó el usuario");
+        }
 
-        console.log("✅ Usuario creado:", authData.user.id);
+        console.log("✅ PASO 1 OK - UID:", authData.user.id);
 
-        // 2. Crear perfil en tabla usuarios
+        // Esperar un momento para que el usuario esté disponible
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        console.log("🔐 PASO 2: Creando perfil en tabla usuarios...");
         const { error: profileError } = await supabase
           .from('usuarios')
           .insert({
@@ -263,23 +284,34 @@
             puntos_totales: 0
           });
 
-        if (profileError) throw profileError;
+        if (profileError) {
+          console.error("❌ Error perfil:", profileError);
+          throw profileError;
+        }
 
-        console.log("✅ Perfil creado en Supabase");
+        console.log("✅ PASO 2 OK - Perfil creado");
 
-        // 3. Iniciar sesión automáticamente
+        // Iniciar sesión automáticamente
+        console.log("🔐 PASO 3: Iniciando sesión...");
         const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password
         });
 
-        if (signInError) throw signInError;
+        if (signInError) {
+          console.error("❌ Error signIn:", signInError);
+          throw signInError;
+        }
 
+        console.log("✅ PASO 3 OK - Sesión iniciada");
         mostrarOk("¡Cuenta creada! Redirigiendo...");
-        setTimeout(() => window.location.href = "prode.html", 1000);
+        
+        setTimeout(() => {
+          window.location.href = "prode.html";
+        }, 1000);
 
       } catch (err) {
-        console.error("❌ Error:", err);
+        console.error("❌ Error completo:", err);
         mostrarError(err.message || "Error al registrar");
         btn.disabled = false;
         btn.textContent = "Registrarme";
@@ -287,6 +319,7 @@
 
     } else {
       // LOGIN
+      console.log("🔐 LOGIN - Intentando ingresar...");
       btn.disabled = true;
       btn.textContent = "Procesando...";
 
@@ -296,10 +329,17 @@
           password
         });
 
-        if (error) throw error;
+        if (error) {
+          console.error("❌ Error login:", error);
+          throw error;
+        }
 
+        console.log("✅ Login exitoso");
         mostrarOk("Ingresando...");
-        setTimeout(() => window.location.href = "prode.html", 800);
+        
+        setTimeout(() => {
+          window.location.href = "prode.html";
+        }, 800);
 
       } catch (err) {
         console.error("❌ Error login:", err);
