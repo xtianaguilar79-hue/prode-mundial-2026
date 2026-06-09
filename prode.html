@@ -22,7 +22,7 @@
   <nav class="nav">
     <a href="index.html">🏠 Inicio</a>
     <a href="instructivo.html">📘 Reglamento</a>
-    <a href="index.html#ranking"> Ranking</a>
+    <a href="index.html#ranking">🏅 Ranking</a>
     <a href="admin.html" id="linkAdmin" style="display:none">🔐 Admin</a>
     <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
   </nav>
@@ -46,37 +46,40 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════ -->
-  <!-- UNIRSE A UN GRUPO (NUEVO) -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- GESTIÓN DE GRUPOS (UNIRSE + VER + SALIRSE) -->
   <!-- ═══════════════════════════════════════════════════════ -->
   <section style="margin-bottom:30px">
     <div style="background: linear-gradient(135deg, var(--bg3) 0%, var(--card) 100%); border: 1.5px solid var(--border); border-radius: var(--r-lg); padding: 20px; box-shadow: var(--shadow-sm);">
       <h3 style="margin: 0 0 8px 0; display: flex; align-items: center; gap: 10px; color: var(--gold); font-size: 18px;">
-        👥 Unirse a un grupo
+        👥 Mis Grupos
       </h3>
       <p style="color: var(--text2); font-size: 13px; margin: 0 0 16px 0;">
-        ¿Te invitaron a un grupo después de registrarte? Escribí el nombre exacto y sumate.
+        Unite a grupos para competir en rankings paralelos. Podés salirte cuando quieras.
       </p>
 
-      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: end;">
+      <!-- Formulario para unirse -->
+      <div style="display: flex; gap: 10px; flex-wrap: wrap; align-items: end; margin-bottom: 16px;">
         <div style="flex: 1; min-width: 200px;">
           <label style="display:block; font-size:11px; color:var(--text2); margin-bottom:6px; text-transform:uppercase; letter-spacing:0.5px;">
-            Nombre del grupo
+            Unirse a un grupo nuevo
           </label>
           <input type="text" id="nuevoGrupoInput" class="input" placeholder="Ej: Oficina, Colegio, Familia..." style="width:100%; padding:10px; font-size:14px;">
         </div>
-        <button id="btnUnirseGrupo" class="btn-guardar" style="padding:10px 20px; background:var(--gold); color:#000; font-weight:700; border:none; border-radius:6px; cursor:pointer; font-family:inherit;">
+        <button id="btnUnirseGrupo" style="padding:10px 20px; background:var(--gold); color:#000; font-weight:700; border:none; border-radius:6px; cursor:pointer; font-family:inherit; font-size:14px;">
           ➕ Unirme
         </button>
       </div>
 
-      <div id="msgGrupo" style="margin-top:12px; font-size:13px; display:none; padding:8px 12px; border-radius:6px;"></div>
+      <!-- Mensajes de feedback -->
+      <div id="msgGrupo" style="margin-bottom:12px; font-size:13px; display:none; padding:8px 12px; border-radius:6px;"></div>
 
-      <div id="misGruposContainer" style="margin-top:16px; display:none;">
+      <!-- Lista de grupos actuales -->
+      <div id="misGruposContainer" style="display:none;">
         <label style="display:block; font-size:11px; color:var(--text2); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
-          Mis grupos actuales
+          Grupos en los que participás
         </label>
-        <div id="misGruposList" style="display:flex; flex-wrap:wrap; gap:6px;"></div>
+        <div id="misGruposList" style="display:flex; flex-wrap:wrap; gap:8px;"></div>
       </div>
     </div>
   </section>
@@ -175,7 +178,7 @@
               <div id="verCamp1Pts" style="font-size:11px; color:var(--text2); margin-top:4px;">—</div>
             </div>
             <div style="background:var(--bg); padding:14px 8px; border-radius:var(--r-sm); border:1px solid var(--border);">
-              <div style="font-size:32px;">🥈</div>
+              <div style="font-size:32px;"></div>
               <div id="verCamp2" style="font-size:15px; font-weight:700; margin-top:6px; color:var(--text);">—</div>
               <div id="verCamp2Pts" style="font-size:11px; color:var(--text2); margin-top:4px;">—</div>
             </div>
