@@ -1,4 +1,4 @@
-import { supabase, obtenerUsuario } from "./auth-guard.js";
+import { supabase } from "./supabase-config.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, SELECCIONES
 } from "../datos-partidos.js";
@@ -8,33 +8,32 @@ let faseActiva = "j1";
 let resultados = {};
 let partidosConEquiposReales = TODOS_PARTIDOS;
 
+console.log("📋 app-admin.js cargado");
+
 async function cargarResultados() {
   try {
-    const { data, error } = await supabase
-      .from('resultados')
-      .select('*');
-
+    const { data, error } = await supabase.from('resultados').select('*');
     if (error) throw error;
-
     resultados = {};
     data.forEach(r => { resultados[r.partido_id] = r; });
     console.log("✅ Resultados cargados:", Object.keys(resultados).length);
   } catch (err) {
-    console.error("Error al cargar resultados:", err);
+    console.error("❌ Error al cargar resultados:", err);
   }
 }
 
 async function cargarEquiposReales() {
   try {
     partidosConEquiposReales = await obtenerPartidosConEquiposReales();
-    console.log("✅ Equipos reales cargados en admin");
+    console.log("✅ Equipos reales cargados");
   } catch (err) {
-    console.error("Error al cargar equipos reales:", err);
+    console.error("❌ Error al cargar equipos:", err);
     partidosConEquiposReales = TODOS_PARTIDOS;
   }
 }
 
 function renderTabs() {
+  console.log("📑 Renderizando tabs, fase activa:", faseActiva);
   const tabs = [
     { id: "j1", label: "Fecha 1" },
     { id: "j2", label: "Fecha 2" },
@@ -44,10 +43,16 @@ function renderTabs() {
     { id: "cuartos", label: "Cuartos" },
     { id: "semis", label: "Semis" },
     { id: "3er", label: "3er Puesto" },
-    { id: "final", label: "Final " },
+    { id: "final", label: "Final 🏆" },
   ];
 
-  document.getElementById("faseTabs").innerHTML = tabs.map(t => `
+  const tabsContainer = document.getElementById("faseTabs");
+  if (!tabsContainer) {
+    console.error("❌ No se encontró #faseTabs");
+    return;
+  }
+
+  tabsContainer.innerHTML = tabs.map(t => `
     <button class="fase-btn ${faseActiva === t.id ? "active" : ""}" data-fase="${t.id}">
       ${t.label}
     </button>
@@ -60,6 +65,8 @@ function renderTabs() {
       renderPartidos();
     };
   });
+  
+  console.log("✅ Tabs renderizadas");
 }
 
 function getPartidosFase() {
@@ -71,23 +78,33 @@ function getPartidosFase() {
 }
 
 function renderPartidos() {
+  console.log("⚽ Renderizando partidos, fase:", faseActiva);
   const cont = document.getElementById("partidosAdmin");
-  const partidos = getPartidosFase();
+  if (!cont) {
+    console.error("❌ No se encontró #partidosAdmin");
+    return;
+  }
   
-  console.log(`📋 Renderizando fase ${faseActiva}: ${partidos.length} partidos`);
+  const partidos = getPartidosFase();
+  console.log(`📋 Cantidad de partidos: ${partidos.length}`);
+  
+  if (partidos.length === 0) {
+    cont.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px;">No hay partidos en esta fase</p>';
+    return;
+  }
   
   cont.innerHTML = partidos.map(p => {
     const partidoReal = partidosConEquiposReales.find(x => x.id === p.id) || p;
     const flagL = FLAGS[partidoReal.local] || "🏳️";
-    const flagV = FLAGS[partidoReal.visit] || "️";
+    const flagV = FLAGS[partidoReal.visit] || "🏳️";
     const res = resultados[p.id];
     const esElim = !p.j || p.fase;
     
     let showAlargue = false;
     let showPenales = false;
     
-    if (res) {
-      if (res.local !== undefined && res.visit !== undefined && parseInt(res.local) === parseInt(res.visit)) {
+    if (res && res.local !== undefined && res.visit !== undefined) {
+      if (parseInt(res.local) === parseInt(res.visit)) {
         showAlargue = true;
         if (res.alargue_local !== null && res.alargue_visit !== null && 
             parseInt(res.alargue_local) === parseInt(res.alargue_visit)) {
@@ -141,7 +158,7 @@ function renderPartidos() {
 
         <div class="partido-footer">
           <button class="btn-guardar btn-res" data-id="${p.id}" style="padding:8px 16px;">
-            ${res ? "✓ Actualizar" : " Cargar resultado"}
+            ${res ? "✓ Actualizar" : "💾 Cargar resultado"}
           </button>
           ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px; margin-left:8px;">🗑️ Borrar</button>` : ""}
         </div>
@@ -158,6 +175,8 @@ function renderPartidos() {
   cont.querySelectorAll("[data-borrar]").forEach(btn => {
     btn.onclick = () => borrarResultado(btn.dataset.borrar);
   });
+  
+  console.log("✅ Partidos renderizados");
 }
 
 function setupEventListeners() {
@@ -255,10 +274,7 @@ async function guardarResultado(id) {
   };
 
   try {
-    const { error } = await supabase
-      .from('resultados')
-      .upsert(datos, { onConflict: 'id' });
-
+    const { error } = await supabase.from('resultados').upsert(datos, { onConflict: 'id' });
     if (error) throw error;
 
     mostrarMensaje("✅ Resultado guardado correctamente", "ok");
@@ -275,11 +291,7 @@ async function borrarResultado(id) {
   if (!confirm(`¿Borrar el resultado del partido ${id}?`)) return;
 
   try {
-    const { error } = await supabase
-      .from('resultados')
-      .delete()
-      .eq('id', id);
-
+    const { error } = await supabase.from('resultados').delete().eq('id', id);
     if (error) throw error;
 
     mostrarMensaje("🗑️ Resultado borrado", "ok");
@@ -293,7 +305,7 @@ async function borrarResultado(id) {
 }
 
 window.generarPrueba = async () => {
-  if (!confirm("¿Generar resultados de PRUEBA para todos los partidos?\n\nEsto es solo para testing.")) return;
+  if (!confirm("¿Generar resultados de PRUEBA para todos los partidos?\n\n⚠️ Los usuarios NO verán estos resultados (tienen es_prueba=true)")) return;
 
   try {
     const pruebas = TODOS_PARTIDOS.map(p => ({
@@ -308,10 +320,7 @@ window.generarPrueba = async () => {
       es_prueba: true
     }));
 
-    const { error } = await supabase
-      .from('resultados')
-      .upsert(pruebas, { onConflict: 'id' });
-
+    const { error } = await supabase.from('resultados').upsert(pruebas, { onConflict: 'id' });
     if (error) throw error;
 
     mostrarMensaje("🧪 Resultados de prueba generados", "ok");
@@ -328,11 +337,7 @@ window.limpiarPrueba = async () => {
   if (!confirm("¿Borrar SOLO los resultados de PRUEBA?")) return;
 
   try {
-    const { error } = await supabase
-      .from('resultados')
-      .delete()
-      .eq('es_prueba', true);
-
+    const { error } = await supabase.from('resultados').delete().eq('es_prueba', true);
     if (error) throw error;
 
     mostrarMensaje("🧹 Pruebas limpiadas", "ok");
@@ -374,16 +379,10 @@ window.guardarCampeonReal = async () => {
     return;
   }
 
-  if (!confirm(`¿Confirmás que ${campeon} es el campeón del Mundial?\n\nEsta acción calculará los puntos de todos los usuarios.`)) return;
+  if (!confirm(`¿Confirmás que ${campeon} es el campeón del Mundial?`)) return;
 
   try {
-    const { error } = await supabase
-      .from('config')
-      .upsert({
-        id: 'final',
-        campeon: campeon
-      }, { onConflict: 'id' });
-
+    const { error } = await supabase.from('config').upsert({ id: 'final', campeon }, { onConflict: 'id' });
     if (error) throw error;
 
     mostrarMensaje(`🏆 Campeón guardado: ${campeon}`, "ok");
@@ -395,11 +394,11 @@ window.guardarCampeonReal = async () => {
 };
 
 window.actualizarEquipos = async () => {
-  if (!confirm("¿Actualizar los equipos de las fases eliminatorias?\n\nSe calcularán los clasificados y se actualizarán los cruces.")) return;
+  if (!confirm("¿Actualizar los equipos de las fases eliminatorias?")) return;
 
   try {
     const resultado = await actualizarEquiposEliminatorias();
-    mostrarMensaje(`✅ Equipos actualizados. Fase: ${resultado.fase}. Partidos actualizados: ${Object.keys(resultado.partidosActualizados).length}`, "ok");
+    mostrarMensaje(`✅ Equipos actualizados. Fase: ${resultado.fase}`, "ok");
     await cargarEquiposReales();
     renderPartidos();
   } catch (err) {
@@ -410,16 +409,10 @@ window.actualizarEquipos = async () => {
 
 async function cargarCampeonReal() {
   try {
-    const { data, error } = await supabase
-      .from('config')
-      .select('*')
-      .eq('id', 'final')
-      .single();
-
+    const { data, error } = await supabase.from('config').select('*').eq('id', 'final').single();
     if (!error && data) {
       document.getElementById("realCampeon").value = data.campeon;
-      document.getElementById("campeonRealActual").textContent = 
-        `🏆 Campeón actual: ${FLAGS[data.campeon] || "🏳️"} ${data.campeon}`;
+      document.getElementById("campeonRealActual").textContent = `🏆 Campeón actual: ${FLAGS[data.campeon] || "🏳️"} ${data.campeon}`;
     }
   } catch (err) {
     console.error(err);
@@ -436,29 +429,32 @@ function mostrarMensaje(msg, tipo) {
   setTimeout(() => { el.style.display = "none"; }, 4000);
 }
 
+// INICIALIZACIÓN
 async function init() {
-  console.log(" Iniciando admin...");
-  await cargarResultados();
-  await cargarEquiposReales();
-  await cargarCampeonReal();
-  renderTabs();
-  renderPartidos();
+  console.log("🚀 Iniciando admin panel...");
+  try {
+    await cargarResultados();
+    await cargarEquiposReales();
+    await cargarCampeonReal();
+    renderTabs();
+    renderPartidos();
 
-  const select = document.getElementById("realCampeon");
-  if (select) {
-    select.innerHTML = '<option value="">-- Seleccionar campeón --</option>' +
-      SELECCIONES.sort((a, b) => a.localeCompare(b))
-        .map(s => `<option value="${s}">${FLAGS[s] || "🏳️"} ${s}</option>`)
-        .join("");
+    const select = document.getElementById("realCampeon");
+    if (select) {
+      select.innerHTML = '<option value="">-- Seleccionar campeón --</option>' +
+        SELECCIONES.sort((a, b) => a.localeCompare(b))
+          .map(s => `<option value="${s}">${FLAGS[s] || "🏳️"} ${s}</option>`)
+          .join("");
+    }
+    console.log("✅ Admin panel iniciado correctamente");
+  } catch (err) {
+    console.error("❌ Error en init:", err);
   }
 }
 
-// INICIALIZACIÓN DIRECTA - sin esperar eventos
-(async () => {
-  try {
-    await protegerPagina(true);
-    await init();
-  } catch (err) {
-    console.error("Error en init:", err);
-  }
-})();
+// Ejecutar inmediatamente
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}

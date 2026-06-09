@@ -29,17 +29,18 @@ async function cargarDatosCompletos() {
     usuariosData.forEach(u => { usuarios[u.id] = u; });
     todosLosUsuarios = usuarios;
 
-    // Cargar predicciones
+    // Cargar predicciones (SOLO las reales, no las de prueba)
     const { data: predsData, error: predsError } = await supabase
       .from('predicciones')
       .select('*');
 
     if (predsError) throw predsError;
 
-    // Cargar resultados
+    // Cargar resultados (SOLO los reales, NO los de prueba)
     const { data: resData, error: resError } = await supabase
       .from('resultados')
-      .select('*');
+      .select('*')
+      .eq('es_prueba', false);  // ← IMPORTANTE: Filtrar resultados de prueba
 
     if (resError) throw resError;
 
@@ -112,7 +113,6 @@ async function cargarDatosCompletos() {
       }
     });
 
-    // Agregar usuarios sin predicciones
     Object.values(usuarios).forEach(u => {
       if (!ranking[u.id]) {
         ranking[u.id] = {
@@ -188,7 +188,6 @@ function renderRanking(lista, totalUsuarios) {
   document.getElementById("rankingLoader").style.display = "none";
   document.getElementById("actualizado").textContent = "Actualizado: " + new Date().toLocaleTimeString();
 
-  // Verificar si hay jugadores con pronósticos
   const jugadoresActivos = lista.filter(u => u.partidosPronosticados > 0);
   const hayActivos = jugadoresActivos.length > 0;
 
@@ -203,7 +202,7 @@ function renderRanking(lista, totalUsuarios) {
             ? `Ya hay <strong style="color:var(--gold)">${totalUsuarios}</strong> jugador${totalUsuarios === 1 ? '' : 'es'} registrado${totalUsuarios === 1 ? '' : 's'}. El ranking se activará cuando comience el Mundial.`
             : `El ranking se activará una vez que comience el Mundial y los jugadores carguen sus pronósticos.`}
         </p>
-        <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none; font-size:14px;"> Registrarme y pronosticar</a>
+        <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none; font-size:14px;">🔐 Registrarme y pronosticar</a>
       </div>
     `;
     return;
@@ -211,7 +210,6 @@ function renderRanking(lista, totalUsuarios) {
 
   document.getElementById("rankingTabla").style.display = "block";
 
-  // TOP 3
   const top3Div = document.getElementById("top3");
   if (lista.length >= 3) {
     const orden = [1, 0, 2];
@@ -235,7 +233,6 @@ function renderRanking(lista, totalUsuarios) {
     top3Div.innerHTML = "";
   }
 
-  // Tabla
   const tbody = document.getElementById("rankingBody");
   tbody.innerHTML = lista.map(u => {
     const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
@@ -263,7 +260,7 @@ function renderRanking(lista, totalUsuarios) {
 }
 
 function renderCardPartido(p, resultado, estado) {
-  const flagL = FLAGS[p.local] || "️";
+  const flagL = FLAGS[p.local] || "🏳️";
   const flagV = FLAGS[p.visit] || "🏳️";
   
   let claseCard = "resultado-card";
@@ -323,7 +320,6 @@ function renderResultados(resultados) {
   const cont = document.getElementById("resultadosContenido");
   document.getElementById("resultadosLoader").style.display = "none";
 
-  // Si no hay ningún resultado cargado
   if (Object.keys(resultados).length === 0) {
     cont.innerHTML = `
       <div style="text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1px solid var(--border);">
@@ -358,7 +354,6 @@ function renderResultados(resultados) {
     const finalizados = sec.partidos.filter(p => resultados[p.id]);
     const proximos = sec.partidos.filter(p => !resultados[p.id] && !partidoEnJuego(p));
 
-    // Solo mostrar secciones que tengan al menos un partido finalizado o en vivo
     if (finalizados.length === 0 && vivos.length === 0) return;
 
     const ordenados = [...vivos, ...finalizados];
