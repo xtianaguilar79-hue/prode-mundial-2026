@@ -5,7 +5,7 @@ import {
   calcularPuntosCampeon, msHastaBloqueo, formatearTiempo, partidoBloqueado
 } from "../datos-partidos.js";
 
-console.log("📋 app-prode.js cargado");
+console.log(" app-prode.js cargado");
 
 let usuarioId = null;
 let predicciones = {};
@@ -14,24 +14,44 @@ let prediccionCampeon = null;
 let resultadoFinal = null;
 let faseActiva = "j1";
 let intervalosCrono = [];
-let partidosConEquiposReales = TODOS_PARTIDOS;
-let clasificacionesCargadas = false;
-
-// ═══════════════════════════════════════════════════════
-// INICIALIZACIÓN
-// ═══════════════════════════════════════════════════════
 
 async function init() {
   console.log("🚀 Iniciando prode...");
   
   try {
-    // Usar el guard mejorado
-    const user = await protegerPagina(false);
-    if (!user) return; // Si redirigió a login, detenemos todo
-
-    usuarioId = user.uid;
-    console.log("✅ Autenticado como:", user.nombre);
+    const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
+    if (sessionError || !session) {
+      console.log("⚠️ No hay sesión, redirigiendo a login");
+      window.location.href = "login.html";
+      return;
+    }
+
+    const { data: usuario, error: userError } = await supabase
+      .from('usuarios')
+      .select('*')
+      .eq('id', session.user.id)
+      .single();
+
+    if (userError || !usuario) {
+      console.error("❌ No se encontró el perfil:", userError);
+      window.location.href = "login.html";
+      return;
+    }
+
+    usuarioId = usuario.id;
+    console.log("✅ Autenticado como:", usuario.nombre);
+
+    const userNameEl = document.getElementById("userName");
+    if (userNameEl) userNameEl.textContent = usuario.nombre;
+
+    if (usuario.es_admin) {
+      const adminTag = document.getElementById("adminTag");
+      if (adminTag) adminTag.style.display = "inline";
+      const linkAdmin = document.getElementById("linkAdmin");
+      if (linkAdmin) linkAdmin.style.display = "inline-block";
+    }
+
     await cargarDatos();
     await cargarCampeon();
     renderTabs();
@@ -40,18 +60,9 @@ async function init() {
     
     console.log("✅ Prode iniciado correctamente");
   } catch (err) {
-    console.error("❌ Error crítico en init:", err);
+    console.error("❌ Error en init:", err);
   }
 }
-
-// Ejecutar
-init();
-  }
-}
-
-// ═══════════════════════════════════════════════════════
-// CARGA DE DATOS
-// ═══════════════════════════════════════════════════════
 
 async function cargarDatos() {
   try {
@@ -99,10 +110,6 @@ async function cargarCampeon() {
   }
 }
 
-// ═══════════════════════════════════════════════════════
-// ESTADÍSTICAS
-// ═══════════════════════════════════════════════════════
-
 function actualizarStats() {
   let total = 0;
   Object.values(predicciones).forEach(pred => {
@@ -124,14 +131,10 @@ function actualizarStats() {
   if (statPts) statPts.textContent = total;
   if (statPred) statPred.textContent = `${Object.keys(predicciones).length}/104`;
   if (statFidelidad) {
-    statFidelidad.textContent = bonus > 0 ? "✓" : "✗";
+    statFidelidad.textContent = bonus > 0 ? "✓" : "";
     statFidelidad.style.color = bonus > 0 ? "var(--green)" : "var(--accent)";
   }
 }
-
-// ═══════════════════════════════════════════════════════
-// TABS DE FASES
-// ═══════════════════════════════════════════════════════
 
 function renderTabs() {
   const tabsContainer = document.getElementById("faseTabs");
@@ -172,23 +175,25 @@ function getPartidosFase() {
   return PARTIDOS_ELIM.filter(p => p.fase === faseActiva);
 }
 
-// ═══════════════════════════════════════════════════════
-// RENDERIZADO DE PARTIDOS
-// ═══════════════════════════════════════════════════════
-
 function renderPartidos() {
+  console.log("⚽ Renderizando partidos, fase:", faseActiva);
+  
   const loader = document.getElementById("partidosLoader");
   const grid = document.getElementById("partidosGrid");
   
-  if (!loader || !grid) return;
+  if (!loader || !grid) {
+    console.error("❌ No se encontró loader o grid");
+    return;
+  }
 
   loader.style.display = "none";
   grid.style.display = "grid";
 
   const partidos = getPartidosFase();
+  console.log(`📋 Partidos en fase ${faseActiva}:`, partidos.length);
 
   if (partidos.length === 0) {
-    grid.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px; grid-column:1/-1;">No hay partidos disponibles en esta fase aún.</p>';
+    grid.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px; grid-column:1/-1;">No hay partidos</p>';
     return;
   }
 
@@ -203,6 +208,8 @@ function renderPartidos() {
       iniciarCronometro(p);
     }
   });
+  
+  console.log("✅ Partidos renderizados");
 }
 
 function iniciarCronometro(partido) {
@@ -231,9 +238,8 @@ function renderTarjeta(p) {
   const esElim = !p.j || p.fase;
   const bloqueado = partidoBloqueado(p);
 
-  const flagL = FLAGS[p.local] || "🏳️";
+  const flagL = FLAGS[p.local] || "️";
   const flagV = FLAGS[p.visit] || "🏳️";
-  
   const pts = guardado && res ? calcularPuntos(pred, res) : null;
 
   let marcadorHTML;
@@ -315,7 +321,7 @@ function renderTarjeta(p) {
           </div>
         ` : ""}
         ${guardado 
-          ? `<span class="tag-bloqueado">🔒 Guardado</span>` 
+          ? `<span class="tag-bloqueado"> Guardado</span>` 
           : bloqueado 
             ? `<span class="tag-bloqueado" style="color:var(--red);">🔒 Bloqueado</span>`
             : `<button class="btn-guardar" data-id="${p.id}">Guardar pronóstico</button>`
@@ -324,10 +330,6 @@ function renderTarjeta(p) {
     </div>
   `;
 }
-
-// ═══════════════════════════════════════════════════════
-// EVENT LISTENER PARA INPUTS
-// ═══════════════════════════════════════════════════════
 
 document.addEventListener("input", (e) => {
   if (!e.target.classList.contains("score-in")) return;
@@ -357,10 +359,6 @@ document.addEventListener("input", (e) => {
   }
 });
 
-// ═══════════════════════════════════════════════════════
-// GUARDAR PREDICCIÓN
-// ═══════════════════════════════════════════════════════
-
 async function guardarPrediccion(id) {
   const p = TODOS_PARTIDOS.find(x => x.id === id);
   if (!p) return;
@@ -378,12 +376,15 @@ async function guardarPrediccion(id) {
     return;
   }
 
-  if (!confirm(`¿Confirmás tu pronóstico?\n\n${p.local} ${gL} - ${gV} ${p.visit}\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
+  if (!confirm(`¿Confirmás tu pronóstico?\n\n${p.local} ${gL} - ${gV} ${p.visit}\n\n️ NO PODRÁS MODIFICARLO`)) {
     return;
   }
 
   const esElim = !p.j || p.fase;
-  let alargueLocal = null, alargueVisit = null, penalesLocal = null, penalesVisit = null;
+  let alargueLocal = null;
+  let alargueVisit = null;
+  let penalesLocal = null;
+  let penalesVisit = null;
 
   if (esElim && parseInt(gL) === parseInt(gV)) {
     const alL = document.getElementById("alL-" + id)?.value;
@@ -446,10 +447,6 @@ async function guardarPrediccion(id) {
   }
 }
 
-// ═══════════════════════════════════════════════════════
-// PRONÓSTICO DEL CAMPEÓN
-// ═══════════════════════════════════════════════════════
-
 function renderCampeon() {
   const loader = document.getElementById("campeonLoader");
   if (loader) loader.style.display = "none";
@@ -477,7 +474,7 @@ function renderCampeon() {
       "pre-final": "ANTES DE LA FINAL (jugando Semis)",
       "cerrado": "CERRADO"
     };
-    campeonFaseActual.textContent = "📍 Estado actual: " + (nombresFase[info.fase] || info.fase);
+    campeonFaseActual.textContent = " Estado actual: " + (nombresFase[info.fase] || info.fase);
   }
 
   if (prediccionCampeon && prediccionCampeon.bloqueado) {
@@ -555,7 +552,7 @@ function validarCampeon() {
   if (!msg) return true;
 
   if (v1 && v2 && v1 === v2) {
-    msg.textContent = "⚠️ No podés repetir selecciones";
+    msg.textContent = "️ No podés repetir selecciones";
     msg.style.background = "var(--red-soft)";
     msg.style.border = "1px solid var(--red)";
     msg.style.color = "var(--red)";
@@ -604,7 +601,7 @@ async function guardarCampeon() {
 
   const pts = info.puntos;
 
-  if (!confirm(`¿Confirmás tu pronóstico del campeón?\n\n🥇 Opción 1: ${v1} (+${pts[0]} pts)\n🥈 Opción 2: ${v2} (+${pts[1]} pts)\n🥉 Opción 3: ${v3} (+${pts[2]} pts)\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
+  if (!confirm(`¿Confirmás tu pronóstico del campeón?\n\n🥇 Opción 1: ${v1} (+${pts[0]} pts)\n Opción 2: ${v2} (+${pts[1]} pts)\n🥉 Opción 3: ${v3} (+${pts[2]} pts)\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
     return;
   }
 
@@ -624,8 +621,11 @@ async function guardarCampeon() {
     if (error) throw error;
 
     prediccionCampeon = { 
-      opcion1: v1, opcion2: v2, opcion3: v3, 
-      bloqueado: true, puntos_otorgados: pts,
+      opcion1: v1, 
+      opcion2: v2, 
+      opcion3: v3, 
+      bloqueado: true, 
+      puntos_otorgados: pts,
       fase_al_pronunciar: info.fase
     };
     
@@ -639,223 +639,4 @@ async function guardarCampeon() {
   }
 }
 
-// ═══════════════════════════════════════════════════════
-// INICIAR
-// ═══════════════════════════════════════════════════════
-
 init();
-
-// ═══════════════════════════════════════════════════════
-// GESTIÓN DE GRUPOS (unirse / salir / validaciones)
-// ═══════════════════════════════════════════════════════
-
-async function cargarMisGrupos() {
-  try {
-    const { data: usuario } = await supabase
-      .from('usuarios')
-      .select('grupos')
-      .eq('id', usuarioId)
-      .single();
-
-    if (!usuario || !usuario.grupos || usuario.grupos.length === 0) {
-      const cont = document.getElementById("misGruposContainer");
-      if (cont) cont.style.display = "none";
-      return;
-    }
-
-    const cont = document.getElementById("misGruposContainer");
-    const list = document.getElementById("misGruposList");
-    
-    if (cont) cont.style.display = "block";
-    if (list) {
-      list.innerHTML = usuario.grupos.map(g => {
-        // Escapar comillas simples para el onclick
-        const gEscapado = g.replace(/'/g, "\\'").replace(/"/g, "&quot;");
-        return `
-          <span style="background:var(--gold-soft); border:1px solid var(--gold); color:var(--gold); padding:4px 10px; border-radius:20px; font-size:12px; font-weight:600; display:inline-flex; align-items:center; gap:6px;">
-            👥 ${g}
-            <button type="button" onclick="window.salirDeGrupo('${gEscapado}')" 
-                    style="background:none; border:none; color:var(--red); cursor:pointer; font-size:16px; font-weight:700; padding:0; line-height:1; margin-left:4px;"
-                    title="Salir del grupo">×</button>
-          </span>
-        `;
-      }).join("");
-    }
-  } catch (err) {
-    console.error("Error cargando grupos:", err);
-  }
-}
-
-async function unirseAGrupo() {
-  const input = document.getElementById("nuevoGrupoInput");
-  const msg = document.getElementById("msgGrupo");
-  
-  if (!input || !msg) return;
-  
-  const nombreGrupo = input.value.trim();
-  
-  // Validación: nombre vacío
-  if (!nombreGrupo) {
-    msg.textContent = "⚠️ Escribí el nombre del grupo";
-    msg.style.background = "var(--red-soft)";
-    msg.style.color = "var(--red)";
-    msg.style.display = "block";
-    return;
-  }
-
-  // Validación: longitud mínima
-  if (nombreGrupo.length < 2) {
-    msg.textContent = "⚠️ El nombre debe tener al menos 2 caracteres";
-    msg.style.background = "var(--red-soft)";
-    msg.style.color = "var(--red)";
-    msg.style.display = "block";
-    return;
-  }
-
-  // Validación: longitud máxima
-  if (nombreGrupo.length > 40) {
-    msg.textContent = "⚠️ El nombre es muy largo (máx. 40 caracteres)";
-    msg.style.background = "var(--red-soft)";
-    msg.style.color = "var(--red)";
-    msg.style.display = "block";
-    return;
-  }
-
-  try {
-    // Obtener grupos actuales del usuario
-    const { data: usuario, error: userError } = await supabase
-      .from('usuarios')
-      .select('grupos')
-      .eq('id', usuarioId)
-      .single();
-
-    if (userError) throw userError;
-
-    const gruposActuales = usuario?.grupos || [];
-    
-    // Validación: ya está en ese grupo (comparación case-insensitive)
-    const yaExiste = gruposActuales.some(g => g.toLowerCase() === nombreGrupo.toLowerCase());
-    
-    if (yaExiste) {
-      msg.textContent = `⚠️ Ya estás en el grupo "${nombreGrupo}"`;
-      msg.style.background = "var(--red-soft)";
-      msg.style.color = "var(--red)";
-      msg.style.display = "block";
-      return;
-    }
-
-    // Buscar si el grupo ya existe en el sistema (creado por otro usuario)
-    // para preservar el nombre original (misma capitalización)
-    let nombreFinal = nombreGrupo;
-    
-    const { data: otrosUsuarios } = await supabase
-      .from('usuarios')
-      .select('grupos')
-      .neq('id', usuarioId);
-
-    if (otrosUsuarios) {
-      for (const u of otrosUsuarios) {
-        if (u.grupos && Array.isArray(u.grupos)) {
-          const encontrado = u.grupos.find(g => g.toLowerCase() === nombreGrupo.toLowerCase());
-          if (encontrado) {
-            nombreFinal = encontrado; // Usamos el nombre original
-            break;
-          }
-        }
-      }
-    }
-
-    // Agregar nuevo grupo
-    const nuevosGrupos = [...gruposActuales, nombreFinal];
-
-    const { error } = await supabase
-      .from('usuarios')
-      .update({ grupos: nuevosGrupos })
-      .eq('id', usuarioId);
-
-    if (error) throw error;
-
-    msg.textContent = `✅ Te uniste al grupo "${nombreFinal}"`;
-    msg.style.background = "var(--green-soft)";
-    msg.style.color = "var(--green)";
-    msg.style.display = "block";
-    
-    input.value = "";
-    
-    await cargarMisGrupos();
-    
-    setTimeout(() => { msg.style.display = "none"; }, 4000);
-  } catch (err) {
-    console.error(err);
-    msg.textContent = "❌ Error: " + err.message;
-    msg.style.background = "var(--red-soft)";
-    msg.style.color = "var(--red)";
-    msg.style.display = "block";
-  }
-}
-
-async function salirDeGrupo(nombreGrupo) {
-  const msg = document.getElementById("msgGrupo");
-  
-  if (!confirm(`¿Salir del grupo "${nombreGrupo}"?`)) return;
-
-  try {
-    const { data: usuario } = await supabase
-      .from('usuarios')
-      .select('grupos')
-      .eq('id', usuarioId)
-      .single();
-
-    if (!usuario || !usuario.grupos) return;
-
-    // Filtrar el grupo a eliminar (case-insensitive)
-    const nuevosGrupos = usuario.grupos.filter(g => g.toLowerCase() !== nombreGrupo.toLowerCase());
-
-    const { error } = await supabase
-      .from('usuarios')
-      .update({ grupos: nuevosGrupos })
-      .eq('id', usuarioId);
-
-    if (error) throw error;
-
-    if (msg) {
-      msg.textContent = `✅ Saliste del grupo "${nombreGrupo}"`;
-      msg.style.background = "var(--green-soft)";
-      msg.style.color = "var(--green)";
-      msg.style.display = "block";
-      setTimeout(() => { msg.style.display = "none"; }, 4000);
-    }
-
-    await cargarMisGrupos();
-  } catch (err) {
-    console.error(err);
-    if (msg) {
-      msg.textContent = "❌ Error: " + err.message;
-      msg.style.background = "var(--red-soft)";
-      msg.style.color = "var(--red)";
-      msg.style.display = "block";
-    }
-  }
-}
-
-// Hacer salirDeGrupo disponible globalmente (para el onclick inline)
-window.salirDeGrupo = salirDeGrupo;
-
-// Event listeners para el formulario de grupos
-const btnUnirse = document.getElementById("btnUnirseGrupo");
-if (btnUnirse) {
-  btnUnirse.onclick = unirseAGrupo;
-}
-
-const inputGrupo = document.getElementById("nuevoGrupoInput");
-if (inputGrupo) {
-  inputGrupo.addEventListener("keypress", (e) => {
-    if (e.key === "Enter") {
-      e.preventDefault();
-      unirseAGrupo();
-    }
-  });
-}
-
-// Cargar grupos al iniciar
-cargarMisGrupos();
