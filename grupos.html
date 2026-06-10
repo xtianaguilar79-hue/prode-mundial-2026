@@ -29,7 +29,7 @@
     th { background: var(--bg2); color: var(--text2); padding: 12px 8px; text-align: center; font-size: 11px; text-transform: uppercase; }
     th:first-child, td:first-child { text-align: center; width: 40px; padding-left: 16px; }
     th.left, td.left { text-align: left; }
-    td { padding: 12px 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+    td { padding: 12px 8px; border-bottom: 1px solid var(--border); color: var(--text); font-size: 14px; }
     tr:last-child td { border-bottom: none; }
     
     /* Resaltado de clasificados */
@@ -38,15 +38,13 @@
     
     .equipo-cell { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
     .flag-sm { font-size: 16px; }
-    
-    .pj, .pts { font-weight: 700; }
-    .pts { color: var(--gold); font-size: 16px; }
 
     .actualizado { text-align: center; font-size: 12px; color: var(--text3); margin-top: 40px; }
 
     @media (max-width: 600px) {
-      .hide-mobile { display: none; }
       .hero-grupos h1 { font-size: 32px; }
+      table { font-size: 12px; }
+      th, td { padding: 8px 4px; }
     }
   </style>
 </head>
@@ -61,9 +59,9 @@
     </div>
   </div>
   <nav class="nav">
-    <a href="index.html"> Inicio</a>
+    <a href="index.html">🏠 Inicio</a>
     <a href="instructivo.html">📘 Reglamento</a>
-    <a href="index.html#ranking"> Ranking</a>
+    <a href="index.html#ranking">🏅 Ranking</a>
     <a href="chat.html">💬 Chat</a>
     <a href="grupos.html" style="color:var(--gold); font-weight:700;">📊 Grupos</a>
     <a href="login.html">🔐 Ingresar</a>
@@ -157,14 +155,14 @@
                 <tr>
                   <th>#</th>
                   <th class="left">Equipo</th>
-                  <th class="hide-mobile">PJ</th>
-                  <th class="hide-mobile">PG</th>
-                  <th class="hide-mobile">PE</th>
-                  <th class="hide-mobile">PP</th>
+                  <th>PTS</th>
+                  <th>PJ</th>
+                  <th>PG</th>
+                  <th>PE</th>
+                  <th>PP</th>
                   <th>GF</th>
                   <th>GC</th>
                   <th>DG</th>
-                  <th>PTS</th>
                 </tr>
               </thead>
               <tbody>
@@ -177,14 +175,14 @@
                         <span>${eq.equipo}</span>
                       </div>
                     </td>
-                    <td class="hide-mobile pj">${eq.pj}</td>
-                    <td class="hide-mobile">${eq.pg}</td>
-                    <td class="hide-mobile">${eq.pe}</td>
-                    <td class="hide-mobile">${eq.pp}</td>
+                    <td>${eq.pts}</td>
+                    <td>${eq.pj}</td>
+                    <td>${eq.pg}</td>
+                    <td>${eq.pe}</td>
+                    <td>${eq.pp}</td>
                     <td>${eq.gf}</td>
                     <td>${eq.gc}</td>
                     <td>${eq.dg > 0 ? '+' + eq.dg : eq.dg}</td>
-                    <td class="pts">${eq.pts}</td>
                   </tr>
                 `).join('')}
               </tbody>
