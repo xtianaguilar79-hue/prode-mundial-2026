@@ -258,7 +258,7 @@ function renderRanking(lista, totalUsuarios) {
   if (tbody) {
     tbody.innerHTML = lista.map(u => {
       const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
-      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","","🥉"][u.pos-1]}</span>` : u.pos;
+      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","🥈","🥉"][u.pos-1]}</span>` : u.pos;
       const gruposHTML = u.grupos && u.grupos.length > 0 
         ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
         : '<span style="color:var(--text3); font-size:11px;">—</span>';
