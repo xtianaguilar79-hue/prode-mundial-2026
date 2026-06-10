@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Clasificación · Prode Mundial 2026</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    .grupos-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+    .hero-grupos { text-align: center; margin-bottom: 40px; }
+    .hero-grupos h1 { font-family: 'Anton', sans-serif; font-size: 42px; color: var(--gold); letter-spacing: 2px; }
+    .hero-grupos p { color: var(--text2); font-size: 16px; }
+
+    .grupo-section { margin-bottom: 40px; }
+    .grupo-title { 
+      font-family: 'Anton', sans-serif; 
+      font-size: 24px; 
+      color: var(--gold); 
+      margin-bottom: 16px; 
+      padding-bottom: 8px; 
+      border-bottom: 2px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    .tabla-wrap { overflow-x: auto; border-radius: var(--r); border: 1px solid var(--border); background: var(--card); }
+    table { width: 100%; border-collapse: collapse; font-size: 14px; }
+    th { background: var(--bg2); color: var(--text2); padding: 12px 8px; text-align: center; font-size: 11px; text-transform: uppercase; }
+    th:first-child, td:first-child { text-align: center; width: 40px; padding-left: 16px; }
+    th.left, td.left { text-align: left; }
+    td { padding: 12px 8px; border-bottom: 1px solid var(--border); color: var(--text); }
+    tr:last-child td { border-bottom: none; }
+    
+    /* Resaltado de clasificados */
+    tr.pos-1 td, tr.pos-2 td { font-weight: 700; color: var(--gold); }
+    tr.pos-1 { background: rgba(255, 201, 60, 0.05); }
+    
+    .equipo-cell { display: flex; align-items: center; gap: 8px; white-space: nowrap; }
+    .flag-sm { font-size: 16px; }
+    
+    .pj, .pts { font-weight: 700; }
+    .pts { color: var(--gold); font-size: 16px; }
+
+    .actualizado { text-align: center; font-size: 12px; color: var(--text3); margin-top: 40px; }
+
+    @media (max-width: 600px) {
+      .hide-mobile { display: none; }
+      .hero-grupos h1 { font-size: 32px; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="brand">
+    <span class="copa">🏆</span>
+    <div>
+      <h1>PRODE MUNDIAL 2026</h1>
+      <p>📊 Tablas de Clasificación</p>
+    </div>
+  </div>
+  <nav class="nav">
+    <a href="index.html"> Inicio</a>
+    <a href="instructivo.html">📘 Reglamento</a>
+    <a href="index.html#ranking"> Ranking</a>
+    <a href="chat.html">💬 Chat</a>
+    <a href="grupos.html" style="color:var(--gold); font-weight:700;">📊 Grupos</a>
+    <a href="login.html">🔐 Ingresar</a>
+  </nav>
+</header>
+
+<main class="grupos-container">
+  <div class="hero-grupos">
+    <h1>CLASIFICACIÓN</h1>
+    <p>Posiciones actualizadas en tiempo real según los resultados oficiales</p>
+  </div>
+
+  <div id="loader" style="text-align:center; padding:40px;">
+    <div class="spinner"></div> Cargando tablas...
+  </div>
+
+  <div id="contenido-grupos"></div>
+
+  <p class="actualizado" id="txt-actualizado"></p>
+</main>
+
+<footer style="text-align:center; padding:30px; color:var(--text2); font-size:12px; border-top:1px solid var(--border); margin-top:40px">
+  Prode Mundial 2026 · Tablas de Posiciones
+</footer>
+
+<script type="module">
+  import { supabase } from "./js/supabase-config.js";
+  import { PARTIDOS_GRUPOS, FLAGS } from "./datos-partidos.js";
+
+  // Inicializar
+  (async () => {
+    try {
+      // 1. Obtener resultados oficiales de la BD
+      const { data: resultados, error } = await supabase
+        .from('resultados')
+        .select('*')
+        .eq('es_prueba', false); // Solo resultados reales
+
+      if (error) throw error;
+
+      renderTablas(resultados || []);
+      
+      document.getElementById('loader').style.display = 'none';
+      document.getElementById('txt-actualizado').textContent = `Última actualización: ${new Date().toLocaleTimeString()}`;
+    } catch (err) {
+      console.error(err);
+      document.getElementById('loader').innerHTML = '<p style="color:var(--red)">Error al cargar datos</p>';
+    }
+  })();
+
+  function renderTablas(resultados) {
+    const contenedor = document.getElementById('contenido-grupos');
+    const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+    let html = "";
+
+    GRUPOS.forEach(grupo => {
+      // Filtrar partidos de este grupo
+      const partidosGrupo = PARTIDOS_GRUPOS.filter(p => p.grupo === grupo);
+      
+      // Estructura para almacenar stats
+      const tabla = {};
+
+      partidosGrupo.forEach(p => {
+        if (!tabla[p.local]) initEquipo(tabla, p.local);
+        if (!tabla[p.visit]) initEquipo(tabla, p.visit);
+
+        const res = resultados.find(r => r.partido_id === p.id);
+        if (res && res.local !== null && res.visit !== null) {
+          const gL = parseInt(res.local);
+          const gV = parseInt(res.visit);
+          
+          actualizarStats(tabla[p.local], gL, gV);
+          actualizarStats(tabla[p.visit], gV, gL);
+        }
+      });
+
+      // Convertir a array y ordenar
+      const clasificados = Object.values(tabla).sort((a, b) => {
+        if (b.pts !== a.pts) return b.pts - a.pts;
+        if (b.dg !== a.dg) return b.dg - a.dg;
+        return b.gf - a.gf;
+      });
+
+      // Generar HTML de la tabla
+      html += `
+        <div class="grupo-section">
+          <div class="grupo-title">GRUPO ${grupo}</div>
+          <div class="tabla-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>#</th>
+                  <th class="left">Equipo</th>
+                  <th class="hide-mobile">PJ</th>
+                  <th class="hide-mobile">PG</th>
+                  <th class="hide-mobile">PE</th>
+                  <th class="hide-mobile">PP</th>
+                  <th>GF</th>
+                  <th>GC</th>
+                  <th>DG</th>
+                  <th>PTS</th>
+                </tr>
+              </thead>
+              <tbody>
+                ${clasificados.map((eq, i) => `
+                  <tr class="pos-${i + 1}">
+                    <td>${i + 1}</td>
+                    <td class="left">
+                      <div class="equipo-cell">
+                        <span class="flag-sm">${FLAGS[eq.equipo] || "🏳️"}</span>
+                        <span>${eq.equipo}</span>
+                      </div>
+                    </td>
+                    <td class="hide-mobile pj">${eq.pj}</td>
+                    <td class="hide-mobile">${eq.pg}</td>
+                    <td class="hide-mobile">${eq.pe}</td>
+                    <td class="hide-mobile">${eq.pp}</td>
+                    <td>${eq.gf}</td>
+                    <td>${eq.gc}</td>
+                    <td>${eq.dg > 0 ? '+' + eq.dg : eq.dg}</td>
+                    <td class="pts">${eq.pts}</td>
+                  </tr>
+                `).join('')}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      `;
+    });
+
+    contenedor.innerHTML = html;
+  }
+
+  function initEquipo(tabla, nombre) {
+    tabla[nombre] = { 
+      equipo: nombre, 
+      pj: 0, pg: 0, pe: 0, pp: 0, 
+      gf: 0, gc: 0, dg: 0, pts: 0 
+    };
+  }
+
+  function actualizarStats(eq, golesFavor, golesContra) {
+    eq.pj++;
+    eq.gf += golesFavor;
+    eq.gc += golesContra;
+    eq.dg = eq.gf - eq.gc;
+    
+    if (golesFavor > golesContra) {
+      eq.pg++;
+      eq.pts += 3;
+    } else if (golesFavor === golesContra) {
+      eq.pe++;
+      eq.pts += 1;
+    } else {
+      eq.pp++;
+    }
+  }
+</script>
+
+</body>
+</html>
