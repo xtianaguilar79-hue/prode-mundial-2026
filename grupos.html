@@ -40,15 +40,14 @@
 
     .actualizado { text-align: center; font-size: 12px; color: var(--text3); margin-top: 40px; }
 
-    /* ═══ ESTILOS CRUCES ELIMINATORIOS ═══ */
     .eliminatorias-section { margin-top: 60px; }
     .eliminatorias-title {
       font-family: 'Anton', sans-serif;
       font-size: 32px;
       color: var(--gold);
       text-align: center;
-      margin-bottom: 40px;      letter-spacing: 2px;
-    }
+      margin-bottom: 40px;
+      letter-spacing: 2px;    }
     .fase-title {
       font-family: 'Anton', sans-serif;
       font-size: 22px;
@@ -96,8 +95,8 @@
       display: flex;
       flex-direction: column;
       gap: 8px;
-    }    .cruce-equipo {
-      display: flex;
+    }
+    .cruce-equipo {      display: flex;
       justify-content: space-between;
       align-items: center;
       padding: 8px;
@@ -145,8 +144,8 @@
       <p>📊 Tablas de Clasificación</p>
     </div>
   </div>
-  <nav class="nav">    <a href="index.html">🏠 Inicio</a>
-    <a href="instructivo.html">📘 Reglamento</a>
+  <nav class="nav">
+    <a href="index.html">🏠 Inicio</a>    <a href="instructivo.html">📘 Reglamento</a>
     <a href="index.html#ranking">🏅 Ranking</a>
     <a href="chat.html">💬 Chat</a>
     <a href="grupos.html" style="color:var(--gold); font-weight:700;">📊 Grupos</a>
@@ -179,9 +178,6 @@
   import { supabase } from "./js/supabase-config.js";
   import { PARTIDOS_GRUPOS, PARTIDOS_ELIM, TODOS_PARTIDOS, FLAGS, getKickoffTimestamp } from "./datos-partidos.js";
 
-  // ═══════════════════════════════════════════════════════
-  // RANKING FIFA JUNIO 2026 (CRITERIO 5 DE DESEMPATE)
-  // ═══════════════════════════════════════════════════════
   const RANKING_FIFA = {
     "Argentina": 1, "España": 2, "Francia": 3, "Inglaterra": 4,
     "Portugal": 5, "Brasil": 6, "Marruecos": 7, "Países Bajos": 8,
@@ -194,20 +190,18 @@
     "Paraguay": 41, "Escocia": 42, "Túnez": 45, "RD Congo": 46,
     "Uzbekistán": 50, "Qatar": 56, "Irak": 57, "Arabia Saudita": 60,
     "Sudáfrica": 61, "Jordania": 63, "Bosnia-Herzegovina": 64,
-    "Cabo Verde": 67, "Ghana": 73, "Curazao": 82, "Haití": 83,    "Nueva Zelanda": 85
+    "Cabo Verde": 67, "Ghana": 73, "Curazao": 82, "Haití": 83,
+    "Nueva Zelanda": 85
   };
 
-  // ═══════════════════════════════════════════════════════
-  // INICIALIZACIÓN
-  // ═══════════════════════════════════════════════════════
-  (async () => {
-    try {
+  (async () => {    try {
       const { data: resultados, error } = await supabase
         .from('resultados')
-        .select('*')
-        .eq('es_prueba', false);
+        .select('*');
 
       if (error) throw error;
+
+      console.log("✅ Resultados cargados:", resultados?.length || 0);
 
       renderTablas(resultados || []);
       renderEliminatorias(resultados || []);
@@ -220,9 +214,6 @@
     }
   })();
 
-  // ═══════════════════════════════════════════════════════
-  // TABLAS DE GRUPOS
-  // ═══════════════════════════════════════════════════════
   function renderTablas(resultados) {
     const contenedor = document.getElementById('contenido-grupos');
     const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -244,6 +235,7 @@
           actualizarStats(tabla[p.visit], gV, gL);
         }
       });
+
       const clasificados = Object.values(tabla).sort((a, b) => {
         if (b.pts !== a.pts) return b.pts - a.pts;
         if (b.dg !== a.dg) return b.dg - a.dg;
@@ -251,8 +243,7 @@
       });
 
       html += `
-        <div class="grupo-section">
-          <div class="grupo-title">GRUPO ${grupo}</div>
+        <div class="grupo-section">          <div class="grupo-title">GRUPO ${grupo}</div>
           <div class="tabla-wrap">
             <table>
               <thead>
@@ -292,7 +283,8 @@
               </tbody>
             </table>
           </div>
-        </div>      `;
+        </div>
+      `;
     });
 
     contenedor.innerHTML = html;
@@ -301,7 +293,6 @@
   function initEquipo(tabla, nombre) {
     tabla[nombre] = { equipo: nombre, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 };
   }
-
   function actualizarStats(eq, golesFavor, golesContra) {
     eq.pj++;
     eq.gf += golesFavor;
@@ -312,9 +303,6 @@
     else { eq.pp++; }
   }
 
-  // ═══════════════════════════════════════════════════════
-  // CRUCES ELIMINATORIOS
-  // ═══════════════════════════════════════════════════════
   function renderEliminatorias(resultados) {
     const contenedor = document.getElementById('contenido-eliminatorias');
     
@@ -341,7 +329,8 @@
         const estado = getEstadoPartido(p, res);
         
         const equipoLocal = obtenerEquipo(p.local, equipos16avos, resultados);
-        const equipoVisit = obtenerEquipo(p.visit, equipos16avos, resultados);        
+        const equipoVisit = obtenerEquipo(p.visit, equipos16avos, resultados);
+        
         let ganador = null;
         if (res && res.local !== null && res.visit !== null) {
           const gL = parseInt(res.local);
@@ -352,8 +341,7 @@
             const alL = parseInt(res.alargue_local);
             const alV = parseInt(res.alargue_visit);
             if (alL > alV) ganador = 'local';
-            else if (alV > alL) ganador = 'visit';
-            else if (res.penales_local !== null && res.penales_visit !== null) {
+            else if (alV > alL) ganador = 'visit';            else if (res.penales_local !== null && res.penales_visit !== null) {
               ganador = parseInt(res.penales_local) > parseInt(res.penales_visit) ? 'local' : 'visit';
             }
           }
@@ -390,7 +378,8 @@
     });
 
     contenedor.innerHTML = html;
-    contenedor.style.display = 'block';  }
+    contenedor.style.display = 'block';
+  }
 
   function calcularClasificacion(resultados) {
     const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -401,8 +390,7 @@
       const tabla = {};
 
       partidosGrupo.forEach(p => {
-        if (!tabla[p.local]) initEquipo(tabla, p.local);
-        if (!tabla[p.visit]) initEquipo(tabla, p.visit);
+        if (!tabla[p.local]) initEquipo(tabla, p.local);        if (!tabla[p.visit]) initEquipo(tabla, p.visit);
 
         const res = resultados.find(r => r.partido_id === p.id);
         if (res && res.local !== null && res.visit !== null) {
@@ -430,41 +418,30 @@
     return clasificacion;
   }
 
-  // ═══════════════════════════════════════════════════════
-  // DETERMINAR EQUIPOS 16AVOS (REGLAS FIFA + RANKING)
-  // ═══════════════════════════════════════════════════════
   function determinarEquipos16avos(clasificacion) {
-    // Calcular ranking de terceros con 5 criterios FIFA
     const terceros = Object.entries(clasificacion)
       .map(([grupo, data]) => ({
         grupo,
         equipo: data.tercero,
-        pts: data.stats[2]?.pts || 0,        dg: data.stats[2]?.dg || 0,
+        pts: data.stats[2]?.pts || 0,
+        dg: data.stats[2]?.dg || 0,
         gf: data.stats[2]?.gf || 0,
         rankingFifa: RANKING_FIFA[data.tercero] || 100
       }))
       .filter(t => t.equipo !== null)
       .sort((a, b) => {
-        // Criterio 1: Mayor número de puntos
         if (b.pts !== a.pts) return b.pts - a.pts;
-        // Criterio 2: Diferencia de goles
         if (b.dg !== a.dg) return b.dg - a.dg;
-        // Criterio 3: Goles a favor
         if (b.gf !== a.gf) return b.gf - a.gf;
-        // Criterio 4: Fair play (no implementado - requiere datos de tarjetas)
-        // Criterio 5: Ranking FIFA (menor posición = mejor)
         if (a.rankingFifa !== b.rankingFifa) return a.rankingFifa - b.rankingFifa;
         return 0;
       })
-      .slice(0, 8); // Top 8 terceros
+      .slice(0, 8);
 
-    // Crear mapa de terceros clasificados
     const tercerosMap = {};
-    terceros.forEach(t => {
-      tercerosMap[t.grupo] = t.equipo;
+    terceros.forEach(t => {      tercerosMap[t.grupo] = t.equipo;
     });
 
-    // Combinaciones oficiales FIFA para cruces de 16avos
     const combinacionesFIFA = {
       'M074': ['A', 'B', 'C', 'D', 'F'],
       'M077': ['C', 'D', 'F', 'G', 'H'],
@@ -476,11 +453,9 @@
       'M087': ['D', 'E', 'I', 'J', 'L']
     };
 
-    // Asignar terceros a cruces SIN REPETIR
     const tercerosAsignados = new Set();
     const asignacionCruces = {};
 
-    // Ordenar cruces por prioridad (los que tienen menos opciones primero)
     const crucesOrdenados = Object.entries(combinacionesFIFA)
       .sort((a, b) => {
         const opcionesA = a[1].filter(g => tercerosMap[g] && !tercerosAsignados.has(tercerosMap[g])).length;
@@ -488,7 +463,7 @@
         return opcionesA - opcionesB;
       });
 
-    // Asignar cada tercero a un cruce específico    crucesOrdenados.forEach(([cruceId, gruposPermitidos]) => {
+    crucesOrdenados.forEach(([cruceId, gruposPermitidos]) => {
       for (const t of terceros) {
         if (gruposPermitidos.includes(t.grupo) && !tercerosAsignados.has(t.equipo)) {
           asignacionCruces[cruceId] = t.equipo;
@@ -513,11 +488,9 @@
         if (puesto === 1) {
           return clasificacion[grupos[0]]?.primero || null;
         }
-        if (puesto === 2) {
-          return clasificacion[grupos[0]]?.segundo || null;
+        if (puesto === 2) {          return clasificacion[grupos[0]]?.segundo || null;
         }
         if (puesto === 3) {
-          // Buscar en la asignación de cruces FIFA
           for (const [cruceId, gruposPermitidos] of Object.entries(combinacionesFIFA)) {
             const coincide = grupos.some(g => gruposPermitidos.includes(g));
             if (coincide && asignacionCruces[cruceId]) {
@@ -528,7 +501,6 @@
               }
             }
           }
-          // Fallback
           for (const t of terceros) {
             if (grupos.includes(t.grupo) && !tercerosAsignados.has(t.equipo)) {
               return t.equipo;
@@ -537,7 +509,8 @@
           return null;
         }
         return null;
-      }    };
+      }
+    };
   }
 
   function obtenerEquipo(posicion, equipos16avos, resultados) {
@@ -564,8 +537,7 @@
           }
         }
       }
-      return null;
-    }
+      return null;    }
     
     if (posicion.includes('Perdedor') || posicion.includes('Ganador')) {
       const semiId = posicion.includes('SF1') ? 'M101' : 'M102';
@@ -586,7 +558,8 @@
             if (res.alargue_local !== null && res.alargue_visit !== null) {
               const alL = parseInt(res.alargue_local);
               const alV = parseInt(res.alargue_visit);
-              if (alL > alV) { ganador = partido.local; perdedor = partido.visit; }              else if (alV > alL) { ganador = partido.visit; perdedor = partido.local; }
+              if (alL > alV) { ganador = partido.local; perdedor = partido.visit; }
+              else if (alV > alL) { ganador = partido.visit; perdedor = partido.local; }
               else {
                 ganador = parseInt(res.penales_local) > parseInt(res.penales_visit) ? partido.local : partido.visit;
                 perdedor = ganador === partido.local ? partido.visit : partido.local;
@@ -614,6 +587,5 @@
     return 'finalizado';
   }
 </script>
-
 </body>
 </html>
