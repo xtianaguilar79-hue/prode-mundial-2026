@@ -11,10 +11,9 @@ let filtroGrupoActual = "";
 
 // ══════════════════════════════════════════════════════
 // DETECTAR ESTADO DEL PARTIDO
-// ═══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 
 function getEstadoPartido(partido, resultado) {
-  // PRIORIDAD 1: Usar estado manual de la base de datos si existe
   if (resultado && resultado.estado) {
     if (resultado.estado === "vivo") {
       return { estado: "vivo", texto: "🔴 EN JUEGO" };
@@ -24,15 +23,13 @@ function getEstadoPartido(partido, resultado) {
     }
   }
   
-  // PRIORIDAD 2: Si tiene resultado cargado pero sin estado, asumir finalizado
   if (resultado && resultado.local !== null && resultado.local !== undefined) {
     return { estado: "finalizado", texto: "Finalizado" };
   }
   
-  // PRIORIDAD 3: Detección automática por horario (fallback)
   const kickoff = getKickoffTimestamp(partido);
   const ahora = Date.now();
-  const finPartido = kickoff + (120 * 60 * 1000); // 90' + 30' alargue
+  const finPartido = kickoff + (120 * 60 * 1000);
   
   if (ahora < kickoff) {
     return { estado: "proximo", texto: `${partido.fecha} · ${partido.hora} ARG` };
@@ -47,24 +44,21 @@ function getEstadoPartido(partido, resultado) {
 
 // ══════════════════════════════════════════════════════
 // CARGA DE DATOS
-// ═══════════════════════════════════════════════════════async function cargarDatosCompletos() {
+// ══════════════════════════════════════════════════════
+async function cargarDatosCompletos() {
   try {
-    // Usuarios
-    const { data: usuariosData, error: usuariosError } = await supabase
-      .from('usuarios')
+    const { data: usuariosData, error: usuariosError } = await supabase      .from('usuarios')
       .select('*');
     if (usuariosError) throw usuariosError;
 
     const usuarios = {};
     if (usuariosData) usuariosData.forEach(u => { usuarios[u.id] = u; });
 
-    // Predicciones
     const { data: predsData, error: predsError } = await supabase
       .from('predicciones')
       .select('*');
     if (predsError) throw predsError;
 
-    // Resultados (solo los reales, no pruebas)
     const { data: resData, error: resError } = await supabase
       .from('resultados')
       .select('*')
@@ -74,7 +68,6 @@ function getEstadoPartido(partido, resultado) {
     const resultados = {};
     if (resData) resData.forEach(r => { resultados[r.partido_id] = r; });
 
-    // Campeones
     const { data: campeonesData, error: campeonesError } = await supabase
       .from('campeones')
       .select('*');
@@ -83,7 +76,6 @@ function getEstadoPartido(partido, resultado) {
     const campeones = {};
     if (campeonesData) campeonesData.forEach(c => { campeones[c.user_id] = c; });
 
-    // Campeón real
     const { data: finalData, error: finalError } = await supabase
       .from('config')
       .select('*')
@@ -91,12 +83,12 @@ function getEstadoPartido(partido, resultado) {
       .single();
     const campeonReal = !finalError && finalData ? finalData.campeon : null;
 
-    // Calcular ranking
     const ranking = {};
 
     if (predsData) {
       predsData.forEach(pred => {
-        const res = resultados[pred.partido_id];        const pts = res ? calcularPuntos(pred, res) : 0;
+        const res = resultados[pred.partido_id];
+        const pts = res ? calcularPuntos(pred, res) : 0;
 
         if (!ranking[pred.user_id]) {
           const u = usuarios[pred.user_id] || {};
@@ -104,8 +96,7 @@ function getEstadoPartido(partido, resultado) {
             uid: pred.user_id,
             nombre: u.nombre || "Jugador",
             apellido: u.apellido || "",
-            apodo: u.apodo || null,
-            grupos: u.grupos || [],
+            apodo: u.apodo || null,            grupos: u.grupos || [],
             puntos: 0,
             puntosCampeon: 0,
             partidosPronosticados: 0,
@@ -117,7 +108,6 @@ function getEstadoPartido(partido, resultado) {
         ranking[pred.user_id].partidosPronosticados += 1;
         if (pts > 0) ranking[pred.user_id].partidosAcertados += 1;
         
-        // NUEVO: Guardar detalle solo si hay resultado oficial
         if (res && res.local !== null && res.local !== undefined) {
           const partido = TODOS_PARTIDOS.find(p => p.id === pred.partido_id);
           if (partido) {
@@ -145,7 +135,8 @@ function getEstadoPartido(partido, resultado) {
           puntosCampeon: 0,
           partidosPronosticados: 0,
           partidosAcertados: 0,
-          detallePartidos: []        };
+          detallePartidos: []
+        };
       }
       if (campeonReal) {
         ranking[uid].puntosCampeon = calcularPuntosCampeon(pred, campeonReal);
@@ -154,8 +145,7 @@ function getEstadoPartido(partido, resultado) {
 
     Object.values(usuarios).forEach(u => {
       if (!ranking[u.id]) {
-        ranking[u.id] = {
-          uid: u.id,
+        ranking[u.id] = {          uid: u.id,
           nombre: u.nombre,
           apellido: u.apellido || "",
           apodo: u.apodo || null,
@@ -194,7 +184,8 @@ function getEstadoPartido(partido, resultado) {
   }
 }
 
-// ══════════════════════════════════════════════════════// SELECTOR DE GRUPOS
+// ══════════════════════════════════════════════════════
+// SELECTOR DE GRUPOS
 // ══════════════════════════════════════════════════════
 
 function actualizarSelectorGrupos(usuarios) {
@@ -204,7 +195,6 @@ function actualizarSelectorGrupos(usuarios) {
       u.grupos.forEach(g => gruposSet.add(g));
     }
   });
-
   const select = document.getElementById("filtroGrupo");
   if (!select) return;
   
@@ -225,7 +215,7 @@ function actualizarSelectorGrupos(usuarios) {
   };
 }
 
-// ═══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 // RANKING
 // ══════════════════════════════════════════════════════
 
@@ -243,7 +233,8 @@ function renderRanking(lista, totalUsuarios) {
     if (rankingTabla) rankingTabla.style.display = "none";
     
     const top3 = document.getElementById("top3");
-    if (top3) {      top3.innerHTML = `
+    if (top3) {
+      top3.innerHTML = `
         <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1.5px solid var(--gold);">
           <div style="font-size:70px; margin-bottom:16px;">🏆</div>
           <h3 style="color:var(--gold); font-family:'Anton'; font-size:clamp(24px, 4vw, 36px); margin-bottom:12px;">¡MUY PRONTO ARRANCA EL TORNEO!</h3>
@@ -252,8 +243,7 @@ function renderRanking(lista, totalUsuarios) {
               ? `Ya hay <strong style="color:var(--gold)">${totalUsuarios}</strong> jugador${totalUsuarios === 1 ? '' : 'es'} registrado${totalUsuarios === 1 ? '' : 's'}.`
               : 'El ranking se activará cuando comience el Mundial.'}
           </p>
-          <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none;">🔐 Registrarme</a>
-        </div>
+          <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none;">🔐 Registrarme</a>        </div>
       `;
     }
     return;
@@ -272,7 +262,7 @@ function renderRanking(lista, totalUsuarios) {
       const u = lista[idx];
       if (!u) return "";
       return `
-        <div class="top3-card ${colores[i]}" onclick="mostrarDetalleJugador('${u.uid}')" style="cursor:pointer;" title="Ver detalle de ${u.nombre}">
+        <div class="top3-card ${colores[i]}" onclick="window.mostrarDetalleJugador('${u.uid}')" style="cursor:pointer;" title="Ver detalle de ${u.nombre}">
           <div class="emoji">${emojis[i]}</div>
           <div class="nombre">${u.nombre} ${u.apellido}</div>
           ${u.apodo ? `<div style="font-size:11px; color:var(--text2); margin-bottom:4px;">"${u.apodo}"</div>` : ""}
@@ -292,17 +282,17 @@ function renderRanking(lista, totalUsuarios) {
       const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","🥈","🥉"][u.pos-1]}</span>` : u.pos;
       const gruposHTML = u.grupos && u.grupos.length > 0 
         ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
-        : '<span style="color:var(--text3); font-size:11px;">—</span>';      
+        : '<span style="color:var(--text3); font-size:11px;">—</span>';
+      
       return `
-        <tr class="${claseFila}" onclick="mostrarDetalleJugador('${u.uid}')" style="cursor:pointer;" title="Ver detalle de ${u.nombre}">
+        <tr class="${claseFila}" onclick="window.mostrarDetalleJugador('${u.uid}')" style="cursor:pointer;" title="Ver detalle de ${u.nombre}">
           <td>${posText}</td>
           <td class="left">
             <strong>${u.nombre} ${u.apellido}</strong>
             ${u.apodo ? `<div style="font-size:11px; color:var(--text2);">"${u.apodo}"</div>` : ""}
           </td>
           <td style="font-size:11px;">${gruposHTML}</td>
-          <td>${u.partidosPronosticados}/104</td>
-          <td>${u.partidosAcertados}</td>
+          <td>${u.partidosPronosticados}/104</td>          <td>${u.partidosAcertados}</td>
           <td>${u.puntosCampeon > 0 ? `<span style="color:var(--gold)">+${u.puntosCampeon}</span>` : "—"}</td>
           <td>${u.bonus > 0 ? `<span style="color:var(--green)">+${u.bonus}</span>` : "—"}</td>
           <td class="pts-total">${u.total}</td>
@@ -313,10 +303,10 @@ function renderRanking(lista, totalUsuarios) {
 }
 
 // ══════════════════════════════════════════════════════
-// MODAL DE DETALLE DE JUGADOR (NUEVO)
+// MODAL DE DETALLE DE JUGADOR
 // ══════════════════════════════════════════════════════
 
-window.mostrarDetalleJugador = async (uid) => {
+window.mostrarDetalleJugador = async function(uid) {
   try {
     const { lista } = await cargarDatosCompletos();
     const jugador = lista.find(u => u.uid === uid);
@@ -330,18 +320,18 @@ window.mostrarDetalleJugador = async (uid) => {
     const modalContent = document.getElementById("modalContent");
     
     if (!modal || !modalContent) {
-      console.error("Modal no encontrado en el DOM. Agregá el HTML del modal a index.html");
+      console.error("Modal no encontrado en el DOM");
       return;
     }
 
-    // Agrupar partidos por fase (solo los que tienen resultado oficial)
     const partidosPorFase = {
       "Fase de Grupos": [],
       "Dieciseisavos": [],
       "Octavos": [],
       "Cuartos": [],
       "Semifinales": [],
-      "3er Puesto": [],      "Final": []
+      "3er Puesto": [],
+      "Final": []
     };
 
     jugador.detallePartidos.forEach(det => {
@@ -351,11 +341,9 @@ window.mostrarDetalleJugador = async (uid) => {
       else if (fase === "octavos") partidosPorFase["Octavos"].push(det);
       else if (fase === "cuartos") partidosPorFase["Cuartos"].push(det);
       else if (fase === "semis") partidosPorFase["Semifinales"].push(det);
-      else if (fase === "3er") partidosPorFase["3er Puesto"].push(det);
-      else if (fase === "final") partidosPorFase["Final"].push(det);
+      else if (fase === "3er") partidosPorFase["3er Puesto"].push(det);      else if (fase === "final") partidosPorFase["Final"].push(det);
     });
 
-    // Generar HTML del encabezado
     let html = `
       <div style="text-align:center; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid var(--border);">
         <h2 style="font-family:'Anton'; font-size:32px; color:var(--gold); margin-bottom:8px;">${jugador.nombre} ${jugador.apellido}</h2>
@@ -373,7 +361,6 @@ window.mostrarDetalleJugador = async (uid) => {
       </div>
     `;
 
-    // Si no tiene partidos con resultado oficial
     if (jugador.detallePartidos.length === 0) {
       html += `
         <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
@@ -383,14 +370,14 @@ window.mostrarDetalleJugador = async (uid) => {
         </div>
       `;
     } else {
-      // Mostrar partidos por fase
       Object.entries(partidosPorFase).forEach(([fase, partidos]) => {
         if (partidos.length === 0) return;
 
         const puntosFase = partidos.reduce((sum, det) => sum + det.puntos, 0);
 
         html += `
-          <div style="margin-bottom:24px;">            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:8px 12px; background:var(--bg2); border-radius:6px;">
+          <div style="margin-bottom:24px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:12px; padding:8px 12px; background:var(--bg2); border-radius:6px;">
               <h3 style="color:var(--gold); font-size:16px; margin:0; font-family:'Anton';">${fase}</h3>
               <span style="font-family:'Anton'; font-size:20px; color:var(--gold);">${puntosFase} pts</span>
             </div>
@@ -403,7 +390,6 @@ window.mostrarDetalleJugador = async (uid) => {
           const predV = det.prediccion.visit !== null && det.prediccion.visit !== undefined ? det.prediccion.visit : "-";
           const resL = det.resultado.local !== null && det.resultado.local !== undefined ? det.resultado.local : "-";
           const resV = det.resultado.visit !== null && det.resultado.visit !== undefined ? det.resultado.visit : "-";
-
           html += `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--card); border:1px solid var(--border); border-radius:6px; margin-bottom:8px; border-left:3px solid ${det.puntos > 0 ? 'var(--gold)' : 'var(--border)'};">
               <div style="flex:1;">
@@ -428,18 +414,19 @@ window.mostrarDetalleJugador = async (uid) => {
     modalContent.innerHTML = html;
     modal.style.display = "flex";
   } catch (err) {
-    console.error(err);
-    alert("Error al cargar el detalle");
+    console.error("Error en mostrarDetalleJugador:", err);
+    alert("Error al cargar el detalle: " + err.message);
   }
 };
 
-window.cerrarModalDetalle = () => {
+window.cerrarModalDetalle = function() {
   const modal = document.getElementById("modalDetalle");
   if (modal) modal.style.display = "none";
 };
 
 // ══════════════════════════════════════════════════════
-// RESULTADOS CON ESTADOS EN VIVO// ═══════════════════════════════════════════════════════
+// RESULTADOS CON ESTADOS EN VIVO
+// ══════════════════════════════════════════════════════
 
 function renderCardPartido(p, resultado) {
   const flagL = FLAGS[p.local] || "🏳️";
@@ -452,8 +439,7 @@ function renderCardPartido(p, resultado) {
 
   let liveBadge = "";
   if (estado === "vivo") {
-    liveBadge = `<span class="live-badge">🔴 EN JUEGO</span>`;
-  }
+    liveBadge = `<span class="live-badge">🔴 EN JUEGO</span>`;  }
 
   let marcadorHTML;
   if (estado === "finalizado" && resultado && resultado.local !== null) {
@@ -488,7 +474,8 @@ function renderCardPartido(p, resultado) {
         <span class="badge badge-fecha" style="margin-left:auto;">📍 ${p.sede}</span>
       </div>
       <div class="resultado-equipos">
-        <div class="resultado-equipo">          <span style="font-size:22px;">${flagL}</span>
+        <div class="resultado-equipo">
+          <span style="font-size:22px;">${flagL}</span>
           <span>${p.local}</span>
         </div>
         <div class="resultado-marcador">
@@ -502,7 +489,6 @@ function renderCardPartido(p, resultado) {
     </div>
   `;
 }
-
 function renderResultados(resultados) {
   const cont = document.getElementById("resultadosContenido");
   const loader = document.getElementById("resultadosLoader");
@@ -537,7 +523,8 @@ function renderResultados(resultados) {
     hayContenido = true;
     const ordenados = [...enJuego, ...finalizados, ...pendientes];
 
-    html += `<h3 class="seccion-titulo">${sec.label}</h3>`;    html += `<div class="resultados-grid">`;
+    html += `<h3 class="seccion-titulo">${sec.label}</h3>`;
+    html += `<div class="resultados-grid">`;
     
     ordenados.forEach(p => {
       html += renderCardPartido(p, resultados[p.id]);
@@ -550,8 +537,7 @@ function renderResultados(resultados) {
     cont.innerHTML = `
       <div style="text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1px solid var(--border);">
         <div style="font-size:60px; margin-bottom:16px;">⏳</div>
-        <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>
-        <p style="color:var(--text2); font-size:14px; max-width:450px; margin:0 auto;">
+        <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>        <p style="color:var(--text2); font-size:14px; max-width:450px; margin:0 auto;">
           Los partidos en juego aparecerán en vivo. Los resultados oficiales se cargarán al finalizar cada partido.
         </p>
       </div>
@@ -563,7 +549,7 @@ function renderResultados(resultados) {
 
 // ══════════════════════════════════════════════════════
 // CARGAR Y RENDERIZAR
-// ═══════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════
 
 async function cargarYRenderizar() {
   try {
@@ -585,4 +571,4 @@ async function cargarYRenderizar() {
 }
 
 cargarYRenderizar();
-setInterval(cargarYRenderizar, 30000); // Actualizar cada 30 segundos
+setInterval(cargarYRenderizar, 30000);
