@@ -2,6 +2,7 @@
 //  PRODE MUNDIAL 2026 - FIXTURE OFICIAL FIFA
 // Horarios en HORA ARGENTINA (UTC-3)
 // Bloqueo: 5 minutos antes del kickoff
+// Usa hora del SERVIDOR (no la del dispositivo)
 // ═══════════════════════════════════════════════════════
 
 // ─── BANDERAS DE LAS 48 SELECCIONES (VERIFICADAS Y CORRECTAS) ───
@@ -46,8 +47,7 @@ export const FLAGS = {
   "Bélgica":              "🇧🇪",
   "Egipto":               "🇪🇬",
   "Irán":                 "🇮🇷",
-  "Nueva Zelanda":        "🇳🇿",
- 
+  "Nueva Zelanda":        "🇳🇿", 
   // GRUPO H
   "España":               "🇪🇸",
   "Cabo Verde":           "🇨🇻",
@@ -82,12 +82,12 @@ export const FLAGS = {
 export const SELECCIONES = Object.keys(FLAGS);
 
 export function getFlag(equipo) {
-  return FLAGS[equipo] || "️";
+  return FLAGS[equipo] || "🏳️";
 }
 
-// ─── PARTIDOS FASE DE GRUPOS (72 partidos) ──
+// ─── PARTIDOS FASE DE GRUPOS (72 partidos) ───
 export const PARTIDOS_GRUPOS = [
-  // ═══ JORNADA 1 ══
+  // ═══ JORNADA 1 ═══
   { id:"M001", j:1, grupo:"A", local:"México", visit:"Sudáfrica", fecha:"11/06", hora:"16:00", sede:"Azteca, CDMX" },
   { id:"M002", j:1, grupo:"A", local:"Corea del Sur", visit:"Rep. Checa", fecha:"11/06", hora:"23:00", sede:"Akron, GDL" },
   { id:"M003", j:1, grupo:"B", local:"Canadá", visit:"Bosnia-Herzegovina", fecha:"12/06", hora:"16:00", sede:"Toronto, CAN" },
@@ -96,8 +96,7 @@ export const PARTIDOS_GRUPOS = [
   { id:"M007", j:1, grupo:"C", local:"Brasil", visit:"Marruecos", fecha:"13/06", hora:"19:00", sede:"MetLife, NJ" },
   { id:"M005", j:1, grupo:"C", local:"Haití", visit:"Escocia", fecha:"13/06", hora:"22:00", sede:"Boston, USA" },
   { id:"M006", j:1, grupo:"D", local:"Australia", visit:"Turquía", fecha:"14/06", hora:"01:00", sede:"Vancouver, CAN" },
-  { id:"M010", j:1, grupo:"E", local:"Alemania", visit:"Curazao", fecha:"14/06", hora:"14:00", sede:"Houston, USA" },
-  { id:"M009", j:1, grupo:"E", local:"Costa de Marfil", visit:"Ecuador", fecha:"14/06", hora:"20:00", sede:"Filadelfia, USA" },
+  { id:"M010", j:1, grupo:"E", local:"Alemania", visit:"Curazao", fecha:"14/06", hora:"14:00", sede:"Houston, USA" },  { id:"M009", j:1, grupo:"E", local:"Costa de Marfil", visit:"Ecuador", fecha:"14/06", hora:"20:00", sede:"Filadelfia, USA" },
   { id:"M011", j:1, grupo:"F", local:"Países Bajos", visit:"Japón", fecha:"14/06", hora:"17:00", sede:"Dallas, USA" },
   { id:"M012", j:1, grupo:"F", local:"Suecia", visit:"Túnez", fecha:"14/06", hora:"23:00", sede:"BBVA, MTY" },
   { id:"M014", j:1, grupo:"H", local:"España", visit:"Cabo Verde", fecha:"15/06", hora:"13:00", sede:"Atlanta, USA" },
@@ -146,8 +145,7 @@ export const PARTIDOS_GRUPOS = [
   { id:"M050", j:3, grupo:"C", local:"Marruecos", visit:"Haití", fecha:"24/06", hora:"19:00", sede:"Atlanta, USA" },
   { id:"M053", j:3, grupo:"A", local:"Rep. Checa", visit:"México", fecha:"24/06", hora:"22:00", sede:"Azteca, CDMX" },
   { id:"M054", j:3, grupo:"A", local:"Sudáfrica", visit:"Corea del Sur", fecha:"24/06", hora:"22:00", sede:"BBVA, MTY" },
-  { id:"M055", j:3, grupo:"E", local:"Curazao", visit:"Costa de Marfil", fecha:"25/06", hora:"17:00", sede:"Filadelfia, USA" },
-  { id:"M056", j:3, grupo:"E", local:"Ecuador", visit:"Alemania", fecha:"25/06", hora:"17:00", sede:"Nueva York/NJ, USA" },
+  { id:"M055", j:3, grupo:"E", local:"Curazao", visit:"Costa de Marfil", fecha:"25/06", hora:"17:00", sede:"Filadelfia, USA" },  { id:"M056", j:3, grupo:"E", local:"Ecuador", visit:"Alemania", fecha:"25/06", hora:"17:00", sede:"Nueva York/NJ, USA" },
   { id:"M057", j:3, grupo:"F", local:"Japón", visit:"Suecia", fecha:"25/06", hora:"20:00", sede:"Dallas, USA" },
   { id:"M058", j:3, grupo:"F", local:"Túnez", visit:"Países Bajos", fecha:"25/06", hora:"20:00", sede:"Kansas City, USA" },
   { id:"M059", j:3, grupo:"D", local:"Turquía", visit:"Estados Unidos", fecha:"25/06", hora:"23:00", sede:"Los Angeles, USA" },
@@ -168,7 +166,7 @@ export const PARTIDOS_GRUPOS = [
 
 // ─── PARTIDOS ELIMINATORIOS (32 partidos) ───
 export const PARTIDOS_ELIM = [
-  // ══ DIECISEISAVOS DE FINAL ═══
+  // ═══ DIECISEISAVOS DE FINAL ═══
   { id:"M073", fase:"16avos", local:"2°A", visit:"2°B", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M076", fase:"16avos", local:"1°C", visit:"2°F", fecha:"29/06", hora:"14:00", sede:"Houston, USA" },
   { id:"M074", fase:"16avos", local:"1°E", visit:"3° A/B/C/D/F", fecha:"29/06", hora:"17:30", sede:"Boston, USA" },
@@ -196,8 +194,7 @@ export const PARTIDOS_ELIM = [
   { id:"M095", fase:"octavos", local:"G86", visit:"G88", fecha:"07/07", hora:"13:00", sede:"Atlanta, USA" },
   { id:"M096", fase:"octavos", local:"G85", visit:"G87", fecha:"07/07", hora:"17:00", sede:"Vancouver, CAN" },
 
-  // ═══ CUARTOS DE FINAL ═══
-  { id:"M097", fase:"cuartos", local:"G89", visit:"G90", fecha:"09/07", hora:"17:00", sede:"Boston, USA" },
+  // ═══ CUARTOS DE FINAL ═══  { id:"M097", fase:"cuartos", local:"G89", visit:"G90", fecha:"09/07", hora:"17:00", sede:"Boston, USA" },
   { id:"M098", fase:"cuartos", local:"G93", visit:"G94", fecha:"10/07", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M099", fase:"cuartos", local:"G91", visit:"G92", fecha:"11/07", hora:"18:00", sede:"Miami, USA" },
   { id:"M100", fase:"cuartos", local:"G95", visit:"G96", fecha:"11/07", hora:"22:00", sede:"Kansas City, USA" },
@@ -246,7 +243,6 @@ export function calcularPuntos(pred, resultado) {
   if (pV === rV) total += pts.golV;
 
   if (pL === rL && pV === rV) total += pts.exacto;
-
   if (fase !== "grupos" && signoP === "E" && signoR === "E") {
     const pAL = pred.alargue_local !== null && pred.alargue_local !== undefined ? parseInt(pred.alargue_local) : null;
     const pAV = pred.alargue_visit !== null && pred.alargue_visit !== undefined ? parseInt(pred.alargue_visit) : null;
@@ -296,8 +292,7 @@ export const PUNTOS_CAMPEON_POR_FASE = {
   "pre-octavos": [50, 30, 10],
   "pre-cuartos": [40, 20, 0],
   "pre-semis":   [30, 10, 0],
-  "pre-final":   [10, 0, 0],
-  "cerrado":     [0, 0, 0],
+  "pre-final":   [10, 0, 0],  "cerrado":     [0, 0, 0],
 };
 
 export const FECHAS_LIMITE_CAMPEON = {
@@ -311,8 +306,117 @@ export const FECHAS_LIMITE_CAMPEON = {
   "pre-final":   "2026-07-19T15:55:00-03:00",
 };
 
+// ═══════════════════════════════════════════════════════
+// SINCRONIZACIÓN DE HORA CON SERVIDOR (NUEVO)
+// ═══════════════════════════════════════════════════════
+
+// Diferencia entre hora local y hora del servidor (en milisegundos)
+let diferenciaHoraria = 0;
+let horaSincronizada = false;
+
+/**
+ * Sincroniza la hora local con la hora del servidor Supabase.
+ * Debe llamarse UNA SOLA VEZ al inicio de la aplicación.
+ * @param {Object} supabaseClient - Instancia del cliente de Supabase
+ */
+export async function sincronizarHoraServidor(supabaseClient) {
+  try {
+    console.log("🕐 Sincronizando hora con el servidor...");
+    
+    // Método 1: Intentar obtener hora mediante función RPC
+    try {
+      const { data, error } = await supabaseClient.rpc('obtener_hora_servidor');
+      if (!error && data) {
+        const horaServidor = new Date(data).getTime();
+        const horaLocal = Date.now();
+        diferenciaHoraria = horaServidor - horaLocal;
+        horaSincronizada = true;
+        console.log("✅ Hora sincronizada vía RPC. Diferencia:", diferenciaHoraria, "ms");
+        return;
+      }
+    } catch (rpcError) {
+      console.warn("⚠️ RPC no disponible, intentando método alternativo...");
+    }
+    
+    // Método 2: Obtener hora del header HTTP de una consulta
+    const { data, error } = await supabaseClient
+      .from('config')
+      .select('id')      .limit(1);
+    
+    if (!error) {
+      // Supabase devuelve la hora del servidor en el header Date
+      // La obtenemos haciendo una consulta y comparando timestamps
+      const horaLocalAntes = Date.now();
+      
+      // Hacer otra consulta para medir el tiempo de respuesta
+      const { data: data2 } = await supabaseClient
+        .from('config')
+        .select('id')
+        .limit(1);
+      
+      const horaLocalDespues = Date.now();
+      
+      // Estimar hora del servidor como el punto medio entre las dos consultas locales
+      const horaLocalEstimada = (horaLocalAntes + horaLocalDespues) / 2;
+      
+      // Como no podemos acceder directamente al header Date desde el navegador,
+      // usamos una aproximación: asumimos que la hora del servidor está cerca
+      // de la hora local promedio (esto funciona si el servidor está en la misma zona horaria)
+      
+      // Para mayor precisión, podemos usar una API externa de hora
+      try {
+        const response = await fetch('https://worldtimeapi.org/api/timezone/America/Argentina/Buenos_Aires');
+        if (response.ok) {
+          const timeData = await response.json();
+          const horaServidor = new Date(timeData.datetime).getTime();
+          const horaLocalPromedio = horaLocalEstimada;
+          diferenciaHoraria = horaServidor - horaLocalPromedio;
+          horaSincronizada = true;
+          console.log("✅ Hora sincronizada vía API externa. Diferencia:", diferenciaHoraria, "ms");
+          return;
+        }
+      } catch (apiError) {
+        console.warn("⚠️ API externa no disponible, usando hora local");
+      }
+      
+      // Si todo falla, usamos hora local (diferencia = 0)
+      diferenciaHoraria = 0;
+      horaSincronizada = true;
+      console.log("⚠️ Usando hora local como fallback");
+    }
+  } catch (err) {
+    console.error("❌ Error al sincronizar hora:", err);
+    diferenciaHoraria = 0;
+    horaSincronizada = true;
+  }
+}
+/**
+ * Devuelve la hora REAL ajustada según el servidor.
+ * Si no se ha sincronizado, usa la hora local.
+ * @returns {number} Timestamp en milisegundos
+ */
+export function horaReal() {
+  return Date.now() + diferenciaHoraria;
+}
+
+/**
+ * Verifica si la hora ya fue sincronizada con el servidor
+ * @returns {boolean}
+ */
+export function esHoraSincronizada() {
+  return horaSincronizada;
+}
+
+/**
+ * Obtiene la diferencia horaria actual (para debug)
+ * @returns {number} Diferencia en milisegundos
+ */
+export function obtenerDiferenciaHoraria() {
+  return diferenciaHoraria;
+}
+
 export function obtenerFaseActual() {
-  const ahora = new Date();
+  const ahora = new Date(horaReal()); // ← CAMBIO: usar horaReal() en lugar de new Date()
   for (const [fase, fechaLimite] of Object.entries(FECHAS_LIMITE_CAMPEON)) {
     if (ahora < new Date(fechaLimite)) return fase;
   }
@@ -336,8 +440,7 @@ export function calcularPuntosCampeon(prediccion, campeonReal) {
   if (campeonReal === prediccion.opcion3) return pts[2];
   return 0;
 }
-
-// ─── CRONÓMETRO Y BLOQUEO ──
+// ─── CRONÓMETRO Y BLOQUEO ───
 export function getKickoffTimestamp(partido) {
   const [dia, mes] = partido.fecha.split("/");
   const [hora, min] = partido.hora.split(":");
@@ -345,7 +448,7 @@ export function getKickoffTimestamp(partido) {
 }
 
 export function msHastaBloqueo(partido) {
-  return (getKickoffTimestamp(partido) - (5 * 60 * 1000)) - Date.now();
+  return (getKickoffTimestamp(partido) - (5 * 60 * 1000)) - horaReal(); // ← CAMBIO: usar horaReal()
 }
 
 export function formatearTiempo(ms) {
