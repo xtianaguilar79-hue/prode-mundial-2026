@@ -2,7 +2,8 @@ import { supabase } from "./supabase-config.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, PUNTOS, 
   calcularPuntos, SELECCIONES, obtenerPuntosCampeonDisponibles,
-  calcularPuntosCampeon, msHastaBloqueo, formatearTiempo, partidoBloqueado
+  calcularPuntosCampeon, msHastaBloqueo, formatearTiempo, partidoBloqueado,
+  sincronizarHoraServidor
 } from "../datos-partidos.js";
 
 console.log("📋 app-prode.js cargado");
@@ -14,7 +15,7 @@ let prediccionCampeon = null;
 let resultadoFinal = null;
 let faseActiva = "j1";
 let intervalosCrono = [];
-let misGrupos = []; // ← NUEVO: lista de grupos del usuario
+let misGrupos = [];
 
 // ═══════════════════════════════════════════════════════
 // INICIALIZACIÓN
@@ -24,10 +25,14 @@ async function init() {
   console.log("🚀 Iniciando prode...");
   
   try {
+    // PRIMERO: Sincronizar hora con el servidor
+    await sincronizarHoraServidor(supabase);
+    console.log("✅ Hora sincronizada con el servidor");
+    
     const { data: { session }, error: sessionError } = await supabase.auth.getSession();
     
     if (sessionError || !session) {
-      console.log("️ No hay sesión, redirigiendo a login");
+      console.log("⚠️ No hay sesión, redirigiendo a login");
       window.location.href = "login.html";
       return;
     }
@@ -43,11 +48,10 @@ async function init() {
       window.location.href = "login.html";
       return;
     }
-
     usuarioId = usuario.id;
-    misGrupos = usuario.grupos || []; // ← NUEVO: cargar grupos
+    misGrupos = usuario.grupos || [];
     console.log("✅ Autenticado como:", usuario.nombre);
-
+    
     const userNameEl = document.getElementById("userName");
     if (userNameEl) userNameEl.textContent = usuario.nombre;
 
@@ -60,11 +64,11 @@ async function init() {
 
     await cargarDatos();
     await cargarCampeon();
-    renderMisGrupos(); // ← NUEVO: renderizar grupos
+    renderMisGrupos();
     renderTabs();
     renderPartidos();
     renderCampeon();
-    configurarSeccionGrupos(); // ← NUEVO: activar botones de grupos
+    configurarSeccionGrupos();
     
     console.log("✅ Prode iniciado correctamente");
   } catch (err) {
@@ -73,7 +77,7 @@ async function init() {
 }
 
 // ═══════════════════════════════════════════════════════
-// GESTIÓN DE GRUPOS (NUEVO - SIN ROMPER NADA)
+// GESTIÓN DE GRUPOS
 // ═══════════════════════════════════════════════════════
 
 function renderMisGrupos() {
@@ -92,8 +96,7 @@ function renderMisGrupos() {
     <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; display:flex; align-items:center; gap:10px;">
       <span style="font-weight:600; color:var(--text); font-size:13px;">👥 ${grupo}</span>
       <button onclick="window.salirDeGrupo(${index})" 
-              style="background:var(--red); color:#fff; border:none; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:11px; font-weight:600; font-family:inherit;">
-        Salir
+              style="background:var(--red); color:#fff; border:none; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:11px; font-weight:600; font-family:inherit;">        Salir
       </button>
     </div>
   `).join("");
@@ -142,8 +145,7 @@ async function unirseAGrupo() {
   try {
     const nuevosGrupos = [...misGrupos, nombre];
     
-    const { error } = await supabase
-      .from('usuarios')
+    const { error } = await supabase      .from('usuarios')
       .update({ grupos: nuevosGrupos })
       .eq('id', usuarioId);
     
@@ -192,8 +194,7 @@ function mostrarMsgGrupo(texto, tipo) {
   
   msg.textContent = texto;
   msg.style.display = "block";
-  
-  if (tipo === "error") {
+    if (tipo === "error") {
     msg.style.background = "var(--red-soft)";
     msg.style.border = "1px solid var(--red)";
     msg.style.color = "var(--red)";
@@ -243,7 +244,6 @@ async function cargarCampeon() {
       .single();
 
     if (campData) prediccionCampeon = campData;
-
     const { data: finalData } = await supabase
       .from('config')
       .select('*')
@@ -292,8 +292,7 @@ function renderTabs() {
     { id: "j3", label: "Fecha 3" },
     { id: "16avos", label: "16avos" },
     { id: "octavos", label: "Octavos" },
-    { id: "cuartos", label: "Cuartos" },
-    { id: "semis", label: "Semis" },
+    { id: "cuartos", label: "Cuartos" },    { id: "semis", label: "Semis" },
     { id: "3er", label: "3er Puesto" },
     { id: "final", label: "Final 🏆" },
   ];
@@ -342,15 +341,15 @@ function renderPartidos() {
     grid.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px; grid-column:1/-1;">No hay partidos</p>';
     return;
   }
-
   grid.innerHTML = partidos.map(p => renderTarjeta(p)).join("");
 
   grid.querySelectorAll(".btn-guardar").forEach(btn => {
     btn.onclick = () => guardarPrediccion(btn.dataset.id);
   });
 
+  // Iniciar cronómetro para partidos NO bloqueados (tengan o no pronóstico)
   partidos.forEach(p => {
-    if (!predicciones[p.id] && !partidoBloqueado(p)) {
+    if (!partidoBloqueado(p)) {
       iniciarCronometro(p);
     }
   });
@@ -377,19 +376,27 @@ function iniciarCronometro(partido) {
   intervalosCrono.push(setInterval(actualizar, 1000));
 }
 
+// ═══════════════════════════════════════════════════════
+// RENDERIZAR TARJETA (MODIFICADO PARA PERMITIR EDICIÓN)
+// ═══════════════════════════════════════════════════════
+
 function renderTarjeta(p) {
   const pred = predicciones[p.id];
   const res = resultados[p.id];
   const guardado = !!pred;
   const esElim = !p.j || p.fase;
   const bloqueado = partidoBloqueado(p);
+  
+  // NUEVA LÓGICA: se puede editar si está guardado PERO el partido no está bloqueado
+  const editable = guardado && !bloqueado;
 
-  const flagL = FLAGS[p.local] || "🏳️";
-  const flagV = FLAGS[p.visit] || "🏳️";
+  const flagL = FLAGS[p.local] || "🏳️";  const flagV = FLAGS[p.visit] || "🏳️";
   const pts = guardado && res ? calcularPuntos(pred, res) : null;
 
   let marcadorHTML;
-  if (guardado) {
+  
+  if (guardado && !editable) {
+    // CASO 1: Guardado y bloqueado (o con resultado oficial) → solo lectura
     marcadorHTML = `
       <div class="score-saved">
         <span>${pred.local}</span>
@@ -404,37 +411,95 @@ function renderTarjeta(p) {
       ` : ''}
     `;
   } else {
+    // CASO 2: Nuevo o editable → mostrar inputs (precargados si es editable)
+    const valL = guardado ? pred.local : "";
+    const valV = guardado ? pred.visit : "";
+    const valAlL = guardado && pred.alargue_local !== null ? pred.alargue_local : "";
+    const valAlV = guardado && pred.alargue_visit !== null ? pred.alargue_visit : "";
+    const valPenL = guardado && pred.penales_local !== null ? pred.penales_local : "";
+    const valPenV = guardado && pred.penales_visit !== null ? pred.penales_visit : "";
+    
+    // Determinar si mostrar alargue/penales (si ya están guardados o si hay empate)
+    const mostrarAlargue = esElim && (valAlL !== "" || (valL !== "" && valV !== "" && parseInt(valL) === parseInt(valV)));
+    const mostrarPenales = esElim && (valPenL !== "" || (valAlL !== "" && valAlV !== "" && parseInt(valAlL) === parseInt(valAlV)));
+    
     marcadorHTML = `
       <div class="marcador">
-        <input type="number" min="0" max="20" class="score-in" id="gL-${p.id}" placeholder="0" ${bloqueado ? "disabled" : ""}>
+        <input type="number" min="0" max="20" class="score-in" id="gL-${p.id}" placeholder="0" value="${valL}" ${bloqueado ? "disabled" : ""}>
         <span class="sep">–</span>
-        <input type="number" min="0" max="20" class="score-in" id="gV-${p.id}" placeholder="0" ${bloqueado ? "disabled" : ""}>
+        <input type="number" min="0" max="20" class="score-in" id="gV-${p.id}" placeholder="0" value="${valV}" ${bloqueado ? "disabled" : ""}>
       </div>
       ${esElim ? `
-        <div class="ext-inputs" id="ext-${p.id}" style="display:none; flex-direction:column; gap:6px; margin-top:8px; width:100%;">
+        <div class="ext-inputs" id="ext-${p.id}" style="display:${mostrarAlargue ? 'flex' : 'none'}; flex-direction:column; gap:6px; margin-top:8px; width:100%;">
           <div style="display:flex; gap:6px; align-items:center; justify-content:center;">
             <label style="font-size:11px; color:var(--text2);">Alargue:</label>
-            <input type="number" min="0" max="20" class="score-in" id="alL-${p.id}" placeholder="0" style="width:60px;">
+            <input type="number" min="0" max="20" class="score-in" id="alL-${p.id}" placeholder="0" value="${valAlL}" style="width:60px;">
             <span>–</span>
-            <input type="number" min="0" max="20" class="score-in" id="alV-${p.id}" placeholder="0" style="width:60px;">
+            <input type="number" min="0" max="20" class="score-in" id="alV-${p.id}" placeholder="0" value="${valAlV}" style="width:60px;">
           </div>
-          <div id="pen-${p.id}" style="display:none; gap:6px; align-items:center; justify-content:center;">
+          <div id="pen-${p.id}" style="display:${mostrarPenales ? 'flex' : 'none'}; gap:6px; align-items:center; justify-content:center;">
             <label style="font-size:11px; color:var(--text2);">Penales:</label>
-            <input type="number" min="0" max="20" class="score-in" id="penL-${p.id}" placeholder="0" style="width:60px;">
-            <span>–</span>
-            <input type="number" min="0" max="20" class="score-in" id="penV-${p.id}" placeholder="0" style="width:60px;">
+            <input type="number" min="0" max="20" class="score-in" id="penL-${p.id}" placeholder="0" value="${valPenL}" style="width:60px;">            <span>–</span>
+            <input type="number" min="0" max="20" class="score-in" id="penV-${p.id}" placeholder="0" value="${valPenV}" style="width:60px;">
           </div>
         </div>
       ` : ""}
     `;
   }
 
+  // Texto del botón según el estado
+  let footerHTML = "";
+  
+  if (res) {
+    footerHTML += `
+      <div class="resultado-real">
+        Resultado: <strong>${res.local} – ${res.visit}</strong>
+        ${pts !== null ? `<span class="pts-badge">+${pts} pts</span>` : ""}
+      </div>
+    `;
+  }
+  
+  if (bloqueado) {
+    // Partido bloqueado → solo mostrar estado
+    if (guardado) {
+      footerHTML += `<span class="tag-bloqueado">🔒 Pronóstico definitivo</span>`;
+    } else {
+      footerHTML += `<span class="tag-bloqueado" style="color:var(--red);">🔒 No se pudo pronosticar</span>`;
+    }
+  } else if (editable) {
+    // Guardado pero editable → botón para actualizar
+    footerHTML += `<button class="btn-guardar" data-id="${p.id}" style="background:var(--green);">🔄 Actualizar pronóstico</button>`;
+  } else {
+    // Nuevo → botón para guardar
+    footerHTML += `<button class="btn-guardar" data-id="${p.id}">💾 Guardar pronóstico</button>`;
+  }
+
+  // Cronómetro: mostrar siempre que no esté bloqueado
+  let cronoHTML = "";
+  if (!bloqueado) {
+    const cronoLabel = editable ? "Se bloquea en: " : "Se bloquea en: ";
+    cronoHTML = `
+      <div class="crono-box">
+        <span style="font-size:11px;">${cronoLabel}</span>
+        <span id="crono-${p.id}" style="font-family:'Anton'; font-size:14px; color:var(--gold);">--:--:--</span>
+      </div>
+    `;
+  }
+  
+  // Badge de estado
+  let estadoBadge = "";
+  if (editable) {    estadoBadge = `<span style="background:var(--green-soft); color:var(--green); padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700;">✏️ EDITABLE</span>`;
+  } else if (guardado && bloqueado) {
+    estadoBadge = `<span style="background:var(--bg2); color:var(--text2); padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700;">🔒 DEFINITIVO</span>`;
+  }
+
   return `
-    <div class="partido-card ${guardado ? "guardado" : ""} ${bloqueado && !guardado ? "bloqueado" : ""}">
+    <div class="partido-card ${guardado ? "guardado" : ""} ${bloqueado && !guardado ? "bloqueado" : ""} ${editable ? "editable" : ""}">
       <div class="partido-meta">
         <span class="badge badge-id">${p.id}</span>
         ${p.grupo ? `<span class="badge badge-grupo">Grupo ${p.grupo}</span>` : ""}
         ${p.fase ? `<span class="badge badge-grupo">${p.fase.toUpperCase()}</span>` : ""}
+        ${estadoBadge}
         <span class="badge badge-fecha">${p.fecha} · ${p.hora} ARG</span>
       </div>
 
@@ -452,40 +517,27 @@ function renderTarjeta(p) {
         </div>
       </div>
 
-      ${!guardado && !bloqueado ? `
-        <div class="crono-box">
-          <span style="font-size:11px;">Se bloquea en: </span>
-          <span id="crono-${p.id}" style="font-family:'Anton'; font-size:14px; color:var(--gold);">--:--:--</span>
-        </div>
-      ` : ""}
+      ${cronoHTML}
 
       <div class="partido-footer">
-        ${res ? `
-          <div class="resultado-real">
-            Resultado: <strong>${res.local} – ${res.visit}</strong>
-            ${pts !== null ? `<span class="pts-badge">+${pts} pts</span>` : ""}
-          </div>
-        ` : ""}
-        ${guardado 
-          ? `<span class="tag-bloqueado">🔒 Guardado</span>` 
-          : bloqueado 
-            ? `<span class="tag-bloqueado" style="color:var(--red);">🔒 Bloqueado</span>`
-            : `<button class="btn-guardar" data-id="${p.id}">Guardar pronóstico</button>`
-        }
+        ${footerHTML}
       </div>
     </div>
   `;
 }
 
+// ═══════════════════════════════════════════════════════
+// EVENTO INPUT (para mostrar/ocultar alargue y penales)
+// ═══════════════════════════════════════════════════════
+
 document.addEventListener("input", (e) => {
   if (!e.target.classList.contains("score-in")) return;
-  const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "");
+  const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "").replace("penL-", "").replace("penV-", "");
   const gL = document.getElementById("gL-" + id)?.value;
   const gV = document.getElementById("gV-" + id)?.value;
   const extDiv = document.getElementById("ext-" + id);
   const penDiv = document.getElementById("pen-" + id);
-  
-  if (!extDiv) return;
+    if (!extDiv) return;
 
   if (gL !== "" && gV !== "" && parseInt(gL) === parseInt(gV)) {
     extDiv.style.display = "flex";
@@ -505,12 +557,16 @@ document.addEventListener("input", (e) => {
   }
 });
 
+// ═══════════════════════════════════════════════════════
+// GUARDAR/ACTUALIZAR PREDICCIÓN (MODIFICADO)
+// ═══════════════════════════════════════════════════════
+
 async function guardarPrediccion(id) {
   const p = TODOS_PARTIDOS.find(x => x.id === id);
   if (!p) return;
 
   if (partidoBloqueado(p)) {
-    alert("🔒 Este partido ya está bloqueado.");
+    alert("🔒 Este partido ya está bloqueado. No se puede modificar.");
     return;
   }
 
@@ -518,11 +574,7 @@ async function guardarPrediccion(id) {
   const gV = document.getElementById("gV-" + id).value;
 
   if (gL === "" || gV === "") {
-    alert("Completá ambos marcadores");
-    return;
-  }
-
-  if (!confirm(`¿Confirmás tu pronóstico?\n\n${p.local} ${gL} - ${gV} ${p.visit}\n\n⚠️ NO PODRÁS MODIFICARLO`)) {
+    alert("⚠️ Completá ambos marcadores");
     return;
   }
 
@@ -534,10 +586,9 @@ async function guardarPrediccion(id) {
 
   if (esElim && parseInt(gL) === parseInt(gV)) {
     const alL = document.getElementById("alL-" + id)?.value;
-    const alV = document.getElementById("alV-" + id)?.value;
-    
+    const alV = document.getElementById("alV-" + id)?.value;    
     if (alL === "" || alV === "") {
-      alert("Elegí el marcador del alargue");
+      alert("⚠️ Elegí el marcador del alargue");
       return;
     }
     
@@ -549,18 +600,28 @@ async function guardarPrediccion(id) {
       const penV = document.getElementById("penV-" + id)?.value;
       
       if (penL === "" || penV === "") {
-        alert("Elegí el marcador de penales");
+        alert("⚠️ Elegí el marcador de penales");
         return;
       }
       
       if (parseInt(penL) === parseInt(penV)) {
-        alert("️ En penales NO puede haber empate");
+        alert("⚠️ En penales NO puede haber empate");
         return;
       }
       
       penalesLocal = parseInt(penL);
       penalesVisit = parseInt(penV);
     }
+  }
+
+  // Detectar si es nueva predicción o actualización
+  const esNueva = !predicciones[id];
+  const mensajeConfirm = esNueva
+    ? `¿Confirmás tu pronóstico?\n\n🏳️ ${p.local} ${gL} - ${gV} ${p.visit} 🏳️\n\nPodrás modificarlo hasta 5 minutos antes del inicio.`
+    : `¿Confirmás la MODIFICACIÓN?\n\n🏳️ ${p.local} ${gL} - ${gV} ${p.visit} 🏳️\n\nReemplazará tu pronóstico anterior.\nPodrás seguir modificándolo hasta 5 minutos antes del inicio.`;
+
+  if (!confirm(mensajeConfirm)) {
+    return;
   }
 
   const datos = {
@@ -573,9 +634,8 @@ async function guardarPrediccion(id) {
     penales_local: penalesLocal,
     penales_visit: penalesVisit,
     fase: p.j ? "grupos" : p.fase,
-    bloqueado: true
+    bloqueado: false
   };
-
   try {
     const { error } = await supabase
       .from('predicciones')
@@ -584,14 +644,24 @@ async function guardarPrediccion(id) {
     if (error) throw error;
 
     predicciones[id] = datos;
-    alert("✅ Pronóstico guardado");
+    
+    if (esNueva) {
+      alert("✅ Pronóstico guardado. Podés modificarlo cuando quieras hasta 5 minutos antes del partido.");
+    } else {
+      alert("✅ Pronóstico actualizado correctamente.");
+    }
+    
     await cargarDatos();
     renderPartidos();
   } catch (err) {
     console.error(err);
-    alert("Error al guardar: " + err.message);
+    alert("❌ Error al guardar: " + err.message);
   }
 }
+
+// ═══════════════════════════════════════════════════════
+// CAMPEÓN (sin cambios)
+// ═══════════════════════════════════════════════════════
 
 function renderCampeon() {
   const loader = document.getElementById("campeonLoader");
@@ -614,8 +684,7 @@ function renderCampeon() {
       "pre-fecha2": "ANTES DE FECHA 2 (jugando Fecha 1)",
       "pre-fecha3": "ANTES DE FECHA 3 (jugando Fecha 2)",
       "pre-16avos": "ANTES DE 16avos (jugando Fecha 3)",
-      "pre-octavos": "ANTES DE OCTAVOS (jugando 16avos)",
-      "pre-cuartos": "ANTES DE CUARTOS (jugando Octavos)",
+      "pre-octavos": "ANTES DE OCTAVOS (jugando 16avos)",      "pre-cuartos": "ANTES DE CUARTOS (jugando Octavos)",
       "pre-semis": "ANTES DE SEMIS (jugando Cuartos)",
       "pre-final": "ANTES DE LA FINAL (jugando Semis)",
       "cerrado": "CERRADO"
@@ -639,7 +708,7 @@ function renderCampeon() {
     const verCamp2Pts = document.getElementById("verCamp2Pts");
     const verCamp3Pts = document.getElementById("verCamp3Pts");
     
-    if (verCamp1) verCamp1.textContent = `${FLAGS[prediccionCampeon.opcion1] || "️"} ${prediccionCampeon.opcion1}`;
+    if (verCamp1) verCamp1.textContent = `${FLAGS[prediccionCampeon.opcion1] || "🏳️"} ${prediccionCampeon.opcion1}`;
     if (verCamp2) verCamp2.textContent = `${FLAGS[prediccionCampeon.opcion2] || "🏳️"} ${prediccionCampeon.opcion2}`;
     if (verCamp3) verCamp3.textContent = `${FLAGS[prediccionCampeon.opcion3] || "🏳️"} ${prediccionCampeon.opcion3}`;
     
@@ -665,7 +734,6 @@ function renderCampeon() {
     if (form) form.style.display = "block";
     if (cerrado) cerrado.style.display = "none";
     if (guardado) guardado.style.display = "none";
-
     const opciones = SELECCIONES
       .sort((a, b) => a.localeCompare(b))
       .map(s => `<option value="${s}">${FLAGS[s] || "🏳️"} ${s}</option>`)
@@ -714,8 +782,7 @@ function validarCampeon() {
     return false;
   }
   if (v2 && v3 && v2 === v3) {
-    msg.textContent = "⚠️ No podés repetir selecciones";
-    msg.style.background = "var(--red-soft)";
+    msg.textContent = "⚠️ No podés repetir selecciones";    msg.style.background = "var(--red-soft)";
     msg.style.border = "1px solid var(--red)";
     msg.style.color = "var(--red)";
     msg.style.display = "block";
@@ -765,7 +832,6 @@ async function guardarCampeon() {
       }, { onConflict: 'user_id' });
 
     if (error) throw error;
-
     prediccionCampeon = { 
       opcion1: v1, 
       opcion2: v2, 
@@ -781,7 +847,7 @@ async function guardarCampeon() {
     actualizarStats();
   } catch (err) {
     console.error(err);
-    alert("Error al guardar: " + err.message);
+    alert("❌ Error al guardar: " + err.message);
   }
 }
 
