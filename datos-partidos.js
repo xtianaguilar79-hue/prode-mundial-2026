@@ -307,101 +307,123 @@ export const FECHAS_LIMITE_CAMPEON = {
 };
 
 // ═══════════════════════════════════════════════════════
-// SINCRONIZACIÓN DE HORA CON SERVIDOR (NUEVO)
+// SINCRONIZACIÓN DE HORA CON SERVIDOR (CORREGIDO)
 // ═══════════════════════════════════════════════════════
 
-// Diferencia entre hora local y hora del servidor (en milisegundos)
 let diferenciaHoraria = 0;
 let horaSincronizada = false;
 
 /**
- * Sincroniza la hora local con la hora del servidor Supabase.
- * Debe llamarse UNA SOLA VEZ al inicio de la aplicación.
- * @param {Object} supabaseClient - Instancia del cliente de Supabase
+ * Sincroniza la hora local con la hora real de Argentina
+ * Usa múltiples métodos con fallback automático
  */
 export async function sincronizarHoraServidor(supabaseClient) {
+  console.log("🕐 Iniciando sincronización de hora...");
+  
+  // MÉTODO 1: API externa de hora mundial (más confiable)
   try {
-    console.log("🕐 Sincronizando hora con el servidor...");
+    console.log("🌐 Intentando método 1: API externa...");
+    const response = await fetch('https://worldtimeapi.org/api/timezone/America/Argentina/Buenos_Aires');
     
-    // Método 1: Intentar obtener hora mediante función RPC
-    try {
-      const { data, error } = await supabaseClient.rpc('obtener_hora_servidor');
-      if (!error && data) {
-        const horaServidor = new Date(data).getTime();
-        const horaLocal = Date.now();
-        diferenciaHoraria = horaServidor - horaLocal;
-        horaSincronizada = true;
-        console.log("✅ Hora sincronizada vía RPC. Diferencia:", diferenciaHoraria, "ms");
-        return;
-      }
-    } catch (rpcError) {
-      console.warn("⚠️ RPC no disponible, intentando método alternativo...");
-    }
-    
-    // Método 2: Obtener hora del header HTTP de una consulta
-    const { data, error } = await supabaseClient
-      .from('config')
-      .select('id')      .limit(1);
-    
-    if (!error) {
-      // Supabase devuelve la hora del servidor en el header Date
-      // La obtenemos haciendo una consulta y comparando timestamps
-      const horaLocalAntes = Date.now();
-      
-      // Hacer otra consulta para medir el tiempo de respuesta
-      const { data: data2 } = await supabaseClient
-        .from('config')
-        .select('id')
-        .limit(1);
-      
-      const horaLocalDespues = Date.now();
-      
-      // Estimar hora del servidor como el punto medio entre las dos consultas locales
-      const horaLocalEstimada = (horaLocalAntes + horaLocalDespues) / 2;
-      
-      // Como no podemos acceder directamente al header Date desde el navegador,
-      // usamos una aproximación: asumimos que la hora del servidor está cerca
-      // de la hora local promedio (esto funciona si el servidor está en la misma zona horaria)
-      
-      // Para mayor precisión, podemos usar una API externa de hora
-      try {
-        const response = await fetch('https://worldtimeapi.org/api/timezone/America/Argentina/Buenos_Aires');
-        if (response.ok) {
-          const timeData = await response.json();
-          const horaServidor = new Date(timeData.datetime).getTime();
-          const horaLocalPromedio = horaLocalEstimada;
-          diferenciaHoraria = horaServidor - horaLocalPromedio;
-          horaSincronizada = true;
-          console.log("✅ Hora sincronizada vía API externa. Diferencia:", diferenciaHoraria, "ms");
-          return;
-        }
-      } catch (apiError) {
-        console.warn("⚠️ API externa no disponible, usando hora local");
-      }
-      
-      // Si todo falla, usamos hora local (diferencia = 0)
-      diferenciaHoraria = 0;
+    if (response.ok) {
+      const timeData = await response.json();
+      const horaServidor = new Date(timeData.datetime).getTime();
+      const horaLocal = Date.now();
+      diferenciaHoraria = horaServidor - horaLocal;
       horaSincronizada = true;
-      console.log("⚠️ Usando hora local como fallback");
+      
+      console.log("✅ Hora sincronizada vía API externa");
+      console.log(`   Hora local: ${new Date(horaLocal).toISOString()}`);
+      console.log(`   Hora real: ${new Date(horaServidor).toISOString()}`);
+      console.log(`   Diferencia: ${diferenciaHoraria}ms (${(diferenciaHoraria/1000).toFixed(2)}s)`);
+      return;
     }
   } catch (err) {
-    console.error("❌ Error al sincronizar hora:", err);
-    diferenciaHoraria = 0;
-    horaSincronizada = true;
+    console.warn("⚠️ Método 1 falló:", err.message);
   }
+    // MÉTODO 2: Otra API externa como backup
+  try {
+    console.log("🌐 Intentando método 2: API backup...");
+    const response = await fetch('https://timeapi.io/api/time/current/zone?timeZone=America/Argentina/Buenos_Aires');
+    
+    if (response.ok) {
+      const timeData = await response.json();
+      const horaServidor = new Date(timeData.dateTime).getTime();
+      const horaLocal = Date.now();
+      diferenciaHoraria = horaServidor - horaLocal;
+      horaSincronizada = true;
+      
+      console.log("✅ Hora sincronizada vía API backup");
+      console.log(`   Diferencia: ${diferenciaHoraria}ms`);
+      return;
+    }
+  } catch (err) {
+    console.warn("⚠️ Método 2 falló:", err.message);
+  }
+  
+  // MÉTODO 3: Función RPC de Supabase (si existe)
+  try {
+    console.log("🗄️ Intentando método 3: Supabase RPC...");
+    const { data, error } = await supabaseClient.rpc('obtener_hora_servidor');
+    
+    if (!error && data) {
+      const horaServidor = new Date(data).getTime();
+      const horaLocal = Date.now();
+      diferenciaHoraria = horaServidor - horaLocal;
+      horaSincronizada = true;
+      
+      console.log("✅ Hora sincronizada vía Supabase RPC");
+      console.log(`   Diferencia: ${diferenciaHoraria}ms`);
+      return;
+    }
+  } catch (err) {
+    console.warn("⚠️ Método 3 falló:", err.message);
+  }
+  
+  // MÉTODO 4: Estimar usando latencia de Supabase
+  try {
+    console.log("🗄️ Intentando método 4: Estimación por latencia...");
+    const horaAntes = Date.now();
+    
+    const { data, error } = await supabaseClient
+      .from('config')
+      .select('id')
+      .limit(1);
+    
+    const horaDespues = Date.now();    
+    if (!error) {
+      // Estimar que la hora del servidor está en el punto medio
+      const latencia = (horaDespues - horaAntes) / 2;
+      const horaServidorEstimada = horaAntes + latencia;
+      
+      // Este método asume que el servidor tiene la hora correcta
+      // Solo es útil si el dispositivo del usuario tiene la hora mal
+      // En este caso, no podemos detectar la diferencia, así que usamos hora local
+      diferenciaHoraria = 0;
+      horaSincronizada = true;
+      
+      console.log("⚠️ Método 4: Usando hora local (no se puede detectar diferencia)");
+      return;
+    }
+  } catch (err) {
+    console.warn("⚠️ Método 4 falló:", err.message);
+  }
+  
+  // FALLBACK FINAL: Usar hora local
+  console.error("❌ Todos los métodos fallaron. Usando hora local del dispositivo.");
+  diferenciaHoraria = 0;
+  horaSincronizada = true;
 }
+
 /**
- * Devuelve la hora REAL ajustada según el servidor.
- * Si no se ha sincronizado, usa la hora local.
- * @returns {number} Timestamp en milisegundos
+ * Devuelve la hora REAL ajustada según el servidor
  */
 export function horaReal() {
   return Date.now() + diferenciaHoraria;
 }
 
 /**
- * Verifica si la hora ya fue sincronizada con el servidor
- * @returns {boolean}
+ * Verifica si la hora ya fue sincronizada
  */
 export function esHoraSincronizada() {
   return horaSincronizada;
@@ -409,7 +431,6 @@ export function esHoraSincronizada() {
 
 /**
  * Obtiene la diferencia horaria actual (para debug)
- * @returns {number} Diferencia en milisegundos
  */
 export function obtenerDiferenciaHoraria() {
   return diferenciaHoraria;
@@ -418,8 +439,7 @@ export function obtenerDiferenciaHoraria() {
 export function obtenerFaseActual() {
   const ahora = new Date(horaReal()); // ← CAMBIO: usar horaReal() en lugar de new Date()
   for (const [fase, fechaLimite] of Object.entries(FECHAS_LIMITE_CAMPEON)) {
-    if (ahora < new Date(fechaLimite)) return fase;
-  }
+    if (ahora < new Date(fechaLimite)) return fase;  }
   return "cerrado";
 }
 
@@ -440,6 +460,7 @@ export function calcularPuntosCampeon(prediccion, campeonReal) {
   if (campeonReal === prediccion.opcion3) return pts[2];
   return 0;
 }
+
 // ─── CRONÓMETRO Y BLOQUEO ───
 export function getKickoffTimestamp(partido) {
   const [dia, mes] = partido.fecha.split("/");
@@ -467,7 +488,6 @@ export function formatearTiempo(ms) {
 export function partidoBloqueado(partido) {
   return msHastaBloqueo(partido) <= 0;
 }
-
 export function partidoListoParaPronosticar(partido, equiposActualizados) {
   if (partido.j) return true;
   
