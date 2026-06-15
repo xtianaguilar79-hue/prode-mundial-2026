@@ -293,63 +293,52 @@ export const FECHAS_LIMITE_CAMPEON = {
 };
 
 // ═══════════════════════════════════════════════════════
-// SINCRONIZACIÓN DE HORA CON SERVIDOR (SOLUCIÓN DEFINITIVA)
+// SINCRONIZACIÓN DE HORA CON SERVIDOR (RPC SUPABASE)
 // ═══════════════════════════════════════════════════════
-// URL y KEY de Supabase (hardcodeadas para evitar problemas de import)
-const SUPABASE_URL = 'https://atiojuyzcumlrixxobah.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF0aW9qdXl6Y3VtbHJpeHhvYmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MzU4NDAsImV4cCI6MjA5NjUxMTg0MH0.2GEcdXqa6Bg6tEmXYAxTFQ30Obn8PlL3i2fWezJWzPg';
 
 let diferenciaHoraria = 0;
 let horaSincronizada = false;
 
 export async function sincronizarHoraServidor(supabaseClient) {
-  console.log("🕐 Sincronizando hora con el servidor...");
-  console.log(`   URL de Supabase: ${SUPABASE_URL}`);
+  console.log("🕐 ═══ INICIANDO SINCRONIZACIÓN DE HORA ═══");
+  console.log("🗄️ Usando función RPC de Supabase...");
   
   try {
     const horaAntes = Date.now();
     
-    const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
-      method: 'HEAD',
-      headers: {
-        'apikey': SUPABASE_ANON_KEY
-      }
-    });
+    const { data, error } = await supabaseClient.rpc('obtener_hora_servidor');
     
     const horaDespues = Date.now();
     
-    console.log(`   Respuesta HTTP: ${response.status} ${response.statusText}`);
+    if (error) {
+      console.error("❌ Error en RPC:", error.message);
+      console.error("⚠️ Asegurate de haber creado la función en Supabase SQL Editor");
+      diferenciaHoraria = 0;
+      horaSincronizada = true;
+      return;
+    }
     
-    if (response.ok) {
-      const headerDate = response.headers.get('Date');
+    if (data) {
+      const horaServidor = new Date(data).getTime();
+      const horaLocalPromedio = (horaAntes + horaDespues) / 2;
+      diferenciaHoraria = horaServidor - horaLocalPromedio;
+      horaSincronizada = true;
       
-      if (headerDate) {
-        const horaServidor = new Date(headerDate).getTime();
-        const horaLocalPromedio = (horaAntes + horaDespues) / 2;
-        diferenciaHoraria = horaServidor - horaLocalPromedio;
-        horaSincronizada = true;
-        
-        console.log("✅ Hora sincronizada vía header HTTP de Supabase");
-        console.log(`   Header Date: ${headerDate}`);
-        console.log(`   Hora servidor (UTC): ${horaServidor}`);
-        console.log(`   Hora local promedio: ${horaLocalPromedio}`);
-        console.log(`   Diferencia: ${diferenciaHoraria}ms (${(diferenciaHoraria/1000).toFixed(2)}s)`);
-        
-        if (Math.abs(diferenciaHoraria) > 60000) {
-          const minutos = Math.round(diferenciaHoraria / 60000);
-          if (minutos > 0) {
-            console.warn(`⚠️ Tu dispositivo está ${minutos} minuto(s) ADELANTADO`);
-          } else {
-            console.warn(`⚠️ Tu dispositivo está ${Math.abs(minutos)} minuto(s) ATRASADO`);
-          }
-        } else {
-          console.log("✅ La hora de tu dispositivo es correcta");        }
+      console.log("✅ SINCRONIZACIÓN EXITOSA vía Supabase RPC");
+      console.log(`   Hora del servidor (UTC): ${data}`);
+      console.log(`   Timestamp servidor: ${horaServidor}`);
+      console.log(`   Timestamp local: ${horaLocalPromedio}`);
+      console.log(`   Diferencia: ${diferenciaHoraria}ms (${(diferenciaHoraria/1000).toFixed(2)}s)`);
+      
+      if (Math.abs(diferenciaHoraria) > 30000) {
+        const minutos = Math.round(diferenciaHoraria / 60000);
+        console.warn(`⚠️ Tu dispositivo está ${minutos > 0 ? 'ADELANTADO' : 'ATRASADO'} ${Math.abs(minutos)} minuto(s)`);
       } else {
-        console.warn("⚠️ No se encontró header Date en la respuesta");
-        horaSincronizada = true;
+        console.log("✅ La hora de tu dispositivo es correcta");
       }
     } else {
-      console.warn("⚠️ Petición a Supabase falló:", response.status, response.statusText);
+      console.error("❌ RPC no devolvió datos");
+      diferenciaHoraria = 0;
       horaSincronizada = true;
     }
   } catch (err) {
@@ -370,6 +359,7 @@ export function esHoraSincronizada() {
 export function obtenerDiferenciaHoraria() {
   return diferenciaHoraria;
 }
+
 
 export function obtenerFaseActual() {
   const ahora = new Date(horaReal());
