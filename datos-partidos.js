@@ -87,7 +87,6 @@ export function getFlag(equipo) {
 
 // ─── PARTIDOS FASE DE GRUPOS (72 partidos) ───
 export const PARTIDOS_GRUPOS = [
-  // ═══ JORNADA 1 ═══
   { id:"M001", j:1, grupo:"A", local:"México", visit:"Sudáfrica", fecha:"11/06", hora:"16:00", sede:"Azteca, CDMX" },
   { id:"M002", j:1, grupo:"A", local:"Corea del Sur", visit:"Rep. Checa", fecha:"11/06", hora:"23:00", sede:"Akron, GDL" },
   { id:"M003", j:1, grupo:"B", local:"Canadá", visit:"Bosnia-Herzegovina", fecha:"12/06", hora:"16:00", sede:"Toronto, CAN" },
@@ -96,7 +95,8 @@ export const PARTIDOS_GRUPOS = [
   { id:"M007", j:1, grupo:"C", local:"Brasil", visit:"Marruecos", fecha:"13/06", hora:"19:00", sede:"MetLife, NJ" },
   { id:"M005", j:1, grupo:"C", local:"Haití", visit:"Escocia", fecha:"13/06", hora:"22:00", sede:"Boston, USA" },
   { id:"M006", j:1, grupo:"D", local:"Australia", visit:"Turquía", fecha:"14/06", hora:"01:00", sede:"Vancouver, CAN" },
-  { id:"M010", j:1, grupo:"E", local:"Alemania", visit:"Curazao", fecha:"14/06", hora:"14:00", sede:"Houston, USA" },  { id:"M009", j:1, grupo:"E", local:"Costa de Marfil", visit:"Ecuador", fecha:"14/06", hora:"20:00", sede:"Filadelfia, USA" },
+  { id:"M010", j:1, grupo:"E", local:"Alemania", visit:"Curazao", fecha:"14/06", hora:"14:00", sede:"Houston, USA" },
+  { id:"M009", j:1, grupo:"E", local:"Costa de Marfil", visit:"Ecuador", fecha:"14/06", hora:"20:00", sede:"Filadelfia, USA" },
   { id:"M011", j:1, grupo:"F", local:"Países Bajos", visit:"Japón", fecha:"14/06", hora:"17:00", sede:"Dallas, USA" },
   { id:"M012", j:1, grupo:"F", local:"Suecia", visit:"Túnez", fecha:"14/06", hora:"23:00", sede:"BBVA, MTY" },
   { id:"M014", j:1, grupo:"H", local:"España", visit:"Cabo Verde", fecha:"15/06", hora:"13:00", sede:"Atlanta, USA" },
@@ -111,8 +111,6 @@ export const PARTIDOS_GRUPOS = [
   { id:"M022", j:1, grupo:"L", local:"Inglaterra", visit:"Croacia", fecha:"17/06", hora:"17:00", sede:"Dallas, USA" },
   { id:"M021", j:1, grupo:"L", local:"Ghana", visit:"Panamá", fecha:"17/06", hora:"20:00", sede:"Toronto, CAN" },
   { id:"M024", j:1, grupo:"K", local:"Uzbekistán", visit:"Colombia", fecha:"17/06", hora:"23:00", sede:"Azteca, CDMX" },
-
-  // ═══ JORNADA 2 ═══
   { id:"M025", j:2, grupo:"A", local:"Rep. Checa", visit:"Sudáfrica", fecha:"18/06", hora:"13:00", sede:"Atlanta, USA" },
   { id:"M026", j:2, grupo:"B", local:"Suiza", visit:"Bosnia-Herzegovina", fecha:"18/06", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M027", j:2, grupo:"B", local:"Canadá", visit:"Qatar", fecha:"18/06", hora:"19:00", sede:"Vancouver, CAN" },
@@ -137,15 +135,14 @@ export const PARTIDOS_GRUPOS = [
   { id:"M045", j:2, grupo:"L", local:"Inglaterra", visit:"Ghana", fecha:"23/06", hora:"17:00", sede:"Boston, USA" },
   { id:"M046", j:2, grupo:"L", local:"Panamá", visit:"Croacia", fecha:"23/06", hora:"20:00", sede:"Toronto, CAN" },
   { id:"M048", j:2, grupo:"K", local:"Colombia", visit:"RD Congo", fecha:"23/06", hora:"23:00", sede:"Akron, GDL" },
-
-  // ═══ JORNADA 3 ═══
   { id:"M051", j:3, grupo:"B", local:"Suiza", visit:"Canadá", fecha:"24/06", hora:"16:00", sede:"Vancouver, CAN" },
   { id:"M052", j:3, grupo:"B", local:"Bosnia-Herzegovina", visit:"Qatar", fecha:"24/06", hora:"16:00", sede:"Seattle, USA" },
   { id:"M049", j:3, grupo:"C", local:"Escocia", visit:"Brasil", fecha:"24/06", hora:"19:00", sede:"Miami, USA" },
   { id:"M050", j:3, grupo:"C", local:"Marruecos", visit:"Haití", fecha:"24/06", hora:"19:00", sede:"Atlanta, USA" },
   { id:"M053", j:3, grupo:"A", local:"Rep. Checa", visit:"México", fecha:"24/06", hora:"22:00", sede:"Azteca, CDMX" },
   { id:"M054", j:3, grupo:"A", local:"Sudáfrica", visit:"Corea del Sur", fecha:"24/06", hora:"22:00", sede:"BBVA, MTY" },
-  { id:"M055", j:3, grupo:"E", local:"Curazao", visit:"Costa de Marfil", fecha:"25/06", hora:"17:00", sede:"Filadelfia, USA" },  { id:"M056", j:3, grupo:"E", local:"Ecuador", visit:"Alemania", fecha:"25/06", hora:"17:00", sede:"Nueva York/NJ, USA" },
+  { id:"M055", j:3, grupo:"E", local:"Curazao", visit:"Costa de Marfil", fecha:"25/06", hora:"17:00", sede:"Filadelfia, USA" },
+  { id:"M056", j:3, grupo:"E", local:"Ecuador", visit:"Alemania", fecha:"25/06", hora:"17:00", sede:"Nueva York/NJ, USA" },
   { id:"M057", j:3, grupo:"F", local:"Japón", visit:"Suecia", fecha:"25/06", hora:"20:00", sede:"Dallas, USA" },
   { id:"M058", j:3, grupo:"F", local:"Túnez", visit:"Países Bajos", fecha:"25/06", hora:"20:00", sede:"Kansas City, USA" },
   { id:"M059", j:3, grupo:"D", local:"Turquía", visit:"Estados Unidos", fecha:"25/06", hora:"23:00", sede:"Los Angeles, USA" },
@@ -166,7 +163,6 @@ export const PARTIDOS_GRUPOS = [
 
 // ─── PARTIDOS ELIMINATORIOS (32 partidos) ───
 export const PARTIDOS_ELIM = [
-  // ═══ DIECISEISAVOS DE FINAL ═══
   { id:"M073", fase:"16avos", local:"2°A", visit:"2°B", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M076", fase:"16avos", local:"1°C", visit:"2°F", fecha:"29/06", hora:"14:00", sede:"Houston, USA" },
   { id:"M074", fase:"16avos", local:"1°E", visit:"3° A/B/C/D/F", fecha:"29/06", hora:"17:30", sede:"Boston, USA" },
@@ -183,8 +179,6 @@ export const PARTIDOS_ELIM = [
   { id:"M088", fase:"16avos", local:"2°D", visit:"2°G", fecha:"03/07", hora:"15:00", sede:"Dallas, USA" },
   { id:"M086", fase:"16avos", local:"1°J", visit:"2°H", fecha:"03/07", hora:"19:00", sede:"Miami, USA" },
   { id:"M087", fase:"16avos", local:"1°K", visit:"3° D/E/I/J/L", fecha:"03/07", hora:"22:30", sede:"Kansas City, USA" },
-
-  // ═══ OCTAVOS DE FINAL ═══
   { id:"M090", fase:"octavos", local:"G73", visit:"G75", fecha:"04/07", hora:"14:00", sede:"Houston, USA" },
   { id:"M089", fase:"octavos", local:"G74", visit:"G77", fecha:"04/07", hora:"18:00", sede:"Filadelfia, USA" },
   { id:"M091", fase:"octavos", local:"G76", visit:"G78", fecha:"05/07", hora:"17:00", sede:"Nueva York/NJ, USA" },
@@ -193,20 +187,13 @@ export const PARTIDOS_ELIM = [
   { id:"M094", fase:"octavos", local:"G81", visit:"G82", fecha:"06/07", hora:"21:00", sede:"Seattle, USA" },
   { id:"M095", fase:"octavos", local:"G86", visit:"G88", fecha:"07/07", hora:"13:00", sede:"Atlanta, USA" },
   { id:"M096", fase:"octavos", local:"G85", visit:"G87", fecha:"07/07", hora:"17:00", sede:"Vancouver, CAN" },
-
-  // ═══ CUARTOS DE FINAL ═══  { id:"M097", fase:"cuartos", local:"G89", visit:"G90", fecha:"09/07", hora:"17:00", sede:"Boston, USA" },
+  { id:"M097", fase:"cuartos", local:"G89", visit:"G90", fecha:"09/07", hora:"17:00", sede:"Boston, USA" },
   { id:"M098", fase:"cuartos", local:"G93", visit:"G94", fecha:"10/07", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M099", fase:"cuartos", local:"G91", visit:"G92", fecha:"11/07", hora:"18:00", sede:"Miami, USA" },
   { id:"M100", fase:"cuartos", local:"G95", visit:"G96", fecha:"11/07", hora:"22:00", sede:"Kansas City, USA" },
-
-  // ═══ SEMIFINALES ═══
   { id:"M101", fase:"semis", local:"G97", visit:"G98", fecha:"14/07", hora:"16:00", sede:"Dallas, USA" },
   { id:"M102", fase:"semis", local:"G99", visit:"G100", fecha:"15/07", hora:"16:00", sede:"Atlanta, USA" },
-
-  // ═══ TERCER PUESTO ═══
   { id:"M103", fase:"3er", local:"Perdedor SF1", visit:"Perdedor SF2", fecha:"18/07", hora:"18:00", sede:"Miami, USA" },
-
-  // ═══ FINAL ═══
   { id:"M104", fase:"final", local:"Ganador SF1", visit:"Ganador SF2", fecha:"19/07", hora:"16:00", sede:"MetLife, NJ" },
 ];
 
@@ -243,6 +230,7 @@ export function calcularPuntos(pred, resultado) {
   if (pV === rV) total += pts.golV;
 
   if (pL === rL && pV === rV) total += pts.exacto;
+
   if (fase !== "grupos" && signoP === "E" && signoR === "E") {
     const pAL = pred.alargue_local !== null && pred.alargue_local !== undefined ? parseInt(pred.alargue_local) : null;
     const pAV = pred.alargue_visit !== null && pred.alargue_visit !== undefined ? parseInt(pred.alargue_visit) : null;
@@ -292,7 +280,8 @@ export const PUNTOS_CAMPEON_POR_FASE = {
   "pre-octavos": [50, 30, 10],
   "pre-cuartos": [40, 20, 0],
   "pre-semis":   [30, 10, 0],
-  "pre-final":   [10, 0, 0],  "cerrado":     [0, 0, 0],
+  "pre-final":   [10, 0, 0],
+  "cerrado":     [0, 0, 0],
 };
 
 export const FECHAS_LIMITE_CAMPEON = {
@@ -304,26 +293,19 @@ export const FECHAS_LIMITE_CAMPEON = {
   "pre-cuartos": "2026-07-09T16:55:00-03:00",
   "pre-semis":   "2026-07-14T15:55:00-03:00",
   "pre-final":   "2026-07-19T15:55:00-03:00",
+};
 
-  // ═══════════════════════════════════════════════════════
-// SINCRONIZACIÓN DE HORA CON SERVIDOR (MÉTODO CONFIABLE)
+// ═══════════════════════════════════════════════════════
+// SINCRONIZACIÓN DE HORA CON SERVIDOR
 // ═══════════════════════════════════════════════════════
 
 let diferenciaHoraria = 0;
 let horaSincronizada = false;
 
-/**
- * Obtiene la hora real del servidor leyendo el header HTTP "Date"
- * de una petición a Supabase. Este método es 100% confiable porque:
- * - No depende de APIs externas
- * - El header Date viene directamente del servidor
- * - Supabase usa servidores con hora correcta (UTC)
- */
 export async function sincronizarHoraServidor(supabaseClient) {
-  console.log(" Sincronizando hora con el servidor...");
+  console.log("🕐 Sincronizando hora con el servidor...");
   
   try {
-    // Obtener la URL de Supabase desde el cliente
     const supabaseUrl = supabaseClient.supabaseUrl;
     
     if (!supabaseUrl) {
@@ -332,7 +314,6 @@ export async function sincronizarHoraServidor(supabaseClient) {
       return;
     }
     
-    // Hacer una petición ligera a Supabase para obtener el header Date
     const horaAntes = Date.now();
     
     const response = await fetch(`${supabaseUrl}/rest/v1/`, {
@@ -345,32 +326,28 @@ export async function sincronizarHoraServidor(supabaseClient) {
     const horaDespues = Date.now();
     
     if (response.ok) {
-      // El header Date viene en formato RFC 7231 (GMT/UTC)
       const headerDate = response.headers.get('Date');
       
       if (headerDate) {
         const horaServidor = new Date(headerDate).getTime();
-        // Usar el punto medio entre antes y después para compensar latencia
         const horaLocalPromedio = (horaAntes + horaDespues) / 2;
         diferenciaHoraria = horaServidor - horaLocalPromedio;
         horaSincronizada = true;
-                console.log("✅ Hora sincronizada vía header HTTP de Supabase");
-        console.log(`   Header Date del servidor: ${headerDate}`);
-        console.log(`   Hora servidor (timestamp): ${horaServidor}`);
-        console.log(`   Hora local promedio: ${horaLocalPromedio}`);
+        
+        console.log("✅ Hora sincronizada vía header HTTP de Supabase");
+        console.log(`   Header Date: ${headerDate}`);
         console.log(`   Diferencia: ${diferenciaHoraria}ms (${(diferenciaHoraria/1000).toFixed(2)}s)`);
         
-        // Mostrar si la hora local está adelantada o atrasada
         if (Math.abs(diferenciaHoraria) > 60000) {
           const minutos = Math.round(diferenciaHoraria / 60000);
           if (minutos > 0) {
-            console.warn(`⚠️ Tu dispositivo está ${minutos} minuto(s) ADELANTADO`);
+            console.warn(`️ Tu dispositivo está ${minutos} minuto(s) ADELANTADO`);
           } else {
             console.warn(`⚠️ Tu dispositivo está ${Math.abs(minutos)} minuto(s) ATRASADO`);
           }
         }
       } else {
-        console.warn("⚠️ No se encontró header Date en la respuesta");
+        console.warn("️ No se encontró header Date");
         horaSincronizada = true;
       }
     } else {
@@ -384,32 +361,23 @@ export async function sincronizarHoraServidor(supabaseClient) {
   }
 }
 
-/**
- * Devuelve la hora REAL ajustada según el servidor
- * Si no se sincronizó, usa Date.now() (fallback)
- */
 export function horaReal() {
   return Date.now() + diferenciaHoraria;
 }
 
-/**
- * Verifica si la hora ya fue sincronizada
- */
 export function esHoraSincronizada() {
   return horaSincronizada;
 }
 
-/**
- * Obtiene la diferencia horaria actual (para debug)
- */
 export function obtenerDiferenciaHoraria() {
   return diferenciaHoraria;
 }
 
 export function obtenerFaseActual() {
-  const ahora = new Date(horaReal()); // ← CAMBIO: usar horaReal() en lugar de new Date()
+  const ahora = new Date(horaReal());
   for (const [fase, fechaLimite] of Object.entries(FECHAS_LIMITE_CAMPEON)) {
-    if (ahora < new Date(fechaLimite)) return fase;  }
+    if (ahora < new Date(fechaLimite)) return fase;
+  }
   return "cerrado";
 }
 
@@ -431,7 +399,7 @@ export function calcularPuntosCampeon(prediccion, campeonReal) {
   return 0;
 }
 
-// ─── CRONÓMETRO Y BLOQUEO ───
+// ── CRONÓMETRO Y BLOQUEO ───
 export function getKickoffTimestamp(partido) {
   const [dia, mes] = partido.fecha.split("/");
   const [hora, min] = partido.hora.split(":");
@@ -439,7 +407,7 @@ export function getKickoffTimestamp(partido) {
 }
 
 export function msHastaBloqueo(partido) {
-  return (getKickoffTimestamp(partido) - (5 * 60 * 1000)) - horaReal(); // ← CAMBIO: usar horaReal()
+  return (getKickoffTimestamp(partido) - (5 * 60 * 1000)) - horaReal();
 }
 
 export function formatearTiempo(ms) {
@@ -458,6 +426,7 @@ export function formatearTiempo(ms) {
 export function partidoBloqueado(partido) {
   return msHastaBloqueo(partido) <= 0;
 }
+
 export function partidoListoParaPronosticar(partido, equiposActualizados) {
   if (partido.j) return true;
   
