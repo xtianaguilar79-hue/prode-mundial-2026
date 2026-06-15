@@ -5,6 +5,8 @@
 // Usa hora del SERVIDOR (no la del dispositivo)
 // ═══════════════════════════════════════════════════════
 
+import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase-config.js";
+
 // ─── BANDERAS DE LAS 48 SELECCIONES (VERIFICADAS Y CORRECTAS) ───
 export const FLAGS = {
   // GRUPO A
@@ -45,7 +47,7 @@ export const FLAGS = {
  
   // GRUPO G
   "Bélgica":              "🇧🇪",
-  "Egipto":               "🇪🇬",
+  "Egipto":               "🇪🇬",  
   "Irán":                 "🇮🇷",
   "Nueva Zelanda":        "🇳🇿", 
   // GRUPO H
@@ -95,8 +97,7 @@ export const PARTIDOS_GRUPOS = [
   { id:"M007", j:1, grupo:"C", local:"Brasil", visit:"Marruecos", fecha:"13/06", hora:"19:00", sede:"MetLife, NJ" },
   { id:"M005", j:1, grupo:"C", local:"Haití", visit:"Escocia", fecha:"13/06", hora:"22:00", sede:"Boston, USA" },
   { id:"M006", j:1, grupo:"D", local:"Australia", visit:"Turquía", fecha:"14/06", hora:"01:00", sede:"Vancouver, CAN" },
-  { id:"M010", j:1, grupo:"E", local:"Alemania", visit:"Curazao", fecha:"14/06", hora:"14:00", sede:"Houston, USA" },
-  { id:"M009", j:1, grupo:"E", local:"Costa de Marfil", visit:"Ecuador", fecha:"14/06", hora:"20:00", sede:"Filadelfia, USA" },
+  { id:"M010", j:1, grupo:"E", local:"Alemania", visit:"Curazao", fecha:"14/06", hora:"14:00", sede:"Houston, USA" },  { id:"M009", j:1, grupo:"E", local:"Costa de Marfil", visit:"Ecuador", fecha:"14/06", hora:"20:00", sede:"Filadelfia, USA" },
   { id:"M011", j:1, grupo:"F", local:"Países Bajos", visit:"Japón", fecha:"14/06", hora:"17:00", sede:"Dallas, USA" },
   { id:"M012", j:1, grupo:"F", local:"Suecia", visit:"Túnez", fecha:"14/06", hora:"23:00", sede:"BBVA, MTY" },
   { id:"M014", j:1, grupo:"H", local:"España", visit:"Cabo Verde", fecha:"15/06", hora:"13:00", sede:"Atlanta, USA" },
@@ -145,8 +146,7 @@ export const PARTIDOS_GRUPOS = [
   { id:"M056", j:3, grupo:"E", local:"Ecuador", visit:"Alemania", fecha:"25/06", hora:"17:00", sede:"Nueva York/NJ, USA" },
   { id:"M057", j:3, grupo:"F", local:"Japón", visit:"Suecia", fecha:"25/06", hora:"20:00", sede:"Dallas, USA" },
   { id:"M058", j:3, grupo:"F", local:"Túnez", visit:"Países Bajos", fecha:"25/06", hora:"20:00", sede:"Kansas City, USA" },
-  { id:"M059", j:3, grupo:"D", local:"Turquía", visit:"Estados Unidos", fecha:"25/06", hora:"23:00", sede:"Los Angeles, USA" },
-  { id:"M060", j:3, grupo:"D", local:"Paraguay", visit:"Australia", fecha:"25/06", hora:"23:00", sede:"San Francisco, USA" },
+  { id:"M059", j:3, grupo:"D", local:"Turquía", visit:"Estados Unidos", fecha:"25/06", hora:"23:00", sede:"Los Angeles, USA" },  { id:"M060", j:3, grupo:"D", local:"Paraguay", visit:"Australia", fecha:"25/06", hora:"23:00", sede:"San Francisco, USA" },
   { id:"M061", j:3, grupo:"I", local:"Noruega", visit:"Francia", fecha:"26/06", hora:"16:00", sede:"Boston, USA" },
   { id:"M062", j:3, grupo:"I", local:"Senegal", visit:"Irak", fecha:"26/06", hora:"16:00", sede:"Toronto, CAN" },
   { id:"M065", j:3, grupo:"H", local:"Cabo Verde", visit:"Arabia Saudita", fecha:"26/06", hora:"21:00", sede:"Houston, USA" },
@@ -196,7 +196,6 @@ export const PARTIDOS_ELIM = [
   { id:"M103", fase:"3er", local:"Perdedor SF1", visit:"Perdedor SF2", fecha:"18/07", hora:"18:00", sede:"Miami, USA" },
   { id:"M104", fase:"final", local:"Ganador SF1", visit:"Ganador SF2", fecha:"19/07", hora:"16:00", sede:"MetLife, NJ" },
 ];
-
 export const TODOS_PARTIDOS = [...PARTIDOS_GRUPOS, ...PARTIDOS_ELIM];
 
 // ─── SISTEMA DE PUNTOS UNIFICADO ───
@@ -245,8 +244,7 @@ export function calcularPuntos(pred, resultado) {
       if (pAL === rAL) total += pts.golL;
       if (pAV === rAV) total += pts.golV;
       
-      if (pAL === rAL && pAV === rAV) {
-        total += pts.exacto;
+      if (pAL === rAL && pAV === rAV) {        total += pts.exacto;
         
         if (signoAlR === "E") {
           const pPL = pred.penales_local !== null && pred.penales_local !== undefined ? parseInt(pred.penales_local) : null;
@@ -295,8 +293,7 @@ export const FECHAS_LIMITE_CAMPEON = {
   "pre-final":   "2026-07-19T15:55:00-03:00",
 };
 
-// ═══════════════════════════════════════════════════════
-// SINCRONIZACIÓN DE HORA CON SERVIDOR
+// ═══════════════════════════════════════════════════════// SINCRONIZACIÓN DE HORA CON SERVIDOR (CORREGIDO)
 // ═══════════════════════════════════════════════════════
 
 let diferenciaHoraria = 0;
@@ -304,26 +301,21 @@ let horaSincronizada = false;
 
 export async function sincronizarHoraServidor(supabaseClient) {
   console.log("🕐 Sincronizando hora con el servidor...");
+  console.log(`   URL de Supabase: ${SUPABASE_URL}`);
   
   try {
-    const supabaseUrl = supabaseClient.supabaseUrl;
-    
-    if (!supabaseUrl) {
-      console.warn("⚠️ No se pudo obtener la URL de Supabase");
-      horaSincronizada = true;
-      return;
-    }
-    
     const horaAntes = Date.now();
     
-    const response = await fetch(`${supabaseUrl}/rest/v1/`, {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
       method: 'HEAD',
       headers: {
-        'apikey': supabaseClient.supabaseKey || ''
+        'apikey': SUPABASE_ANON_KEY
       }
     });
     
     const horaDespues = Date.now();
+    
+    console.log(`   Respuesta HTTP: ${response.status} ${response.statusText}`);
     
     if (response.ok) {
       const headerDate = response.headers.get('Date');
@@ -336,22 +328,25 @@ export async function sincronizarHoraServidor(supabaseClient) {
         
         console.log("✅ Hora sincronizada vía header HTTP de Supabase");
         console.log(`   Header Date: ${headerDate}`);
+        console.log(`   Hora servidor (UTC): ${horaServidor}`);
+        console.log(`   Hora local promedio: ${horaLocalPromedio}`);
         console.log(`   Diferencia: ${diferenciaHoraria}ms (${(diferenciaHoraria/1000).toFixed(2)}s)`);
         
         if (Math.abs(diferenciaHoraria) > 60000) {
           const minutos = Math.round(diferenciaHoraria / 60000);
           if (minutos > 0) {
-            console.warn(`️ Tu dispositivo está ${minutos} minuto(s) ADELANTADO`);
+            console.warn(`⚠️ Tu dispositivo está ${minutos} minuto(s) ADELANTADO`);
           } else {
             console.warn(`⚠️ Tu dispositivo está ${Math.abs(minutos)} minuto(s) ATRASADO`);
           }
+        } else {
+          console.log("✅ La hora de tu dispositivo es correcta");
         }
-      } else {
-        console.warn("️ No se encontró header Date");
+      } else {        console.warn("⚠️ No se encontró header Date en la respuesta");
         horaSincronizada = true;
       }
     } else {
-      console.warn("⚠️ Petición a Supabase falló:", response.status);
+      console.warn("⚠️ Petición a Supabase falló:", response.status, response.statusText);
       horaSincronizada = true;
     }
   } catch (err) {
@@ -396,8 +391,7 @@ export function calcularPuntosCampeon(prediccion, campeonReal) {
   if (campeonReal === prediccion.opcion1) return pts[0];
   if (campeonReal === prediccion.opcion2) return pts[1];
   if (campeonReal === prediccion.opcion3) return pts[2];
-  return 0;
-}
+  return 0;}
 
 // ── CRONÓMETRO Y BLOQUEO ───
 export function getKickoffTimestamp(partido) {
