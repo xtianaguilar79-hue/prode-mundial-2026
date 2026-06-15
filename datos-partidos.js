@@ -5,8 +5,6 @@
 // Usa hora del SERVIDOR (no la del dispositivo)
 // ═══════════════════════════════════════════════════════
 
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "./supabase-config.js";
-
 // ─── BANDERAS DE LAS 48 SELECCIONES (VERIFICADAS Y CORRECTAS) ───
 export const FLAGS = {
   // GRUPO A
@@ -47,9 +45,10 @@ export const FLAGS = {
  
   // GRUPO G
   "Bélgica":              "🇧🇪",
-  "Egipto":               "🇪🇬",  
+  "Egipto":               "🇪🇬",
   "Irán":                 "🇮🇷",
-  "Nueva Zelanda":        "🇳🇿", 
+  "Nueva Zelanda":        "🇳🇿",
+  
   // GRUPO H
   "España":               "🇪🇸",
   "Cabo Verde":           "🇨🇻",
@@ -97,9 +96,9 @@ export const PARTIDOS_GRUPOS = [
   { id:"M007", j:1, grupo:"C", local:"Brasil", visit:"Marruecos", fecha:"13/06", hora:"19:00", sede:"MetLife, NJ" },
   { id:"M005", j:1, grupo:"C", local:"Haití", visit:"Escocia", fecha:"13/06", hora:"22:00", sede:"Boston, USA" },
   { id:"M006", j:1, grupo:"D", local:"Australia", visit:"Turquía", fecha:"14/06", hora:"01:00", sede:"Vancouver, CAN" },
-  { id:"M010", j:1, grupo:"E", local:"Alemania", visit:"Curazao", fecha:"14/06", hora:"14:00", sede:"Houston, USA" },  { id:"M009", j:1, grupo:"E", local:"Costa de Marfil", visit:"Ecuador", fecha:"14/06", hora:"20:00", sede:"Filadelfia, USA" },
-  { id:"M011", j:1, grupo:"F", local:"Países Bajos", visit:"Japón", fecha:"14/06", hora:"17:00", sede:"Dallas, USA" },
-  { id:"M012", j:1, grupo:"F", local:"Suecia", visit:"Túnez", fecha:"14/06", hora:"23:00", sede:"BBVA, MTY" },
+  { id:"M010", j:1, grupo:"E", local:"Alemania", visit:"Curazao", fecha:"14/06", hora:"14:00", sede:"Houston, USA" },
+  { id:"M009", j:1, grupo:"E", local:"Costa de Marfil", visit:"Ecuador", fecha:"14/06", hora:"20:00", sede:"Filadelfia, USA" },
+  { id:"M011", j:1, grupo:"F", local:"Países Bajos", visit:"Japón", fecha:"14/06", hora:"17:00", sede:"Dallas, USA" },  { id:"M012", j:1, grupo:"F", local:"Suecia", visit:"Túnez", fecha:"14/06", hora:"23:00", sede:"BBVA, MTY" },
   { id:"M014", j:1, grupo:"H", local:"España", visit:"Cabo Verde", fecha:"15/06", hora:"13:00", sede:"Atlanta, USA" },
   { id:"M016", j:1, grupo:"G", local:"Bélgica", visit:"Egipto", fecha:"15/06", hora:"16:00", sede:"Seattle, USA" },
   { id:"M013", j:1, grupo:"H", local:"Arabia Saudita", visit:"Uruguay", fecha:"15/06", hora:"19:00", sede:"Miami, USA" },
@@ -146,9 +145,9 @@ export const PARTIDOS_GRUPOS = [
   { id:"M056", j:3, grupo:"E", local:"Ecuador", visit:"Alemania", fecha:"25/06", hora:"17:00", sede:"Nueva York/NJ, USA" },
   { id:"M057", j:3, grupo:"F", local:"Japón", visit:"Suecia", fecha:"25/06", hora:"20:00", sede:"Dallas, USA" },
   { id:"M058", j:3, grupo:"F", local:"Túnez", visit:"Países Bajos", fecha:"25/06", hora:"20:00", sede:"Kansas City, USA" },
-  { id:"M059", j:3, grupo:"D", local:"Turquía", visit:"Estados Unidos", fecha:"25/06", hora:"23:00", sede:"Los Angeles, USA" },  { id:"M060", j:3, grupo:"D", local:"Paraguay", visit:"Australia", fecha:"25/06", hora:"23:00", sede:"San Francisco, USA" },
-  { id:"M061", j:3, grupo:"I", local:"Noruega", visit:"Francia", fecha:"26/06", hora:"16:00", sede:"Boston, USA" },
-  { id:"M062", j:3, grupo:"I", local:"Senegal", visit:"Irak", fecha:"26/06", hora:"16:00", sede:"Toronto, CAN" },
+  { id:"M059", j:3, grupo:"D", local:"Turquía", visit:"Estados Unidos", fecha:"25/06", hora:"23:00", sede:"Los Angeles, USA" },
+  { id:"M060", j:3, grupo:"D", local:"Paraguay", visit:"Australia", fecha:"25/06", hora:"23:00", sede:"San Francisco, USA" },
+  { id:"M061", j:3, grupo:"I", local:"Noruega", visit:"Francia", fecha:"26/06", hora:"16:00", sede:"Boston, USA" },  { id:"M062", j:3, grupo:"I", local:"Senegal", visit:"Irak", fecha:"26/06", hora:"16:00", sede:"Toronto, CAN" },
   { id:"M065", j:3, grupo:"H", local:"Cabo Verde", visit:"Arabia Saudita", fecha:"26/06", hora:"21:00", sede:"Houston, USA" },
   { id:"M066", j:3, grupo:"H", local:"Uruguay", visit:"España", fecha:"26/06", hora:"21:00", sede:"Akron, GDL" },
   { id:"M063", j:3, grupo:"G", local:"Egipto", visit:"Irán", fecha:"27/06", hora:"00:00", sede:"Seattle, USA" },
@@ -196,8 +195,8 @@ export const PARTIDOS_ELIM = [
   { id:"M103", fase:"3er", local:"Perdedor SF1", visit:"Perdedor SF2", fecha:"18/07", hora:"18:00", sede:"Miami, USA" },
   { id:"M104", fase:"final", local:"Ganador SF1", visit:"Ganador SF2", fecha:"19/07", hora:"16:00", sede:"MetLife, NJ" },
 ];
-export const TODOS_PARTIDOS = [...PARTIDOS_GRUPOS, ...PARTIDOS_ELIM];
 
+export const TODOS_PARTIDOS = [...PARTIDOS_GRUPOS, ...PARTIDOS_ELIM];
 // ─── SISTEMA DE PUNTOS UNIFICADO ───
 export const PUNTOS = {
   grupos:    { signo: 3,  golL: 3,  golV: 3,  exacto: 5,  alargue: 0,  penales: 0  },
@@ -244,9 +243,9 @@ export function calcularPuntos(pred, resultado) {
       if (pAL === rAL) total += pts.golL;
       if (pAV === rAV) total += pts.golV;
       
-      if (pAL === rAL && pAV === rAV) {        total += pts.exacto;
-        
-        if (signoAlR === "E") {
+      if (pAL === rAL && pAV === rAV) {
+        total += pts.exacto;
+                if (signoAlR === "E") {
           const pPL = pred.penales_local !== null && pred.penales_local !== undefined ? parseInt(pred.penales_local) : null;
           const pPV = pred.penales_visit !== null && pred.penales_visit !== undefined ? parseInt(pred.penales_visit) : null;
           const rPL = resultado.penales_local !== null && resultado.penales_local !== undefined ? parseInt(resultado.penales_local) : null;
@@ -293,8 +292,12 @@ export const FECHAS_LIMITE_CAMPEON = {
   "pre-final":   "2026-07-19T15:55:00-03:00",
 };
 
-// ═══════════════════════════════════════════════════════// SINCRONIZACIÓN DE HORA CON SERVIDOR (CORREGIDO)
 // ═══════════════════════════════════════════════════════
+// SINCRONIZACIÓN DE HORA CON SERVIDOR (SOLUCIÓN DEFINITIVA)
+// ═══════════════════════════════════════════════════════
+// URL y KEY de Supabase (hardcodeadas para evitar problemas de import)
+const SUPABASE_URL = 'https://atiojuyzcumlrixxobah.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF0aW9qdXl6Y3VtbHJpeHhvYmFoIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODA5MzU4NDAsImV4cCI6MjA5NjUxMTg0MH0.2GEcdXqa6Bg6tEmXYAxTFQ30Obn8PlL3i2fWezJWzPg';
 
 let diferenciaHoraria = 0;
 let horaSincronizada = false;
@@ -340,9 +343,9 @@ export async function sincronizarHoraServidor(supabaseClient) {
             console.warn(`⚠️ Tu dispositivo está ${Math.abs(minutos)} minuto(s) ATRASADO`);
           }
         } else {
-          console.log("✅ La hora de tu dispositivo es correcta");
-        }
-      } else {        console.warn("⚠️ No se encontró header Date en la respuesta");
+          console.log("✅ La hora de tu dispositivo es correcta");        }
+      } else {
+        console.warn("⚠️ No se encontró header Date en la respuesta");
         horaSincronizada = true;
       }
     } else {
@@ -389,9 +392,9 @@ export function calcularPuntosCampeon(prediccion, campeonReal) {
   if (!prediccion || !campeonReal || !prediccion.bloqueado || !prediccion.puntos_otorgados) return 0;
   const pts = prediccion.puntos_otorgados;
   if (campeonReal === prediccion.opcion1) return pts[0];
-  if (campeonReal === prediccion.opcion2) return pts[1];
-  if (campeonReal === prediccion.opcion3) return pts[2];
-  return 0;}
+  if (campeonReal === prediccion.opcion2) return pts[1];  if (campeonReal === prediccion.opcion3) return pts[2];
+  return 0;
+}
 
 // ── CRONÓMETRO Y BLOQUEO ───
 export function getKickoffTimestamp(partido) {
@@ -435,4 +438,4 @@ export function partidoListoParaPronosticar(partido, equiposActualizados) {
   };
   
   return !esPlaceholder(local) && !esPlaceholder(visit);
-}
+  }
