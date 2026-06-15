@@ -2,7 +2,8 @@ import { supabase } from "./supabase-config.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, 
   calcularPuntos, calcularPuntosCampeon,
-  getKickoffTimestamp
+  getKickoffTimestamp,
+  sincronizarHoraServidor, horaReal
 } from "../datos-partidos.js";
 
 console.log("📊 app-publica.js cargado");
@@ -28,7 +29,7 @@ function getEstadoPartido(partido, resultado) {
   }
   
   const kickoff = getKickoffTimestamp(partido);
-  const ahora = Date.now();
+  const ahora = horaReal(); // ← CAMBIO: usar horaReal() en lugar de Date.now()
   const finPartido = kickoff + (120 * 60 * 1000);
   
   if (ahora < kickoff) {
@@ -46,8 +47,8 @@ function getEstadoPartido(partido, resultado) {
 // CARGA DE DATOS
 // ══════════════════════════════════════════════════════
 async function cargarDatosCompletos() {
-  try {
-    const { data: usuariosData, error: usuariosError } = await supabase      .from('usuarios')
+  try {    const { data: usuariosData, error: usuariosError } = await supabase
+      .from('usuarios')
       .select('*');
     if (usuariosError) throw usuariosError;
 
@@ -95,8 +96,8 @@ async function cargarDatosCompletos() {
           ranking[pred.user_id] = {
             uid: pred.user_id,
             nombre: u.nombre || "Jugador",
-            apellido: u.apellido || "",
-            apodo: u.apodo || null,            grupos: u.grupos || [],
+            apellido: u.apellido || "",            apodo: u.apodo || null,
+            grupos: u.grupos || [],
             puntos: 0,
             puntosCampeon: 0,
             partidosPronosticados: 0,
@@ -144,8 +145,8 @@ async function cargarDatosCompletos() {
     });
 
     Object.values(usuarios).forEach(u => {
-      if (!ranking[u.id]) {
-        ranking[u.id] = {          uid: u.id,
+      if (!ranking[u.id]) {        ranking[u.id] = {
+          uid: u.id,
           nombre: u.nombre,
           apellido: u.apellido || "",
           apodo: u.apodo || null,
@@ -193,8 +194,8 @@ function actualizarSelectorGrupos(usuarios) {
   Object.values(usuarios).forEach(u => {
     if (u.grupos && Array.isArray(u.grupos)) {
       u.grupos.forEach(g => gruposSet.add(g));
-    }
-  });
+    }  });
+
   const select = document.getElementById("filtroGrupo");
   if (!select) return;
   
@@ -224,7 +225,7 @@ function renderRanking(lista, totalUsuarios) {
   const actualizado = document.getElementById("actualizado");
   
   if (rankingLoader) rankingLoader.style.display = "none";
-  if (actualizado) actualizado.textContent = "Actualizado: " + new Date().toLocaleTimeString();
+  if (actualizado) actualizado.textContent = "Actualizado: " + new Date(horaReal()).toLocaleTimeString();
 
   const jugadoresActivos = lista.filter(u => u.partidosPronosticados > 0);
 
@@ -242,8 +243,8 @@ function renderRanking(lista, totalUsuarios) {
             ${totalUsuarios > 0 
               ? `Ya hay <strong style="color:var(--gold)">${totalUsuarios}</strong> jugador${totalUsuarios === 1 ? '' : 'es'} registrado${totalUsuarios === 1 ? '' : 's'}.`
               : 'El ranking se activará cuando comience el Mundial.'}
-          </p>
-          <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none;">🔐 Registrarme</a>        </div>
+          </p>          <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none;">🔐 Registrarme</a>
+        </div>
       `;
     }
     return;
@@ -291,8 +292,8 @@ function renderRanking(lista, totalUsuarios) {
             <strong>${u.nombre} ${u.apellido}</strong>
             ${u.apodo ? `<div style="font-size:11px; color:var(--text2);">"${u.apodo}"</div>` : ""}
           </td>
-          <td style="font-size:11px;">${gruposHTML}</td>
-          <td>${u.partidosPronosticados}/104</td>          <td>${u.partidosAcertados}</td>
+          <td style="font-size:11px;">${gruposHTML}</td>          <td>${u.partidosPronosticados}/104</td>
+          <td>${u.partidosAcertados}</td>
           <td>${u.puntosCampeon > 0 ? `<span style="color:var(--gold)">+${u.puntosCampeon}</span>` : "—"}</td>
           <td>${u.bonus > 0 ? `<span style="color:var(--green)">+${u.bonus}</span>` : "—"}</td>
           <td class="pts-total">${u.total}</td>
@@ -340,8 +341,8 @@ window.mostrarDetalleJugador = async function(uid) {
       else if (fase === "16avos") partidosPorFase["Dieciseisavos"].push(det);
       else if (fase === "octavos") partidosPorFase["Octavos"].push(det);
       else if (fase === "cuartos") partidosPorFase["Cuartos"].push(det);
-      else if (fase === "semis") partidosPorFase["Semifinales"].push(det);
-      else if (fase === "3er") partidosPorFase["3er Puesto"].push(det);      else if (fase === "final") partidosPorFase["Final"].push(det);
+      else if (fase === "semis") partidosPorFase["Semifinales"].push(det);      else if (fase === "3er") partidosPorFase["3er Puesto"].push(det);
+      else if (fase === "final") partidosPorFase["Final"].push(det);
     });
 
     let html = `
@@ -438,8 +439,8 @@ function renderCardPartido(p, resultado) {
   if (estado === "proximo") claseCard += " proximo";
 
   let liveBadge = "";
-  if (estado === "vivo") {
-    liveBadge = `<span class="live-badge">🔴 EN JUEGO</span>`;  }
+  if (estado === "vivo") {    liveBadge = `<span class="live-badge">🔴 EN JUEGO</span>`;
+  }
 
   let marcadorHTML;
   if (estado === "finalizado" && resultado && resultado.local !== null) {
@@ -487,8 +488,8 @@ function renderCardPartido(p, resultado) {
         </div>
       </div>
     </div>
-  `;
-}
+  `;}
+
 function renderResultados(resultados) {
   const cont = document.getElementById("resultadosContenido");
   const loader = document.getElementById("resultadosLoader");
@@ -536,8 +537,8 @@ function renderResultados(resultados) {
   if (!hayContenido) {
     cont.innerHTML = `
       <div style="text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1px solid var(--border);">
-        <div style="font-size:60px; margin-bottom:16px;">⏳</div>
-        <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>        <p style="color:var(--text2); font-size:14px; max-width:450px; margin:0 auto;">
+        <div style="font-size:60px; margin-bottom:16px;">⏳</div>        <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>
+        <p style="color:var(--text2); font-size:14px; max-width:450px; margin:0 auto;">
           Los partidos en juego aparecerán en vivo. Los resultados oficiales se cargarán al finalizar cada partido.
         </p>
       </div>
@@ -570,5 +571,15 @@ async function cargarYRenderizar() {
   }
 }
 
-cargarYRenderizar();
-setInterval(cargarYRenderizar, 30000);
+// ══════════════════════════════════════════════════════
+// INICIALIZACIÓN CON SINCRONIZACIÓN DE HORA
+// ══════════════════════════════════════════════════════
+
+(async () => {
+  console.log("🕐 Sincronizando hora con el servidor...");
+  await sincronizarHoraServidor(supabase);
+  console.log("✅ Hora sincronizada. Iniciando carga de datos...");
+  
+  await cargarYRenderizar();
+  setInterval(cargarYRenderizar, 30000);
+})();
