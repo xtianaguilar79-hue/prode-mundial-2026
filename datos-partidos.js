@@ -296,7 +296,8 @@ export const FECHAS_LIMITE_CAMPEON = {
 // SINCRONIZACIÓN DE HORA CON SERVIDOR (RPC SUPABASE)
 // ═══════════════════════════════════════════════════════
 
-let diferenciaHoraria = 0;
+let timestampServidor = null;
+let timestampLocalSync = null;
 let horaSincronizada = false;
 
 export async function sincronizarHoraServidor(supabaseClient) {
@@ -313,43 +314,50 @@ export async function sincronizarHoraServidor(supabaseClient) {
     if (error) {
       console.error("❌ Error en RPC:", error.message);
       console.error("⚠️ Asegurate de haber creado la función en Supabase SQL Editor");
-      diferenciaHoraria = 0;
       horaSincronizada = true;
       return;
     }
     
     if (data) {
-      const horaServidor = new Date(data).getTime();
-      const horaLocalPromedio = (horaAntes + horaDespues) / 2;
-      diferenciaHoraria = horaServidor - horaLocalPromedio;
+      timestampServidor = new Date(data).getTime();
+      timestampLocalSync = (horaAntes + horaDespues) / 2;
       horaSincronizada = true;
+      
+      const diferencia = timestampServidor - timestampLocalSync;
       
       console.log("✅ SINCRONIZACIÓN EXITOSA vía Supabase RPC");
       console.log(`   Hora del servidor (UTC): ${data}`);
-      console.log(`   Timestamp servidor: ${horaServidor}`);
-      console.log(`   Timestamp local: ${horaLocalPromedio}`);
-      console.log(`   Diferencia: ${diferenciaHoraria}ms (${(diferenciaHoraria/1000).toFixed(2)}s)`);
+      console.log(`   Timestamp servidor: ${timestampServidor}`);
+      console.log(`   Timestamp local: ${timestampLocalSync}`);
+      console.log(`   Diferencia inicial: ${diferencia}ms (${(diferencia/1000).toFixed(2)}s)`);
       
-      if (Math.abs(diferenciaHoraria) > 30000) {
-        const minutos = Math.round(diferenciaHoraria / 60000);
+      if (Math.abs(diferencia) > 30000) {
+        const minutos = Math.round(diferencia / 60000);
         console.warn(`⚠️ Tu dispositivo está ${minutos > 0 ? 'ADELANTADO' : 'ATRASADO'} ${Math.abs(minutos)} minuto(s)`);
       } else {
         console.log("✅ La hora de tu dispositivo es correcta");
       }
     } else {
       console.error("❌ RPC no devolvió datos");
-      diferenciaHoraria = 0;
       horaSincronizada = true;
     }
   } catch (err) {
     console.error("❌ Error al sincronizar hora:", err.message);
-    diferenciaHoraria = 0;
     horaSincronizada = true;
   }
 }
 
 export function horaReal() {
-  return Date.now() + diferenciaHoraria;
+  // Si no está sincronizado, usar hora local
+  if (!horaSincronizada || timestampServidor === null) {
+    return Date.now();
+  }
+  
+  // Calcular cuánto tiempo pasó desde la sincronización
+  const tiempoTranscurrido = Date.now() - timestampLocalSync;
+  
+  // La hora real es el timestamp del servidor + el tiempo transcurrido
+  return timestampServidor + tiempoTranscurrido;
 }
 
 export function esHoraSincronizada() {
@@ -357,7 +365,8 @@ export function esHoraSincronizada() {
 }
 
 export function obtenerDiferenciaHoraria() {
-  return diferenciaHoraria;
+  if (!horaSincronizada || timestampServidor === null) return 0;
+  return timestampServidor - Date.now();
 }
 
 
