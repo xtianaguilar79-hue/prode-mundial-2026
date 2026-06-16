@@ -29,7 +29,7 @@ function getEstadoPartido(partido, resultado) {
   }
   
   const kickoff = getKickoffTimestamp(partido);
-  const ahora = horaReal(); // ← CAMBIO: usar horaReal() en lugar de Date.now()
+  const ahora = horaReal();
   const finPartido = kickoff + (120 * 60 * 1000);
   
   if (ahora < kickoff) {
@@ -178,7 +178,7 @@ async function cargarDatosCompletos() {
 
     listaFiltrada.forEach((u, i) => u.pos = i + 1);
 
-    return { lista: listaFiltrada, resultados, usuarios, totalUsuarios: usuariosData?.length || 0 };
+    return { lista: listaFiltrada, resultados, usuarios, predicciones: predsData || [], totalUsuarios: usuariosData?.length || 0 };
   } catch (err) {
     console.error("❌ Error al cargar datos:", err);
     throw err;
@@ -390,8 +390,7 @@ window.mostrarDetalleJugador = async function(uid) {
           const predL = det.prediccion.local !== null && det.prediccion.local !== undefined ? det.prediccion.local : "-";
           const predV = det.prediccion.visit !== null && det.prediccion.visit !== undefined ? det.prediccion.visit : "-";
           const resL = det.resultado.local !== null && det.resultado.local !== undefined ? det.resultado.local : "-";
-          const resV = det.resultado.visit !== null && det.resultado.visit !== undefined ? det.resultado.visit : "-";
-          html += `
+          const resV = det.resultado.visit !== null && det.resultado.visit !== undefined ? det.resultado.visit : "-";          html += `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--card); border:1px solid var(--border); border-radius:6px; margin-bottom:8px; border-left:3px solid ${det.puntos > 0 ? 'var(--gold)' : 'var(--border)'};">
               <div style="flex:1;">
                 <div style="font-weight:600; color:var(--text); font-size:14px; margin-bottom:4px;">
@@ -426,6 +425,149 @@ window.cerrarModalDetalle = function() {
 };
 
 // ══════════════════════════════════════════════════════
+// MODAL DE DETALLE DE PARTIDO (NUEVO)
+// ══════════════════════════════════════════════════════
+
+window.mostrarDetallePartido = async function(partidoId) {
+  try {
+    const { lista, resultados, usuarios } = await cargarDatosCompletos();
+    
+    const partido = TODOS_PARTIDOS.find(p => p.id === partidoId);
+    if (!partido) {
+      alert("Partido no encontrado");
+      return;
+    }
+    
+    const resultado = resultados[partidoId];
+    if (!resultado || resultado.local === null || resultado.local === undefined) {      alert("Este partido aún no tiene resultado oficial");
+      return;
+    }
+
+    const modal = document.getElementById("modalDetalle");
+    const modalContent = document.getElementById("modalContent");
+    
+    if (!modal || !modalContent) {
+      console.error("Modal no encontrado en el DOM");
+      return;
+    }
+
+    // Buscar todas las predicciones de este partido
+    const prediccionesPartido = lista
+      .filter(jugador => {
+        const detalle = jugador.detallePartidos.find(d => d.partido.id === partidoId);
+        return detalle !== undefined;
+      })
+      .map(jugador => {
+        const detalle = jugador.detallePartidos.find(d => d.partido.id === partidoId);
+        return {
+          nombre: jugador.nombre,
+          apellido: jugador.apellido,
+          apodo: jugador.apodo,
+          prediccion: detalle.prediccion,
+          puntos: detalle.puntos
+        };
+      })
+      .sort((a, b) => b.puntos - a.puntos);
+
+    const flagL = FLAGS[partido.local] || "🏳️";
+    const flagV = FLAGS[partido.visit] || "🏳️";
+
+    let html = `
+      <div style="text-align:center; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid var(--border);">
+        <div style="font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
+          ${partido.grupo ? `Grupo ${partido.grupo}` : partido.fase ? partido.fase.toUpperCase() : ''} · ${partido.fecha} · ${partido.hora} ARG
+        </div>
+        <h2 style="font-family:'Anton'; font-size:28px; color:var(--gold); margin-bottom:12px;">
+          ${flagL} ${partido.local} <span style="color:var(--text);">vs</span> ${partido.visit} ${flagV}
+        </h2>
+        <div style="font-family:'Anton'; font-size:48px; color:var(--gold); letter-spacing:3px;">
+          ${resultado.local} - ${resultado.visit}
+        </div>
+        <div style="font-size:12px; color:var(--text2); margin-top:8px;">
+          ${prediccionesPartido.length} jugador${prediccionesPartido.length === 1 ? '' : 'es'} pronosticaron este partido
+        </div>
+      </div>
+    `;
+    if (prediccionesPartido.length === 0) {
+      html += `
+        <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
+          <div style="font-size:50px; margin-bottom:12px;">🤷</div>
+          <p style="color:var(--text2); font-size:14px;">Ningún jugador pronosticó este partido.</p>
+        </div>
+      `;
+    } else {
+      // Estadísticas rápidas
+      const totalPuntos = prediccionesPartido.reduce((sum, j) => sum + j.puntos, 0);
+      const promedio = (totalPuntos / prediccionesPartido.length).toFixed(1);
+      const maxPuntos = prediccionesPartido[0].puntos;
+      const acertaron = prediccionesPartido.filter(j => j.puntos > 0).length;
+
+      html += `
+        <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:20px;">
+          <div style="background:var(--bg2); padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${maxPuntos}</div>
+            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Máximo</div>
+          </div>
+          <div style="background:var(--bg2); padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${promedio}</div>
+            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Promedio</div>
+          </div>
+          <div style="background:var(--bg2); padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${acertaron}/${prediccionesPartido.length}</div>
+            <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Acertaron</div>
+          </div>
+        </div>
+      `;
+
+      // Lista de jugadores
+      html += `
+        <div style="font-size:11px; color:var(--text2); margin-bottom:8px; display:flex; justify-content:space-between; padding:0 4px;">
+          <span>Jugador · Predicción</span>
+          <span>Pts</span>
+        </div>
+      `;
+
+      prediccionesPartido.forEach((j, index) => {
+        const predL = j.prediccion.local !== null && j.prediccion.local !== undefined ? j.prediccion.local : "-";
+        const predV = j.prediccion.visit !== null && j.prediccion.visit !== undefined ? j.prediccion.visit : "-";
+        
+        let medalla = "";
+        if (index === 0 && j.puntos > 0) medalla = "🥇";
+        else if (index === 1 && j.puntos > 0) medalla = "🥈";
+        else if (index === 2 && j.puntos > 0) medalla = "🥉";
+
+        html += `
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:6px; margin-bottom:6px; border-left:3px solid ${j.puntos > 0 ? 'var(--gold)' : 'var(--border)'};">            <div style="flex:1; display:flex; align-items:center; gap:8px;">
+              <span style="font-size:14px; min-width:24px;">${medalla || (index + 1)}</span>
+              <div>
+                <div style="font-weight:600; color:var(--text); font-size:14px;">
+                  ${j.nombre} ${j.apellido}
+                </div>
+                ${j.apodo ? `<div style="font-size:11px; color:var(--text2);">"${j.apodo}"</div>` : ""}
+                <div style="font-size:12px; color:var(--text3); margin-top:2px;">
+                  Pronóstico: <strong style="color:var(--text);">${predL} - ${predV}</strong>
+                </div>
+              </div>
+            </div>
+            <div style="text-align:right; margin-left:12px; padding:6px 10px; background:${j.puntos > 0 ? 'var(--gold-soft)' : 'var(--bg2)'}; border-radius:6px; min-width:50px;">
+              <div style="font-family:'Anton'; font-size:20px; color:${j.puntos > 0 ? 'var(--gold)' : 'var(--text3)'}; line-height:1;">
+                ${j.puntos > 0 ? '+' + j.puntos : '0'}
+              </div>
+            </div>
+          </div>
+        `;
+      });
+    }
+
+    modalContent.innerHTML = html;
+    modal.style.display = "flex";
+  } catch (err) {
+    console.error("Error en mostrarDetallePartido:", err);
+    alert("Error al cargar el detalle del partido: " + err.message);
+  }
+};
+
+// ══════════════════════════════════════════════════════
 // RESULTADOS CON ESTADOS EN VIVO
 // ══════════════════════════════════════════════════════
 
@@ -439,14 +581,16 @@ function renderCardPartido(p, resultado) {
   if (estado === "proximo") claseCard += " proximo";
 
   let liveBadge = "";
-  if (estado === "vivo") {    liveBadge = `<span class="live-badge">🔴 EN JUEGO</span>`;
+  if (estado === "vivo") {
+    liveBadge = `<span class="live-badge">🔴 EN JUEGO</span>`;
   }
 
   let marcadorHTML;
-  if (estado === "finalizado" && resultado && resultado.local !== null) {
-    marcadorHTML = `
-      <div class="marcador-final">${resultado.local} - ${resultado.visit}</div>
-      <div class="marcador-hora">${texto}</div>
+  if (estado === "finalizado" && resultado && resultado.local !== null) {    marcadorHTML = `
+      <div class="marcador-final" onclick="window.mostrarDetallePartido('${p.id}')" style="cursor:pointer; text-decoration:underline; text-decoration-color:var(--gold);" title="Ver pronósticos de los jugadores">
+        ${resultado.local} - ${resultado.visit}
+      </div>
+      <div class="marcador-hora" style="font-size:9px; color:var(--text3);">👆 Tocá para ver pronósticos</div>
     `;
   } else if (estado === "vivo") {
     marcadorHTML = `
@@ -488,10 +632,10 @@ function renderCardPartido(p, resultado) {
         </div>
       </div>
     </div>
-  `;}
+  `;
+}
 
-function renderResultados(resultados) {
-  const cont = document.getElementById("resultadosContenido");
+function renderResultados(resultados) {  const cont = document.getElementById("resultadosContenido");
   const loader = document.getElementById("resultadosLoader");
   
   if (loader) loader.style.display = "none";
@@ -537,10 +681,10 @@ function renderResultados(resultados) {
   if (!hayContenido) {
     cont.innerHTML = `
       <div style="text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1px solid var(--border);">
-        <div style="font-size:60px; margin-bottom:16px;">⏳</div>        <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>
+        <div style="font-size:60px; margin-bottom:16px;">⏳</div>
+        <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>
         <p style="color:var(--text2); font-size:14px; max-width:450px; margin:0 auto;">
-          Los partidos en juego aparecerán en vivo. Los resultados oficiales se cargarán al finalizar cada partido.
-        </p>
+          Los partidos en juego aparecerán en vivo. Los resultados oficiales se cargarán al finalizar cada partido.        </p>
       </div>
     `;
   } else {
