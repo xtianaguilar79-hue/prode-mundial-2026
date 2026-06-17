@@ -8,6 +8,13 @@ import {
 
 console.log("📊 app-publica.js cargado");
 
+// ══════════════════════════════════════════════════════
+// CONFIGURACIÓN DE SALAS (NUEVO)
+// ══════════════════════════════════════════════════════
+const SALA_PRIVADA = "Cardio-Fitness";
+const MODO_SALA = window.location.pathname.includes("sala-cardio");
+const NOMBRE_SALA = "Cardio-Fitness";
+
 let filtroGrupoActual = "";
 
 // ══════════════════════════════════════════════════════
@@ -40,14 +47,14 @@ function getEstadoPartido(partido, resultado) {
     return { estado: "vivo", texto: "🔴 EN JUEGO" };
   }
   
-  return { estado: "pendiente", texto: "⏳ Pendiente resultado oficial" };
-}
+  return { estado: "pendiente", texto: "⏳ Pendiente resultado oficial" };}
 
 // ══════════════════════════════════════════════════════
 // CARGA DE DATOS
 // ══════════════════════════════════════════════════════
 async function cargarDatosCompletos() {
-  try {    const { data: usuariosData, error: usuariosError } = await supabase
+  try {
+    const { data: usuariosData, error: usuariosError } = await supabase
       .from('usuarios')
       .select('*');
     if (usuariosError) throw usuariosError;
@@ -90,14 +97,30 @@ async function cargarDatosCompletos() {
       predsData.forEach(pred => {
         const res = resultados[pred.partido_id];
         const pts = res ? calcularPuntos(pred, res) : 0;
+        // ══════════════════════════════════════════════════════
+        // FILTRO DE SALA (NUEVO)
+        // ══════════════════════════════════════════════════════
+        const u = usuarios[pred.user_id] || {};
+        const gruposUsuario = u.grupos || [];
+        const estaEnSalaPrivada = gruposUsuario.includes(SALA_PRIVADA);
+        
+        // Si estamos en modo general, excluir usuarios de la sala privada
+        // Si estamos en modo sala, solo incluir usuarios de la sala privada
+        if (!MODO_SALA && estaEnSalaPrivada) {
+          return; // Saltar este usuario en el ranking general
+        }
+        if (MODO_SALA && !estaEnSalaPrivada) {
+          return; // Saltar este usuario en el ranking de sala
+        }
+        // ══════════════════════════════════════════════════════
 
         if (!ranking[pred.user_id]) {
-          const u = usuarios[pred.user_id] || {};
           ranking[pred.user_id] = {
             uid: pred.user_id,
             nombre: u.nombre || "Jugador",
-            apellido: u.apellido || "",            apodo: u.apodo || null,
-            grupos: u.grupos || [],
+            apellido: u.apellido || "",
+            apodo: u.apodo || null,
+            grupos: gruposUsuario,
             puntos: 0,
             puntosCampeon: 0,
             partidosPronosticados: 0,
@@ -122,16 +145,29 @@ async function cargarDatosCompletos() {
         }
       });
     }
-
     Object.entries(campeones).forEach(([uid, pred]) => {
+      // ══════════════════════════════════════════════════════
+      // FILTRO DE SALA (NUEVO) - Campeones
+      // ══════════════════════════════════════════════════════
+      const u = usuarios[uid] || {};
+      const gruposUsuario = u.grupos || [];
+      const estaEnSalaPrivada = gruposUsuario.includes(SALA_PRIVADA);
+      
+      if (!MODO_SALA && estaEnSalaPrivada) {
+        return;
+      }
+      if (MODO_SALA && !estaEnSalaPrivada) {
+        return;
+      }
+      // ══════════════════════════════════════════════════════
+
       if (!ranking[uid]) {
-        const u = usuarios[uid] || {};
         ranking[uid] = {
           uid,
           nombre: u.nombre || "Jugador",
           apellido: u.apellido || "",
           apodo: u.apodo || null,
-          grupos: u.grupos || [],
+          grupos: gruposUsuario,
           puntos: 0,
           puntosCampeon: 0,
           partidosPronosticados: 0,
@@ -145,12 +181,26 @@ async function cargarDatosCompletos() {
     });
 
     Object.values(usuarios).forEach(u => {
-      if (!ranking[u.id]) {        ranking[u.id] = {
+      // ══════════════════════════════════════════════════════
+      // FILTRO DE SALA (NUEVO) - Usuarios sin predicciones
+      // ══════════════════════════════════════════════════════
+      const gruposUsuario = u.grupos || [];
+      const estaEnSalaPrivada = gruposUsuario.includes(SALA_PRIVADA);
+      
+      if (!MODO_SALA && estaEnSalaPrivada) {
+        return;
+      }
+      if (MODO_SALA && !estaEnSalaPrivada) {
+        return;
+      }
+      // ══════════════════════════════════════════════════════
+      if (!ranking[u.id]) {
+        ranking[u.id] = {
           uid: u.id,
           nombre: u.nombre,
           apellido: u.apellido || "",
           apodo: u.apodo || null,
-          grupos: u.grupos || [],
+          grupos: gruposUsuario,
           puntos: 0,
           puntosCampeon: 0,
           partidosPronosticados: 0,
@@ -193,14 +243,32 @@ function actualizarSelectorGrupos(usuarios) {
   const gruposSet = new Set();
   Object.values(usuarios).forEach(u => {
     if (u.grupos && Array.isArray(u.grupos)) {
-      u.grupos.forEach(g => gruposSet.add(g));
-    }  });
+      u.grupos.forEach(g => {        // ══════════════════════════════════════════════════════
+        // EXCLUIR SALA PRIVADA DEL SELECTOR EN MODO GENERAL (NUEVO)
+        // ══════════════════════════════════════════════════════
+        if (!MODO_SALA && g === SALA_PRIVADA) {
+          return; // No agregar la sala privada al selector general
+        }
+        // ══════════════════════════════════════════════════════
+        gruposSet.add(g);
+      });
+    }
+  });
 
   const select = document.getElementById("filtroGrupo");
   if (!select) return;
   
   const valorActual = select.value;
-  select.innerHTML = '<option value="">🌍 Ranking General (todos los jugadores)</option>';
+  
+  // ══════════════════════════════════════════════════════
+  // TÍTULO DEL SELECTOR SEGÚN MODO (NUEVO)
+  // ══════════════════════════════════════════════════════
+  const tituloGeneral = MODO_SALA 
+    ? `🏢 Ranking de ${NOMBRE_SALA}` 
+    : '🌍 Ranking General (todos los jugadores)';
+  // ══════════════════════════════════════════════════════
+  
+  select.innerHTML = `<option value="">${tituloGeneral}</option>`;
   
   Array.from(gruposSet).sort().forEach(g => {
     const opt = document.createElement("option");
@@ -224,8 +292,7 @@ function renderRanking(lista, totalUsuarios) {
   const rankingLoader = document.getElementById("rankingLoader");
   const actualizado = document.getElementById("actualizado");
   
-  if (rankingLoader) rankingLoader.style.display = "none";
-  if (actualizado) actualizado.textContent = "Actualizado: " + new Date(horaReal()).toLocaleTimeString();
+  if (rankingLoader) rankingLoader.style.display = "none";  if (actualizado) actualizado.textContent = "Actualizado: " + new Date(horaReal()).toLocaleTimeString();
 
   const jugadoresActivos = lista.filter(u => u.partidosPronosticados > 0);
 
@@ -235,6 +302,14 @@ function renderRanking(lista, totalUsuarios) {
     
     const top3 = document.getElementById("top3");
     if (top3) {
+      // ══════════════════════════════════════════════════════
+      // MENSAJE SEGÚN MODO (NUEVO)
+      // ══════════════════════════════════════════════════════
+      const mensajeSala = MODO_SALA 
+        ? `Aún no hay jugadores en la sala <strong style="color:var(--gold)">${NOMBRE_SALA}</strong>.`
+        : 'El ranking se activará cuando comience el Mundial.';
+      // ══════════════════════════════════════════════════════
+      
       top3.innerHTML = `
         <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1.5px solid var(--gold);">
           <div style="font-size:70px; margin-bottom:16px;">🏆</div>
@@ -242,8 +317,9 @@ function renderRanking(lista, totalUsuarios) {
           <p style="color:var(--text2); font-size:15px; max-width:450px; margin:0 auto 20px;">
             ${totalUsuarios > 0 
               ? `Ya hay <strong style="color:var(--gold)">${totalUsuarios}</strong> jugador${totalUsuarios === 1 ? '' : 'es'} registrado${totalUsuarios === 1 ? '' : 's'}.`
-              : 'El ranking se activará cuando comience el Mundial.'}
-          </p>          <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none;">🔐 Registrarme</a>
+              : mensajeSala}
+          </p>
+          <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none;">🔐 Registrarme</a>
         </div>
       `;
     }
@@ -265,8 +341,7 @@ function renderRanking(lista, totalUsuarios) {
       return `
         <div class="top3-card ${colores[i]}" onclick="window.mostrarDetalleJugador('${u.uid}')" style="cursor:pointer;" title="Ver detalle de ${u.nombre}">
           <div class="emoji">${emojis[i]}</div>
-          <div class="nombre">${u.nombre} ${u.apellido}</div>
-          ${u.apodo ? `<div style="font-size:11px; color:var(--text2); margin-bottom:4px;">"${u.apodo}"</div>` : ""}
+          <div class="nombre">${u.nombre} ${u.apellido}</div>          ${u.apodo ? `<div style="font-size:11px; color:var(--text2); margin-bottom:4px;">"${u.apodo}"</div>` : ""}
           <div class="pts">${u.total}</div>
           <div class="meta">${u.partidosPronosticados} partidos · ${u.partidosAcertados} acertados</div>
         </div>
@@ -292,7 +367,8 @@ function renderRanking(lista, totalUsuarios) {
             <strong>${u.nombre} ${u.apellido}</strong>
             ${u.apodo ? `<div style="font-size:11px; color:var(--text2);">"${u.apodo}"</div>` : ""}
           </td>
-          <td style="font-size:11px;">${gruposHTML}</td>          <td>${u.partidosPronosticados}/104</td>
+          <td style="font-size:11px;">${gruposHTML}</td>
+          <td>${u.partidosPronosticados}/104</td>
           <td>${u.partidosAcertados}</td>
           <td>${u.puntosCampeon > 0 ? `<span style="color:var(--gold)">+${u.puntosCampeon}</span>` : "—"}</td>
           <td>${u.bonus > 0 ? `<span style="color:var(--green)">+${u.bonus}</span>` : "—"}</td>
@@ -314,8 +390,7 @@ window.mostrarDetalleJugador = async function(uid) {
     
     if (!jugador) {
       alert("Jugador no encontrado");
-      return;
-    }
+      return;    }
 
     const modal = document.getElementById("modalDetalle");
     const modalContent = document.getElementById("modalContent");
@@ -341,7 +416,8 @@ window.mostrarDetalleJugador = async function(uid) {
       else if (fase === "16avos") partidosPorFase["Dieciseisavos"].push(det);
       else if (fase === "octavos") partidosPorFase["Octavos"].push(det);
       else if (fase === "cuartos") partidosPorFase["Cuartos"].push(det);
-      else if (fase === "semis") partidosPorFase["Semifinales"].push(det);      else if (fase === "3er") partidosPorFase["3er Puesto"].push(det);
+      else if (fase === "semis") partidosPorFase["Semifinales"].push(det);
+      else if (fase === "3er") partidosPorFase["3er Puesto"].push(det);
       else if (fase === "final") partidosPorFase["Final"].push(det);
     });
 
@@ -363,8 +439,7 @@ window.mostrarDetalleJugador = async function(uid) {
     `;
 
     if (jugador.detallePartidos.length === 0) {
-      html += `
-        <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
+      html += `        <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
           <div style="font-size:50px; margin-bottom:12px;">⏳</div>
           <p style="color:var(--text2); font-size:14px;">Aún no hay resultados oficiales cargados para este jugador.</p>
           <p style="color:var(--text3); font-size:12px; margin-top:8px;">Los detalles aparecerán cuando se carguen los resultados oficiales.</p>
@@ -390,7 +465,8 @@ window.mostrarDetalleJugador = async function(uid) {
           const predL = det.prediccion.local !== null && det.prediccion.local !== undefined ? det.prediccion.local : "-";
           const predV = det.prediccion.visit !== null && det.prediccion.visit !== undefined ? det.prediccion.visit : "-";
           const resL = det.resultado.local !== null && det.resultado.local !== undefined ? det.resultado.local : "-";
-          const resV = det.resultado.visit !== null && det.resultado.visit !== undefined ? det.resultado.visit : "-";          html += `
+          const resV = det.resultado.visit !== null && det.resultado.visit !== undefined ? det.resultado.visit : "-";
+          html += `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--card); border:1px solid var(--border); border-radius:6px; margin-bottom:8px; border-left:3px solid ${det.puntos > 0 ? 'var(--gold)' : 'var(--border)'};">
               <div style="flex:1;">
                 <div style="font-weight:600; color:var(--text); font-size:14px; margin-bottom:4px;">
@@ -412,8 +488,7 @@ window.mostrarDetalleJugador = async function(uid) {
     }
 
     modalContent.innerHTML = html;
-    modal.style.display = "flex";
-  } catch (err) {
+    modal.style.display = "flex";  } catch (err) {
     console.error("Error en mostrarDetalleJugador:", err);
     alert("Error al cargar el detalle: " + err.message);
   }
@@ -425,7 +500,7 @@ window.cerrarModalDetalle = function() {
 };
 
 // ══════════════════════════════════════════════════════
-// MODAL DE DETALLE DE PARTIDO (NUEVO)
+// MODAL DE DETALLE DE PARTIDO
 // ══════════════════════════════════════════════════════
 
 window.mostrarDetallePartido = async function(partidoId) {
@@ -439,7 +514,8 @@ window.mostrarDetallePartido = async function(partidoId) {
     }
     
     const resultado = resultados[partidoId];
-    if (!resultado || resultado.local === null || resultado.local === undefined) {      alert("Este partido aún no tiene resultado oficial");
+    if (!resultado || resultado.local === null || resultado.local === undefined) {
+      alert("Este partido aún no tiene resultado oficial");
       return;
     }
 
@@ -451,7 +527,6 @@ window.mostrarDetallePartido = async function(partidoId) {
       return;
     }
 
-    // Buscar todas las predicciones de este partido
     const prediccionesPartido = lista
       .filter(jugador => {
         const detalle = jugador.detallePartidos.find(d => d.partido.id === partidoId);
@@ -462,8 +537,7 @@ window.mostrarDetallePartido = async function(partidoId) {
         return {
           nombre: jugador.nombre,
           apellido: jugador.apellido,
-          apodo: jugador.apodo,
-          prediccion: detalle.prediccion,
+          apodo: jugador.apodo,          prediccion: detalle.prediccion,
           puntos: detalle.puntos
         };
       })
@@ -488,6 +562,7 @@ window.mostrarDetallePartido = async function(partidoId) {
         </div>
       </div>
     `;
+
     if (prediccionesPartido.length === 0) {
       html += `
         <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
@@ -496,7 +571,6 @@ window.mostrarDetallePartido = async function(partidoId) {
         </div>
       `;
     } else {
-      // Estadísticas rápidas
       const totalPuntos = prediccionesPartido.reduce((sum, j) => sum + j.puntos, 0);
       const promedio = (totalPuntos / prediccionesPartido.length).toFixed(1);
       const maxPuntos = prediccionesPartido[0].puntos;
@@ -512,14 +586,12 @@ window.mostrarDetallePartido = async function(partidoId) {
             <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${promedio}</div>
             <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Promedio</div>
           </div>
-          <div style="background:var(--bg2); padding:12px; border-radius:6px; text-align:center;">
-            <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${acertaron}/${prediccionesPartido.length}</div>
+          <div style="background:var(--bg2); padding:12px; border-radius:6px; text-align:center;">            <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${acertaron}/${prediccionesPartido.length}</div>
             <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Acertaron</div>
           </div>
         </div>
       `;
 
-      // Lista de jugadores
       html += `
         <div style="font-size:11px; color:var(--text2); margin-bottom:8px; display:flex; justify-content:space-between; padding:0 4px;">
           <span>Jugador · Predicción</span>
@@ -537,7 +609,8 @@ window.mostrarDetallePartido = async function(partidoId) {
         else if (index === 2 && j.puntos > 0) medalla = "🥉";
 
         html += `
-          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:6px; margin-bottom:6px; border-left:3px solid ${j.puntos > 0 ? 'var(--gold)' : 'var(--border)'};">            <div style="flex:1; display:flex; align-items:center; gap:8px;">
+          <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 12px; background:var(--card); border:1px solid var(--border); border-radius:6px; margin-bottom:6px; border-left:3px solid ${j.puntos > 0 ? 'var(--gold)' : 'var(--border)'};">
+            <div style="flex:1; display:flex; align-items:center; gap:8px;">
               <span style="font-size:14px; min-width:24px;">${medalla || (index + 1)}</span>
               <div>
                 <div style="font-weight:600; color:var(--text); font-size:14px;">
@@ -562,8 +635,7 @@ window.mostrarDetallePartido = async function(partidoId) {
     modalContent.innerHTML = html;
     modal.style.display = "flex";
   } catch (err) {
-    console.error("Error en mostrarDetallePartido:", err);
-    alert("Error al cargar el detalle del partido: " + err.message);
+    console.error("Error en mostrarDetallePartido:", err);    alert("Error al cargar el detalle del partido: " + err.message);
   }
 };
 
@@ -586,7 +658,8 @@ function renderCardPartido(p, resultado) {
   }
 
   let marcadorHTML;
-  if (estado === "finalizado" && resultado && resultado.local !== null) {    marcadorHTML = `
+  if (estado === "finalizado" && resultado && resultado.local !== null) {
+    marcadorHTML = `
       <div class="marcador-final" onclick="window.mostrarDetallePartido('${p.id}')" style="cursor:pointer; text-decoration:underline; text-decoration-color:var(--gold);" title="Ver pronósticos de los jugadores">
         ${resultado.local} - ${resultado.visit}
       </div>
@@ -611,8 +684,7 @@ function renderCardPartido(p, resultado) {
 
   return `
     <div class="${claseCard}">
-      <div class="resultado-meta">
-        <span class="badge badge-id">${p.id}</span>
+      <div class="resultado-meta">        <span class="badge badge-id">${p.id}</span>
         ${p.grupo ? `<span class="badge badge-grupo">Grupo ${p.grupo}</span>` : ""}
         ${p.fase ? `<span class="badge badge-grupo">${p.fase.toUpperCase()}</span>` : ""}
         ${liveBadge}
@@ -635,7 +707,8 @@ function renderCardPartido(p, resultado) {
   `;
 }
 
-function renderResultados(resultados) {  const cont = document.getElementById("resultadosContenido");
+function renderResultados(resultados) {
+  const cont = document.getElementById("resultadosContenido");
   const loader = document.getElementById("resultadosLoader");
   
   if (loader) loader.style.display = "none";
@@ -660,8 +733,7 @@ function renderResultados(resultados) {  const cont = document.getElementById("r
     if (sec.partidos.length === 0) return;
 
     const enJuego = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "vivo");
-    const finalizados = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "finalizado");
-    const pendientes = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "pendiente");
+    const finalizados = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "finalizado");    const pendientes = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "pendiente");
 
     if (enJuego.length === 0 && finalizados.length === 0 && pendientes.length === 0) return;
 
@@ -684,7 +756,8 @@ function renderResultados(resultados) {  const cont = document.getElementById("r
         <div style="font-size:60px; margin-bottom:16px;">⏳</div>
         <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>
         <p style="color:var(--text2); font-size:14px; max-width:450px; margin:0 auto;">
-          Los partidos en juego aparecerán en vivo. Los resultados oficiales se cargarán al finalizar cada partido.        </p>
+          Los partidos en juego aparecerán en vivo. Los resultados oficiales se cargarán al finalizar cada partido.
+        </p>
       </div>
     `;
   } else {
@@ -709,8 +782,7 @@ async function cargarYRenderizar() {
     
     const resultadosLoader = document.getElementById("resultadosLoader");
     if (resultadosLoader) resultadosLoader.style.display = "none";
-    
-    const resultadosContenido = document.getElementById("resultadosContenido");
+        const resultadosContenido = document.getElementById("resultadosContenido");
     if (resultadosContenido) resultadosContenido.innerHTML = "<p style='color:var(--red); text-align:center; padding:30px;'>Error al cargar resultados</p>";
   }
 }
@@ -721,6 +793,7 @@ async function cargarYRenderizar() {
 
 (async () => {
   console.log("🕐 Sincronizando hora con el servidor...");
+  console.log(`📍 Modo: ${MODO_SALA ? 'SALA PRIVADA (' + NOMBRE_SALA + ')' : 'GENERAL'}`);
   await sincronizarHoraServidor(supabase);
   console.log("✅ Hora sincronizada. Iniciando carga de datos...");
   
