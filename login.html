@@ -47,8 +47,7 @@
       display: flex;
       gap: 6px;
     }
-    .grupo-input-row input {
-      flex: 1;
+    .grupo-input-row input {      flex: 1;
       padding: 8px 10px;
       background: var(--bg);
       border: 1px solid var(--border);
@@ -78,6 +77,40 @@
       opacity: 0.6;
       cursor: not-allowed;
     }
+    .sala-container {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: var(--r-sm);
+      padding: 12px;
+      margin-bottom: 12px;
+    }
+    .sala-container label {
+      display: block;
+      font-size: 12px;
+      color: var(--text2);
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .sala-container input {
+      width: 100%;
+      padding: 8px 10px;
+      background: var(--bg);
+      border: 1px solid var(--border);      border-radius: 6px;
+      color: var(--text);
+      font-size: 13px;
+      outline: none;
+      font-family: inherit;
+      box-sizing: border-box;
+    }
+    .sala-container input:focus {
+      border-color: var(--gold);
+    }
+    .sala-hint {
+      font-size: 11px;
+      color: var(--text3);
+      margin-top: 6px;
+    }
   </style>
 </head>
 <body>
@@ -96,6 +129,14 @@
       <input type="text" id="apellido" class="input" placeholder="Apellido" style="display:none">
       <input type="text" id="apodo" class="input" placeholder="Apodo (opcional)" style="display:none">
       
+      <div id="salaContainer" class="sala-container" style="display:none">
+        <label>🏢 Código de Sala (opcional)</label>
+        <input type="text" id="codigoSala" placeholder="Ej: Cardio-Fitness">
+        <div class="sala-hint">
+          💡 Si tenés un código de sala, ingresalo acá para competir en un ranking privado. Si lo dejás vacío, irás al ranking general.
+        </div>
+      </div>
+      
       <div id="gruposContainer" class="grupos-container" style="display:none">
         <label style="display:block; font-size:12px; color:var(--text2); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
           🏢 Empresa, Colegio o Grupo (opcional)
@@ -104,8 +145,7 @@
         <div class="grupo-input-row">
           <input type="text" id="grupoInput" placeholder="Ej: Empresa X, Colegio Y">
           <button type="button" id="btnAgregarGrupo">+ Agregar</button>
-        </div>
-        <div class="grupo-hint">
+        </div>        <div class="grupo-hint">
           💡 Podés agregar varios grupos para competir en rankings paralelos.
         </div>
       </div>
@@ -154,8 +194,7 @@
     }
   }
 
-  function renderGrupos() {
-    const list = $("gruposList");
+  function renderGrupos() {    const list = $("gruposList");
     if (gruposAgregados.length === 0) {
       list.innerHTML = '<span style="color:var(--text3); font-size:12px;">Sin grupos agregados</span>';
       return;
@@ -204,10 +243,9 @@
     
     $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
     $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
-    $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";
-    $("btnSubmit").textContent = modo === "login" ? "Ingresar" : "Registrarme";
+    $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";    $("btnSubmit").textContent = modo === "login" ? "Ingresar" : "Registrarme";
     
-    const camposRegistro = ["nombre", "apellido", "apodo", "gruposContainer"];
+    const camposRegistro = ["nombre", "apellido", "apodo", "gruposContainer", "salaContainer"];
     camposRegistro.forEach(id => {
       $(id).style.display = modo === "registro" ? "block" : "none";
       if (modo === "registro") {
@@ -219,6 +257,7 @@
         $("nombre").value = "";
         $("apellido").value = "";
         $("apodo").value = "";
+        $("codigoSala").value = "";
         gruposAgregados = [];
         renderGrupos();
       }
@@ -250,16 +289,30 @@
         const nombre = $("nombre").value.trim();
         const apellido = $("apellido").value.trim();
         const apodo = $("apodo").value.trim();
+        const codigoSala = $("codigoSala").value.trim();
         
         if (!nombre) {
-          mostrarError("Ingresá tu nombre");
-          procesando = false;
+          mostrarError("Ingresá tu nombre");          procesando = false;
           return;
         }
         if (!apellido) {
           mostrarError("Ingresá tu apellido");
           procesando = false;
           return;
+        }
+
+        // Validar código de sala
+        let gruposFinales = [...gruposAgregados];
+        if (codigoSala) {
+          if (codigoSala !== "Cardio-Fitness") {
+            mostrarError("Código de sala inválido. Solo se acepta: Cardio-Fitness");
+            procesando = false;
+            return;
+          }
+          // Agregar la sala al array de grupos
+          if (!gruposFinales.includes("Cardio-Fitness")) {
+            gruposFinales.push("Cardio-Fitness");
+          }
         }
 
         btn.disabled = true;
@@ -287,9 +340,8 @@
             nombre: nombre,
             apellido: apellido,
             apodo: apodo || null,
-            grupos: gruposAgregados,
-            es_admin: email === ADMIN_EMAIL.toLowerCase(),
-            puntos_totales: 0
+            grupos: gruposFinales,
+            es_admin: email === ADMIN_EMAIL.toLowerCase(),            puntos_totales: 0
           });
 
         if (profileError) {
@@ -310,7 +362,12 @@
         if (signInError) throw signInError;
 
         console.log("✅ PASO 3 OK - Sesión iniciada");
-        mostrarOk("¡Cuenta creada! Redirigiendo...");
+        
+        if (codigoSala === "Cardio-Fitness") {
+          mostrarOk("¡Cuenta creada! Redirigiendo a la sala Cardio-Fitness...");
+        } else {
+          mostrarOk("¡Cuenta creada! Redirigiendo...");
+        }
         
         sessionStorage.setItem("yaRedirigido", "true");
         
@@ -319,7 +376,7 @@
         }, 1500);
 
       } else {
-        console.log(" LOGIN...");
+        console.log("🔐 LOGIN...");
         btn.disabled = true;
         btn.textContent = "Procesando...";
 
@@ -333,8 +390,7 @@
         console.log("✅ Login exitoso");
         mostrarOk("Ingresando...");
         
-        sessionStorage.setItem("yaRedirigido", "true");
-        
+        sessionStorage.setItem("yaRedirigido", "true");        
         setTimeout(() => {
           window.location.href = "prode.html";
         }, 800);
