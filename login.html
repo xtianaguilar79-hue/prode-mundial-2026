@@ -92,7 +92,7 @@
       text-transform: uppercase;
       letter-spacing: 0.5px;
     }
-    .sala-container input {
+    .sala-container select {
       width: 100%;
       padding: 8px 10px;
       background: var(--bg);
@@ -101,9 +101,10 @@
       font-size: 13px;
       outline: none;
       font-family: inherit;
+      cursor: pointer;
       box-sizing: border-box;
     }
-    .sala-container input:focus {
+    .sala-container select:focus {
       border-color: var(--gold);
     }
     .sala-hint {
@@ -130,10 +131,13 @@
       <input type="text" id="apodo" class="input" placeholder="Apodo (opcional)" style="display:none">
       
       <div id="salaContainer" class="sala-container" style="display:none">
-        <label>🏢 Código de Sala (opcional)</label>
-        <input type="text" id="codigoSala" placeholder="Ej: Cardio-Fitness">
+        <label>🏢 Sala de Competición (opcional)</label>
+        <select id="codigoSala">
+          <option value="">🌍 Ranking General</option>
+          <option value="Cardio-Fitness">🏢 Cardio-Fitness</option>
+        </select>
         <div class="sala-hint">
-          💡 Si tenés un código de sala, ingresalo acá para competir en un ranking privado. Si lo dejás vacío, irás al ranking general.
+          💡 Seleccioná una sala privada para competir en un ranking exclusivo. Si dejás "Ranking General", competirás con todos los jugadores.
         </div>
       </div>
       
@@ -141,11 +145,11 @@
         <label style="display:block; font-size:12px; color:var(--text2); margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
           🏢 Empresa, Colegio o Grupo (opcional)
         </label>
-        <div id="gruposList" class="grupos-list"></div>
-        <div class="grupo-input-row">
+        <div id="gruposList" class="grupos-list"></div>        <div class="grupo-input-row">
           <input type="text" id="grupoInput" placeholder="Ej: Empresa X, Colegio Y">
           <button type="button" id="btnAgregarGrupo">+ Agregar</button>
-        </div>        <div class="grupo-hint">
+        </div>
+        <div class="grupo-hint">
           💡 Podés agregar varios grupos para competir en rankings paralelos.
         </div>
       </div>
@@ -190,11 +194,11 @@
     if (session) {
       console.log("✅ Sesión activa, redirigiendo...");
       sessionStorage.setItem("yaRedirigido", "true");
-      window.location.href = "prode.html";
-    }
+      window.location.href = "prode.html";    }
   }
 
-  function renderGrupos() {    const list = $("gruposList");
+  function renderGrupos() {
+    const list = $("gruposList");
     if (gruposAgregados.length === 0) {
       list.innerHTML = '<span style="color:var(--text3); font-size:12px;">Sin grupos agregados</span>';
       return;
@@ -239,11 +243,11 @@
 
   $("btnCambiar").onclick = () => {
     modo = modo === "login" ? "registro" : "login";
-    console.log("🔄 Modo:", modo);
-    
+    console.log("🔄 Modo:", modo);    
     $("subtitulo").textContent = modo === "login" ? "Ingresá a tu cuenta" : "Creá tu cuenta";
     $("textoCambio").textContent = modo === "login" ? "¿No tenés cuenta?" : "¿Ya tenés cuenta?";
-    $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";    $("btnSubmit").textContent = modo === "login" ? "Ingresar" : "Registrarme";
+    $("btnCambiar").textContent = modo === "login" ? "Registrate" : "Ingresá";
+    $("btnSubmit").textContent = modo === "login" ? "Ingresar" : "Registrarme";
     
     const camposRegistro = ["nombre", "apellido", "apodo", "gruposContainer", "salaContainer"];
     camposRegistro.forEach(id => {
@@ -288,11 +292,11 @@
       if (modo === "registro") {
         const nombre = $("nombre").value.trim();
         const apellido = $("apellido").value.trim();
-        const apodo = $("apodo").value.trim();
-        const codigoSala = $("codigoSala").value.trim();
+        const apodo = $("apodo").value.trim();        const codigoSala = $("codigoSala").value;
         
         if (!nombre) {
-          mostrarError("Ingresá tu nombre");          procesando = false;
+          mostrarError("Ingresá tu nombre");
+          procesando = false;
           return;
         }
         if (!apellido) {
@@ -301,17 +305,12 @@
           return;
         }
 
-        // Validar código de sala
+        // Preparar grupos finales
         let gruposFinales = [...gruposAgregados];
         if (codigoSala) {
-          if (codigoSala !== "Cardio-Fitness") {
-            mostrarError("Código de sala inválido. Solo se acepta: Cardio-Fitness");
-            procesando = false;
-            return;
-          }
-          // Agregar la sala al array de grupos
-          if (!gruposFinales.includes("Cardio-Fitness")) {
-            gruposFinales.push("Cardio-Fitness");
+          // Si seleccionó una sala, agregarla a los grupos
+          if (!gruposFinales.includes(codigoSala)) {
+            gruposFinales.push(codigoSala);
           }
         }
 
@@ -341,8 +340,8 @@
             apellido: apellido,
             apodo: apodo || null,
             grupos: gruposFinales,
-            es_admin: email === ADMIN_EMAIL.toLowerCase(),            puntos_totales: 0
-          });
+            es_admin: email === ADMIN_EMAIL.toLowerCase(),
+            puntos_totales: 0          });
 
         if (profileError) {
           console.error("❌ Error perfil:", profileError);
@@ -363,8 +362,8 @@
 
         console.log("✅ PASO 3 OK - Sesión iniciada");
         
-        if (codigoSala === "Cardio-Fitness") {
-          mostrarOk("¡Cuenta creada! Redirigiendo a la sala Cardio-Fitness...");
+        if (codigoSala) {
+          mostrarOk(`¡Cuenta creada! Redirigiendo a la sala ${codigoSala}...`);
         } else {
           mostrarOk("¡Cuenta creada! Redirigiendo...");
         }
@@ -390,8 +389,8 @@
         console.log("✅ Login exitoso");
         mostrarOk("Ingresando...");
         
-        sessionStorage.setItem("yaRedirigido", "true");        
-        setTimeout(() => {
+        sessionStorage.setItem("yaRedirigido", "true");
+                setTimeout(() => {
           window.location.href = "prode.html";
         }, 800);
       }
