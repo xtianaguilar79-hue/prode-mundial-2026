@@ -47,8 +47,7 @@ async function init() {
       console.error("❌ No se encontró el perfil:", userError);
       window.location.href = "login.html";
       return;
-    }
-    usuarioId = usuario.id;
+    }    usuarioId = usuario.id;
     misGrupos = usuario.grupos || [];
     console.log("✅ Autenticado como:", usuario.nombre);
     
@@ -61,6 +60,18 @@ async function init() {
       const linkAdmin = document.getElementById("linkAdmin");
       if (linkAdmin) linkAdmin.style.display = "inline-block";
     }
+
+    // ══════════════════════════════════════════════════════
+    // MOSTRAR LINK A SALA CARDIO-FITNESS SI PERTENECE (NUEVO)
+    // ══════════════════════════════════════════════════════
+    if (misGrupos.includes("Cardio-Fitness")) {
+      const linkSalaCardio = document.getElementById("linkSalaCardio");
+      if (linkSalaCardio) {
+        linkSalaCardio.style.display = "inline";
+        console.log("✅ Usuario pertenece a Cardio-Fitness, mostrando link");
+      }
+    }
+    // ══════════════════════════════════════════════════════
 
     await cargarDatos();
     await cargarCampeon();
@@ -85,8 +96,7 @@ function renderMisGrupos() {
   const list = document.getElementById("misGruposList");
   
   if (!container || !list) return;
-  
-  if (misGrupos.length === 0) {
+    if (misGrupos.length === 0) {
     container.style.display = "none";
     return;
   }
@@ -96,7 +106,8 @@ function renderMisGrupos() {
     <div style="background:var(--bg2); border:1px solid var(--border); border-radius:8px; padding:8px 12px; display:flex; align-items:center; gap:10px;">
       <span style="font-weight:600; color:var(--text); font-size:13px;">👥 ${grupo}</span>
       <button onclick="window.salirDeGrupo(${index})" 
-              style="background:var(--red); color:#fff; border:none; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:11px; font-weight:600; font-family:inherit;">        Salir
+              style="background:var(--red); color:#fff; border:none; border-radius:6px; padding:4px 10px; cursor:pointer; font-size:11px; font-weight:600; font-family:inherit;">
+        Salir
       </button>
     </div>
   `).join("");
@@ -134,8 +145,7 @@ async function unirseAGrupo() {
   
   if (misGrupos.includes(nombre)) {
     mostrarMsgGrupo("⚠️ Ya estás en ese grupo", "error");
-    return;
-  }
+    return;  }
   
   if (misGrupos.length >= 10) {
     mostrarMsgGrupo("⚠️ Máximo 10 grupos permitidos", "error");
@@ -145,7 +155,8 @@ async function unirseAGrupo() {
   try {
     const nuevosGrupos = [...misGrupos, nombre];
     
-    const { error } = await supabase      .from('usuarios')
+    const { error } = await supabase
+      .from('usuarios')
       .update({ grupos: nuevosGrupos })
       .eq('id', usuarioId);
     
@@ -155,6 +166,17 @@ async function unirseAGrupo() {
     input.value = "";
     mostrarMsgGrupo(`✅ Te uniste al grupo "${nombre}"`, "ok");
     renderMisGrupos();
+    
+    // ══════════════════════════════════════════════════════
+    // SI SE UNIÓ A CARDIO-FITNESS, MOSTRAR EL LINK (NUEVO)
+    // ══════════════════════════════════════════════════════
+    if (nombre === "Cardio-Fitness") {
+      const linkSalaCardio = document.getElementById("linkSalaCardio");
+      if (linkSalaCardio) {
+        linkSalaCardio.style.display = "inline";
+      }
+    }
+    // ══════════════════════════════════════════════════════
   } catch (err) {
     console.error(err);
     mostrarMsgGrupo("❌ Error: " + err.message, "error");
@@ -172,8 +194,7 @@ window.salirDeGrupo = async (index) => {
   try {
     const nuevosGrupos = misGrupos.filter((_, i) => i !== index);
     
-    const { error } = await supabase
-      .from('usuarios')
+    const { error } = await supabase      .from('usuarios')
       .update({ grupos: nuevosGrupos })
       .eq('id', usuarioId);
     
@@ -182,6 +203,17 @@ window.salirDeGrupo = async (index) => {
     misGrupos = nuevosGrupos;
     mostrarMsgGrupo(`✅ Te saliste del grupo "${nombre}"`, "ok");
     renderMisGrupos();
+    
+    // ══════════════════════════════════════════════════════
+    // SI SE SALIÓ DE CARDIO-FITNESS, OCULTAR EL LINK (NUEVO)
+    // ══════════════════════════════════════════════════════
+    if (nombre === "Cardio-Fitness") {
+      const linkSalaCardio = document.getElementById("linkSalaCardio");
+      if (linkSalaCardio) {
+        linkSalaCardio.style.display = "none";
+      }
+    }
+    // ══════════════════════════════════════════════════════
   } catch (err) {
     console.error(err);
     mostrarMsgGrupo("❌ Error: " + err.message, "error");
@@ -194,7 +226,8 @@ function mostrarMsgGrupo(texto, tipo) {
   
   msg.textContent = texto;
   msg.style.display = "block";
-    if (tipo === "error") {
+  
+  if (tipo === "error") {
     msg.style.background = "var(--red-soft)";
     msg.style.border = "1px solid var(--red)";
     msg.style.color = "var(--red)";
@@ -210,7 +243,6 @@ function mostrarMsgGrupo(texto, tipo) {
 // ═══════════════════════════════════════════════════════
 // CARGA DE DATOS
 // ═══════════════════════════════════════════════════════
-
 async function cargarDatos() {
   try {
     const { data: predsData } = await supabase
@@ -244,6 +276,7 @@ async function cargarCampeon() {
       .single();
 
     if (campData) prediccionCampeon = campData;
+
     const { data: finalData } = await supabase
       .from('config')
       .select('*')
@@ -259,8 +292,7 @@ async function cargarCampeon() {
 function actualizarStats() {
   let total = 0;
   Object.values(predicciones).forEach(pred => {
-    const res = resultados[pred.partido_id];
-    if (res) total += calcularPuntos(pred, res);
+    const res = resultados[pred.partido_id];    if (res) total += calcularPuntos(pred, res);
   });
 
   if (prediccionCampeon && resultadoFinal?.campeon) {
@@ -292,7 +324,8 @@ function renderTabs() {
     { id: "j3", label: "Fecha 3" },
     { id: "16avos", label: "16avos" },
     { id: "octavos", label: "Octavos" },
-    { id: "cuartos", label: "Cuartos" },    { id: "semis", label: "Semis" },
+    { id: "cuartos", label: "Cuartos" },
+    { id: "semis", label: "Semis" },
     { id: "3er", label: "3er Puesto" },
     { id: "final", label: "Final 🏆" },
   ];
@@ -308,8 +341,7 @@ function renderTabs() {
       faseActiva = btn.dataset.fase;
       renderTabs();
       renderPartidos();
-    };
-  });
+    };  });
 }
 
 function getPartidosFase() {
@@ -341,6 +373,7 @@ function renderPartidos() {
     grid.innerHTML = '<p style="text-align:center; color:var(--text2); padding:40px; grid-column:1/-1;">No hay partidos</p>';
     return;
   }
+
   grid.innerHTML = partidos.map(p => renderTarjeta(p)).join("");
 
   grid.querySelectorAll(".btn-guardar").forEach(btn => {
@@ -357,8 +390,7 @@ function renderPartidos() {
   console.log("✅ Partidos renderizados");
 }
 
-function iniciarCronometro(partido) {
-  const el = document.getElementById("crono-" + partido.id);
+function iniciarCronometro(partido) {  const el = document.getElementById("crono-" + partido.id);
   if (!el) return;
 
   const actualizar = () => {
@@ -390,7 +422,8 @@ function renderTarjeta(p) {
   // NUEVA LÓGICA: se puede editar si está guardado PERO el partido no está bloqueado
   const editable = guardado && !bloqueado;
 
-  const flagL = FLAGS[p.local] || "🏳️";  const flagV = FLAGS[p.visit] || "🏳️";
+  const flagL = FLAGS[p.local] || "🏳️";
+  const flagV = FLAGS[p.visit] || "🏳️";
   const pts = guardado && res ? calcularPuntos(pred, res) : null;
 
   let marcadorHTML;
@@ -406,8 +439,7 @@ function renderTarjeta(p) {
       ${esElim && pred.alargue_local !== null ? `
         <div style="font-size:10px; color:var(--text2); margin-top:4px; text-align:center;">
           Alargue: <strong>${pred.alargue_local} - ${pred.alargue_visit}</strong>
-          ${pred.penales_local !== null ? ` · Penales: <strong>${pred.penales_local} - ${pred.penales_visit}</strong>` : ''}
-        </div>
+          ${pred.penales_local !== null ? ` · Penales: <strong>${pred.penales_local} - ${pred.penales_visit}</strong>` : ''}        </div>
       ` : ''}
     `;
   } else {
@@ -439,7 +471,8 @@ function renderTarjeta(p) {
           </div>
           <div id="pen-${p.id}" style="display:${mostrarPenales ? 'flex' : 'none'}; gap:6px; align-items:center; justify-content:center;">
             <label style="font-size:11px; color:var(--text2);">Penales:</label>
-            <input type="number" min="0" max="20" class="score-in" id="penL-${p.id}" placeholder="0" value="${valPenL}" style="width:60px;">            <span>–</span>
+            <input type="number" min="0" max="20" class="score-in" id="penL-${p.id}" placeholder="0" value="${valPenL}" style="width:60px;">
+            <span>–</span>
             <input type="number" min="0" max="20" class="score-in" id="penV-${p.id}" placeholder="0" value="${valPenV}" style="width:60px;">
           </div>
         </div>
@@ -455,8 +488,7 @@ function renderTarjeta(p) {
       <div class="resultado-real">
         Resultado: <strong>${res.local} – ${res.visit}</strong>
         ${pts !== null ? `<span class="pts-badge">+${pts} pts</span>` : ""}
-      </div>
-    `;
+      </div>    `;
   }
   
   if (bloqueado) {
@@ -488,7 +520,8 @@ function renderTarjeta(p) {
   
   // Badge de estado
   let estadoBadge = "";
-  if (editable) {    estadoBadge = `<span style="background:var(--green-soft); color:var(--green); padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700;">✏️ EDITABLE</span>`;
+  if (editable) {
+    estadoBadge = `<span style="background:var(--green-soft); color:var(--green); padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700;">✏️ EDITABLE</span>`;
   } else if (guardado && bloqueado) {
     estadoBadge = `<span style="background:var(--bg2); color:var(--text2); padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700;">🔒 DEFINITIVO</span>`;
   }
@@ -504,8 +537,7 @@ function renderTarjeta(p) {
       </div>
 
       <div class="partido-equipos">
-        <div class="equipo">
-          <span class="flag">${flagL}</span>
+        <div class="equipo">          <span class="flag">${flagL}</span>
           <span>${p.local}</span>
         </div>
         <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
@@ -537,7 +569,8 @@ document.addEventListener("input", (e) => {
   const gV = document.getElementById("gV-" + id)?.value;
   const extDiv = document.getElementById("ext-" + id);
   const penDiv = document.getElementById("pen-" + id);
-    if (!extDiv) return;
+  
+  if (!extDiv) return;
 
   if (gL !== "" && gV !== "" && parseInt(gL) === parseInt(gV)) {
     extDiv.style.display = "flex";
@@ -553,8 +586,7 @@ document.addEventListener("input", (e) => {
       penDiv.style.display = "flex";
     } else {
       penDiv.style.display = "none";
-    }
-  }
+    }  }
 });
 
 // ═══════════════════════════════════════════════════════
@@ -586,7 +618,8 @@ async function guardarPrediccion(id) {
 
   if (esElim && parseInt(gL) === parseInt(gV)) {
     const alL = document.getElementById("alL-" + id)?.value;
-    const alV = document.getElementById("alV-" + id)?.value;    
+    const alV = document.getElementById("alV-" + id)?.value;
+    
     if (alL === "" || alV === "") {
       alert("⚠️ Elegí el marcador del alargue");
       return;
@@ -602,8 +635,7 @@ async function guardarPrediccion(id) {
       if (penL === "" || penV === "") {
         alert("⚠️ Elegí el marcador de penales");
         return;
-      }
-      
+      }      
       if (parseInt(penL) === parseInt(penV)) {
         alert("⚠️ En penales NO puede haber empate");
         return;
@@ -636,6 +668,7 @@ async function guardarPrediccion(id) {
     fase: p.j ? "grupos" : p.fase,
     bloqueado: false
   };
+
   try {
     const { error } = await supabase
       .from('predicciones')
@@ -651,8 +684,7 @@ async function guardarPrediccion(id) {
       alert("✅ Pronóstico actualizado correctamente.");
     }
     
-    await cargarDatos();
-    renderPartidos();
+    await cargarDatos();    renderPartidos();
   } catch (err) {
     console.error(err);
     alert("❌ Error al guardar: " + err.message);
@@ -684,7 +716,8 @@ function renderCampeon() {
       "pre-fecha2": "ANTES DE FECHA 2 (jugando Fecha 1)",
       "pre-fecha3": "ANTES DE FECHA 3 (jugando Fecha 2)",
       "pre-16avos": "ANTES DE 16avos (jugando Fecha 3)",
-      "pre-octavos": "ANTES DE OCTAVOS (jugando 16avos)",      "pre-cuartos": "ANTES DE CUARTOS (jugando Octavos)",
+      "pre-octavos": "ANTES DE OCTAVOS (jugando 16avos)",
+      "pre-cuartos": "ANTES DE CUARTOS (jugando Octavos)",
       "pre-semis": "ANTES DE SEMIS (jugando Cuartos)",
       "pre-final": "ANTES DE LA FINAL (jugando Semis)",
       "cerrado": "CERRADO"
@@ -700,7 +733,6 @@ function renderCampeon() {
     if (form) form.style.display = "none";
     if (cerrado) cerrado.style.display = "none";
     if (guardado) guardado.style.display = "block";
-
     const verCamp1 = document.getElementById("verCamp1");
     const verCamp2 = document.getElementById("verCamp2");
     const verCamp3 = document.getElementById("verCamp3");
@@ -734,6 +766,7 @@ function renderCampeon() {
     if (form) form.style.display = "block";
     if (cerrado) cerrado.style.display = "none";
     if (guardado) guardado.style.display = "none";
+
     const opciones = SELECCIONES
       .sort((a, b) => a.localeCompare(b))
       .map(s => `<option value="${s}">${FLAGS[s] || "🏳️"} ${s}</option>`)
@@ -749,8 +782,7 @@ function renderCampeon() {
 
     const btnGuardar = document.getElementById("btnGuardarCampeon");
     if (btnGuardar) btnGuardar.onclick = guardarCampeon;
-    
-    ["camp1", "camp2", "camp3"].forEach(id => {
+        ["camp1", "camp2", "camp3"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.onchange = validarCampeon;
     });
@@ -782,7 +814,8 @@ function validarCampeon() {
     return false;
   }
   if (v2 && v3 && v2 === v3) {
-    msg.textContent = "⚠️ No podés repetir selecciones";    msg.style.background = "var(--red-soft)";
+    msg.textContent = "⚠️ No podés repetir selecciones";
+    msg.style.background = "var(--red-soft)";
     msg.style.border = "1px solid var(--red)";
     msg.style.color = "var(--red)";
     msg.style.display = "block";
@@ -798,8 +831,7 @@ async function guardarCampeon() {
   const v2 = document.getElementById("camp2")?.value;
   const v3 = document.getElementById("camp3")?.value;
 
-  if (!v1 || !v2 || !v3) {
-    alert("Debés elegir las 3 opciones");
+  if (!v1 || !v2 || !v3) {    alert("Debés elegir las 3 opciones");
     return;
   }
 
@@ -832,6 +864,7 @@ async function guardarCampeon() {
       }, { onConflict: 'user_id' });
 
     if (error) throw error;
+
     prediccionCampeon = { 
       opcion1: v1, 
       opcion2: v2, 
@@ -847,8 +880,7 @@ async function guardarCampeon() {
     actualizarStats();
   } catch (err) {
     console.error(err);
-    alert("❌ Error al guardar: " + err.message);
-  }
+    alert("❌ Error al guardar: " + err.message);  }
 }
 
 // INICIAR
