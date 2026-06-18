@@ -243,5 +243,32 @@
     </div>
   </div>
 
-  <script type="module" src="./js/app-publica.js"></script></body>
+  <!-- ══════════════════════════════════════════════════════ -->  <!-- PROTECCIÓN: REDIRIGIR USUARIOS DE CARDIO-FITNESS (NUEVO) -->
+  <!-- ══════════════════════════════════════════════════════ -->
+  <script type="module">
+    import { supabase } from "./js/supabase-config.js";
+    
+    (async () => {
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        if (session) {
+          const { data: usuario } = await supabase
+            .from('usuarios')
+            .select('grupos')
+            .eq('id', session.user.id)
+            .single();
+          
+          if (usuario && usuario.grupos && usuario.grupos.includes("Cardio-Fitness")) {
+            console.log("🔒 Usuario de Cardio-Fitness detectado, redirigiendo...");
+            window.location.href = "sala-cardio.html";
+          }
+        }
+      } catch (err) {
+        console.error("Error verificando sala:", err);
+      }
+    })();
+  </script>
+
+  <script type="module" src="./js/app-publica.js"></script>
+</body>
 </html>
