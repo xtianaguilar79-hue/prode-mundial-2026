@@ -198,9 +198,9 @@
     </div>
   </div>
   <nav class="nav">
-    <a href="index.html">🏠 Inicio</a>
+    <a href="index.html"> Inicio</a>
     <a href="instructivo.html">📘 Reglamento</a>
-    <a href="index.html#ranking">🏅 Ranking</a>
+    <a href="index.html#ranking"> Ranking</a>
     <a href="chat.html">💬 Chat</a>
     <a href="grupos.html" style="color:var(--gold); font-weight:700;">📊 Grupos</a>
     <a href="login.html">🔐 Ingresar</a>
@@ -233,11 +233,6 @@
 <script type="module">
   import { supabase } from "./js/supabase-config.js";
   import { PARTIDOS_GRUPOS, PARTIDOS_ELIM, TODOS_PARTIDOS, FLAGS, getKickoffTimestamp } from "./datos-partidos.js";
-
-  const FOOTBALL_DATA_API_KEY = '72e3e7205761479aacb803289a9ca2e6';
-  const FOOTBALL_DATA_BASE_URL = 'https://api.football-data.org/v4';
-
-  const PARTIDOS_ID_MAP = {};
 
   const RANKING_FIFA = {
     "Argentina": 1, "España": 2, "Francia": 3, "Inglaterra": 4,
@@ -313,6 +308,10 @@
     { id: 'M104', local: 'G101', visit: 'G102' }
   ];
 
+  // ═══════════════════════════════════════════════════════
+  // FUNCIONES AUXILIARES
+  // ═══════════════════════════════════════════════════════
+
   function initEquipo(tabla, nombre) {
     tabla[nombre] = { equipo: nombre, pj: 0, pg: 0, pe: 0, pp: 0, gf: 0, gc: 0, dg: 0, pts: 0 };
   }
@@ -326,6 +325,10 @@
     else if (golesFavor === golesContra) { eq.pe++; eq.pts += 1; }
     else { eq.pp++; }
   }
+
+  // ═══════════════════════════════════════════════════════
+  // ESTADÍSTICAS DIRECTAS (HEAD-TO-HEAD)
+  // ═══════════════════════════════════════════════════════
 
   function calcularEstadisticasDirectas(equipoA, equipoB, partidosGrupo, resultados) {
     const statsA = { pts: 0, gf: 0, gc: 0, dg: 0 };
@@ -378,6 +381,20 @@
     return { statsA, statsB };
   }
 
+  // ═══════════════════════════════════════════════════════
+  // FAIR PLAY (JUEGO LIMPIO)
+  // ═══════════════════════════════════════════════════════
+  // Columnas existentes en la BD:
+  // - amarillas_local, amarillas_visit
+  // - rojas_local, rojas_visit
+  //
+  // Puntuación según reglamento FIFA:
+  // - Amarilla: -1 punto
+  // - Roja (directa o doble amarilla): -4 puntos
+  // (No distinguimos entre roja directa y doble amarilla porque
+  //  la BD solo tiene una columna "rojas")
+  // ═══════════════════════════════════════════════════════
+
   function calcularFairPlay(equipo, partidosGrupo, resultados) {
     let puntos = 0;
     
@@ -388,37 +405,60 @@
       if (p.local === equipo) {
         const amarillas = parseInt(res.amarillas_local) || 0;
         const rojas = parseInt(res.rojas_local) || 0;
-        puntos += (amarillas * -1) + (rojas * -3);
+        puntos += (amarillas * -1) + (rojas * -4);
       } else if (p.visit === equipo) {
         const amarillas = parseInt(res.amarillas_visit) || 0;
         const rojas = parseInt(res.rojas_visit) || 0;
-        puntos += (amarillas * -1) + (rojas * -3);
+        puntos += (amarillas * -1) + (rojas * -4);
       }
     });
     
     return puntos;
   }
 
+  // ═══════════════════════════════════════════════════════
+  // COMPARADOR CON DESEMPATE OLÍMPICO COMPLETO
+  // ═══════════════════════════════════════════════════════
+  // Orden según reglamento FIFA:
+  // 1. Puntos generales
+  // 2. Enfrentamiento directo (pts, DG, GF entre empatados)
+  // 3. Diferencia de goles general
+  // 4. Goles a favor general
+  // 5. Fair Play (más puntos = mejor)
+  // 6. Ranking FIFA (menor número = mejor)
+  // ═══════════════════════════════════════════════════════
+
   function compararEquipos(a, b, tabla, partidosGrupo, resultados) {
+    // 1. Puntos generales
     if (b.pts !== a.pts) return b.pts - a.pts;
 
+    // 2. Enfrentamiento directo (SOLO entre A y B)
     const { statsA, statsB } = calcularEstadisticasDirectas(a.equipo, b.equipo, partidosGrupo, resultados);
     
     if (statsB.pts !== statsA.pts) return statsB.pts - statsA.pts;
     if (statsB.dg !== statsA.dg) return statsB.dg - statsA.dg;
     if (statsB.gf !== statsA.gf) return statsB.gf - statsA.gf;
 
+    // 3. Diferencia de goles general
     if (b.dg !== a.dg) return b.dg - a.dg;
+
+    // 4. Goles a favor general
     if (b.gf !== a.gf) return b.gf - a.gf;
 
+    // 5. Fair Play (MÁS puntos = MEJOR, porque son negativos)
     const fairPlayA = calcularFairPlay(a.equipo, partidosGrupo, resultados);
     const fairPlayB = calcularFairPlay(b.equipo, partidosGrupo, resultados);
     if (fairPlayA !== fairPlayB) return fairPlayB - fairPlayA;
 
+    // 6. Ranking FIFA (menor número = mejor posición)
     const rA = RANKING_FIFA[a.equipo] || 100;
     const rB = RANKING_FIFA[b.equipo] || 100;
     return rA - rB;
   }
+
+  // ═══════════════════════════════════════════════════════
+  // CÁLCULO DE CLASIFICACIÓN POR GRUPO
+  // ═══════════════════════════════════════════════════════
 
   function calcularClasificacion(resultados) {
     const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -441,6 +481,7 @@
         }
       });
 
+      // Ordenar usando el comparador completo
       const ordenados = Object.values(tabla).sort((a, b) => 
         compararEquipos(a, b, tabla, partidosGrupo, resultados)
       );
@@ -456,6 +497,10 @@
     return clasificacion;
   }
 
+  // ═══════════════════════════════════════════════════════
+  // OBTENER 8 MEJORES TERCEROS
+  // ═══════════════════════════════════════════════════════
+
   function obtenerMejoresTerceros(clasificacion, resultados) {
     const terceros = Object.entries(clasificacion)
       .map(([grupo, data]) => {
@@ -463,7 +508,6 @@
         if (!equipo) return null;
 
         const partidosGrupo = PARTIDOS_GRUPOS.filter(p => p.grupo === grupo);
-        
         const statsEquipo = data.stats.find(s => s.equipo === equipo);
         
         return {
@@ -488,6 +532,10 @@
 
     return terceros;
   }
+
+  // ═══════════════════════════════════════════════════════
+  // INICIALIZACIÓN
+  // ═══════════════════════════════════════════════════════
 
   (async () => {
     try {
@@ -514,6 +562,10 @@
       document.getElementById('loader').innerHTML = `<p style="color:var(--red)">Error al cargar datos: ${err.message}</p>`;
     }
   })();
+
+  // ═══════════════════════════════════════════════════════
+  // RENDERIZADO: CLASIFICADOS
+  // ═══════════════════════════════════════════════════════
 
   function renderClasificados(clasificacion, resultados) {
     try {
@@ -598,7 +650,7 @@
               ${segundos.map((eq, i) => `
                 <tr>
                   <td>${i + 1}</td>
-                  <td><span class="flag-sm">${FLAGS[eq.equipo] || '🏳️'}</span> ${eq.equipo}</td>
+                  <td><span class="flag-sm">${FLAGS[eq.equipo] || '️'}</span> ${eq.equipo}</td>
                   <td><span class="grupo-badge">${eq.grupo}</span></td>
                   <td><strong>${eq.pts}</strong></td>
                   <td>${eq.dg > 0 ? '+' + eq.dg : eq.dg}</td>
@@ -640,6 +692,10 @@
       console.error("Error en renderClasificados:", err);
     }
   }
+
+  // ═══════════════════════════════════════════════════════
+  // RENDERIZADO: TABLAS POR GRUPO
+  // ═══════════════════════════════════════════════════════
 
   function renderTablas(resultados) {
     try {
@@ -719,6 +775,10 @@
       console.error("Error en renderTablas:", err);
     }
   }
+
+  // ═══════════════════════════════════════════════════════
+  // DETERMINAR CRUCES DE 16AVOS
+  // ═══════════════════════════════════════════════════════
 
   function determinarCruces16avos(clasificacion) {
     try {
@@ -809,7 +869,7 @@
         }
       }
       
-      console.log("📊 Asignación final:", asignacionCruces);
+      console.log(" Asignación final:", asignacionCruces);
       console.log(`📊 Terceros asignados: ${Object.keys(asignacionCruces).length} de 8`);
 
       const cruces = ESTRUCTURA_16AVOS.map(estructura => {
@@ -863,6 +923,10 @@
       return [];
     }
   }
+
+  // ═══════════════════════════════════════════════════════
+  // FUNCIONES AUXILIARES PARA ELIMINATORIAS
+  // ═══════════════════════════════════════════════════════
 
   function resolverGanador(partidoId, resultados) {
     const res = resultados.find(r => r.partido_id === partidoId);
@@ -932,7 +996,7 @@
       : 'Por definir';
 
     const localFlag = localEquipo ? (FLAGS[localEquipo] || '🏳️') : '❓';
-    const visitFlag = visitEquipo ? (FLAGS[visitEquipo] || '🏳️') : '❓';
+    const visitFlag = visitEquipo ? (FLAGS[visitEquipo] || '️') : '❓';
 
     return `
       <div class="cruce-card ${estado}">
@@ -961,6 +1025,22 @@
     `;
   }
 
+  function getEstadoPartido(partido, resultado) {
+    if (resultado && resultado.estado) {
+      return resultado.estado;
+    }
+    const kickoff = getKickoffTimestamp(partido);
+    const ahora = Date.now();
+    const finPartido = kickoff + (120 * 60 * 1000);
+    if (ahora < kickoff) return 'proximo';
+    if (ahora < finPartido) return 'vivo';
+    return 'finalizado';
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // RENDERIZADO: ELIMINATORIAS
+  // ═══════════════════════════════════════════════════════
+
   function renderEliminatorias(resultados, clasificacion) {
     try {
       const contenedor = document.getElementById('contenido-eliminatorias');
@@ -970,6 +1050,7 @@
 
       let html = '<div class="eliminatorias-title">FASES ELIMINATORIAS</div>';
 
+      // 16AVOS
       html += '<div class="fase-title">DIECISEISAVOS DE FINAL</div>';
       html += '<div class="cruces-grid">';
       
@@ -983,6 +1064,7 @@
       
       html += '</div>';
 
+      // OCTAVOS
       html += '<div class="fase-title">OCTAVOS DE FINAL</div>';
       html += '<div class="cruces-grid">';
       
@@ -1001,6 +1083,7 @@
       
       html += '</div>';
 
+      // CUARTOS
       html += '<div class="fase-title">CUARTOS DE FINAL</div>';
       html += '<div class="cruces-grid">';
       
@@ -1019,6 +1102,7 @@
       
       html += '</div>';
 
+      // SEMIS
       html += '<div class="fase-title">SEMIFINALES</div>';
       html += '<div class="cruces-grid">';
       
@@ -1037,6 +1121,7 @@
       
       html += '</div>';
 
+      // FINAL Y TERCER PUESTO
       html += '<div class="fase-title">🏆 TERCER PUESTO Y FINAL</div>';
       html += '<div class="cruces-grid">';
       
@@ -1061,131 +1146,6 @@
       console.error("Error en renderEliminatorias:", err);
     }
   }
-
-  function getEstadoPartido(partido, resultado) {
-    if (resultado && resultado.estado) {
-      return resultado.estado;
-    }
-    const kickoff = getKickoffTimestamp(partido);
-    const ahora = Date.now();
-    const finPartido = kickoff + (120 * 60 * 1000);
-    if (ahora < kickoff) return 'proximo';
-    if (ahora < finPartido) return 'vivo';
-    return 'finalizado';
-  }
-
-  async function obtenerTarjetasDesdeAPI(partidoId) {
-    try {
-      const partidoInfo = PARTIDOS_ID_MAP[partidoId];
-      if (!partidoInfo) {
-        console.warn(`⚠️ No hay mapeo para el partido ${partidoId}`);
-        return null;
-      }
-
-      const response = await fetch(
-        `${FOOTBALL_DATA_BASE_URL}/competitions/${partidoInfo.competition}/matches?matchday=${partidoInfo.matchday}`,
-        {
-          headers: {
-            'X-Auth-Token': FOOTBALL_DATA_API_KEY
-          }
-        }
-      );
-
-      if (!response.ok) {
-        throw new Error(`API error: ${response.status}`);
-      }
-
-      const data = await response.json();
-      
-      const match = data.matches.find(m => 
-        m.homeTeam.name === partidoInfo.homeTeam && 
-        m.awayTeam.name === partidoInfo.awayTeam
-      );
-
-      if (!match) {
-        console.warn(`⚠️ Partido ${partidoId} no encontrado en API`);
-        return null;
-      }
-
-      const tarjetas = {
-        amarillas_local: 0,
-        rojas_local: 0,
-        amarillas_visit: 0,
-        rojas_visit: 0
-      };
-
-      if (match.events) {
-        match.events.forEach(event => {
-          if (event.type === 'YELLOW_CARD') {
-            if (event.team.id === match.homeTeam.id) {
-              tarjetas.amarillas_local++;
-            } else {
-              tarjetas.amarillas_visit++;
-            }
-          } else if (event.type === 'RED_CARD') {
-            if (event.team.id === match.homeTeam.id) {
-              tarjetas.rojas_local++;
-            } else {
-              tarjetas.rojas_visit++;
-            }
-          }
-        });
-      }
-
-      console.log(`✅ Tarjetas obtenidas para ${partidoId}:`, tarjetas);
-      return tarjetas;
-
-    } catch (error) {
-      console.error(`❌ Error obteniendo tarjetas para ${partidoId}:`, error);
-      return null;
-    }
-  }
-
-  async function sincronizarTarjetasConAPI() {
-    console.log("🔄 Sincronizando tarjetas desde API...");
-    
-    try {
-      const { data: resultados, error } = await supabase
-        .from('resultados')
-        .select('*');
-
-      if (error) throw error;
-
-      for (const resultado of resultados) {
-        if (resultado.amarillas_local !== null && resultado.amarillas_local !== undefined) {
-          continue;
-        }
-
-        const tarjetas = await obtenerTarjetasDesdeAPI(resultado.partido_id);
-        
-        if (tarjetas) {
-          const { error: updateError } = await supabase
-            .from('resultados')
-            .update({
-              amarillas_local: tarjetas.amarillas_local,
-              rojas_local: tarjetas.rojas_local,
-              amarillas_visit: tarjetas.amarillas_visit,
-              rojas_visit: tarjetas.rojas_visit
-            })
-            .eq('partido_id', resultado.partido_id);
-
-          if (updateError) {
-            console.error(`Error actualizando ${resultado.partido_id}:`, updateError);
-          } else {
-            console.log(`✅ Actualizado ${resultado.partido_id}`);
-          }
-
-          await new Promise(resolve => setTimeout(resolve, 6000));
-        }
-      }
-
-      console.log("✅ Sincronización completada");
-    } catch (err) {
-      console.error("❌ Error en sincronización:", err);
-    }
-  }
-
-  window.sincronizarTarjetas = sincronizarTarjetasConAPI;
 </script>
 
 </body>
