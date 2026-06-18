@@ -120,7 +120,7 @@ function getPartidosFase() {
 }
 
 // ═══════════════════════════════════════════════════════
-// RENDER PARTIDOS (CON TARJETAS)
+// RENDER PARTIDOS (CON TODOS LOS TIPOS DE TARJETAS)
 // ═══════════════════════════════════════════════════════
 
 function renderPartidoCard(p) {
@@ -161,39 +161,47 @@ function renderPartidoCard(p) {
   }
   
   // ══════════════════════════════════════════════════════
-  // NUEVO: SECCIÓN DE TARJETAS
+  // NUEVO: SECCIÓN DE TARJETAS COMPLETA
   // ══════════════════════════════════════════════════════
   const tarjetasHTML = `
     <div style="margin-top:12px; padding:12px; background:var(--bg2); border-radius:8px; border:1px solid var(--border);">
       <div style="font-size:11px; color:var(--gold); font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
-        🟨🟥 Tarjetas del Partido
+        🟨 Tarjetas del Partido
       </div>
       <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
         <div>
           <div style="font-size:11px; color:var(--text2); margin-bottom:6px; font-weight:600;">${flagL} ${p.local}</div>
-          <div style="display:flex; gap:6px; align-items:center;">
-            <label style="font-size:10px; color:var(--text2); min-width:60px;">🟨 Amarillas:</label>
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;">
+            <label style="font-size:10px; color:var(--text2); min-width:70px;">🟨 Amarillas:</label>
             <input type="number" min="0" max="20" class="score-in" id="amarillasL-${p.id}" value="${res?.amarillas_local ?? ''}" placeholder="0" style="width:60px;">
           </div>
-          <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">
-            <label style="font-size:10px; color:var(--text2); min-width:60px;">🟥 Rojas:</label>
-            <input type="number" min="0" max="10" class="score-in" id="rojasL-${p.id}" value="${res?.rojas_local ?? ''}" placeholder="0" style="width:60px;">
+          <div style="display:flex; gap:6px; align-items:center; margin-bottom:4px;">
+            <label style="font-size:10px; color:var(--text2); min-width:70px;">🟨 Doble Amarilla:</label>
+            <input type="number" min="0" max="5" class="score-in" id="dobleAmarillaL-${p.id}" value="${res?.doble_amarilla_local ?? ''}" placeholder="0" style="width:60px;">
+          </div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <label style="font-size:10px; color:var(--text2); min-width:70px;">🟥 Roja Directa:</label>
+            <input type="number" min="0" max="5" class="score-in" id="rojaDirectaL-${p.id}" value="${res?.roja_directa_local ?? ''}" placeholder="0" style="width:60px;">
           </div>
         </div>
         <div>
           <div style="font-size:11px; color:var(--text2); margin-bottom:6px; font-weight:600; text-align:right;">${p.visit} ${flagV}</div>
-          <div style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
+          <div style="display:flex; gap:6px; align-items:center; justify-content:flex-end; margin-bottom:4px;">
             <input type="number" min="0" max="20" class="score-in" id="amarillasV-${p.id}" value="${res?.amarillas_visit ?? ''}" placeholder="0" style="width:60px;">
-            <label style="font-size:10px; color:var(--text2); min-width:60px; text-align:right;">🟨 Amarillas:</label>
+            <label style="font-size:10px; color:var(--text2); min-width:70px; text-align:right;">🟨 Amarillas:</label>
           </div>
-          <div style="display:flex; gap:6px; align-items:center; justify-content:flex-end; margin-top:4px;">
-            <input type="number" min="0" max="10" class="score-in" id="rojasV-${p.id}" value="${res?.rojas_visit ?? ''}" placeholder="0" style="width:60px;">
-            <label style="font-size:10px; color:var(--text2); min-width:60px; text-align:right;">🟥 Rojas:</label>
+          <div style="display:flex; gap:6px; align-items:center; justify-content:flex-end; margin-bottom:4px;">
+            <input type="number" min="0" max="5" class="score-in" id="dobleAmarillaV-${p.id}" value="${res?.doble_amarilla_visit ?? ''}" placeholder="0" style="width:60px;">
+            <label style="font-size:10px; color:var(--text2); min-width:70px; text-align:right;">🟨🟨 Doble Amarilla:</label>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
+            <input type="number" min="0" max="5" class="score-in" id="rojaDirectaV-${p.id}" value="${res?.roja_directa_visit ?? ''}" placeholder="0" style="width:60px;">
+            <label style="font-size:10px; color:var(--text2); min-width:70px; text-align:right;">🟥 Roja Directa:</label>
           </div>
         </div>
       </div>
       <div style="font-size:10px; color:var(--text3); margin-top:8px; font-style:italic;">
-        💡 Las tarjetas se usan para desempatar por Fair Play en la clasificación
+        💡 Fair Play: Amarilla=-1, Doble Amarilla=-3, Roja Directa=-4
       </div>
     </div>
   `;
@@ -434,12 +442,14 @@ async function guardarResultado(id) {
   }
 
   // ══════════════════════════════════════════════════════
-  // NUEVO: OBTENER TARJETAS
+  // NUEVO: OBTENER TODOS LOS TIPOS DE TARJETAS
   // ══════════════════════════════════════════════════════
   const amarillasLocal = document.getElementById("amarillasL-" + id)?.value;
-  const rojasLocal = document.getElementById("rojasL-" + id)?.value;
+  const dobleAmarillaLocal = document.getElementById("dobleAmarillaL-" + id)?.value;
+  const rojaDirectaLocal = document.getElementById("rojaDirectaL-" + id)?.value;
   const amarillasVisit = document.getElementById("amarillasV-" + id)?.value;
-  const rojasVisit = document.getElementById("rojasV-" + id)?.value;
+  const dobleAmarillaVisit = document.getElementById("dobleAmarillaV-" + id)?.value;
+  const rojaDirectaVisit = document.getElementById("rojaDirectaV-" + id)?.value;
   // ══════════════════════════════════════════════════════
 
   const datos = {
@@ -454,12 +464,14 @@ async function guardarResultado(id) {
     estado: "finalizado",
     es_prueba: false,
     // ══════════════════════════════════════════════════════
-    // NUEVO: GUARDAR TARJETAS
+    // NUEVO: GUARDAR TODOS LOS TIPOS DE TARJETAS
     // ══════════════════════════════════════════════════════
     amarillas_local: amarillasLocal !== "" ? parseInt(amarillasLocal) : 0,
-    rojas_local: rojasLocal !== "" ? parseInt(rojasLocal) : 0,
+    doble_amarilla_local: dobleAmarillaLocal !== "" ? parseInt(dobleAmarillaLocal) : 0,
+    roja_directa_local: rojaDirectaLocal !== "" ? parseInt(rojaDirectaLocal) : 0,
     amarillas_visit: amarillasVisit !== "" ? parseInt(amarillasVisit) : 0,
-    rojas_visit: rojasVisit !== "" ? parseInt(rojasVisit) : 0
+    doble_amarilla_visit: dobleAmarillaVisit !== "" ? parseInt(dobleAmarillaVisit) : 0,
+    roja_directa_visit: rojaDirectaVisit !== "" ? parseInt(rojaDirectaVisit) : 0
     // ══════════════════════════════════════════════════════
   };
 
@@ -509,9 +521,11 @@ window.generarPrueba = async () => {
       estado: "finalizado",
       es_prueba: true,
       amarillas_local: 0,
-      rojas_local: 0,
+      doble_amarilla_local: 0,
+      roja_directa_local: 0,
       amarillas_visit: 0,
-      rojas_visit: 0
+      doble_amarilla_visit: 0,
+      roja_directa_visit: 0
     }));
 
     await supabase.from('resultados').upsert(pruebas, { onConflict: 'id' });
