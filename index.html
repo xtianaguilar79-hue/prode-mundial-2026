@@ -243,7 +243,7 @@
     </div>
   </div>
 
-  <!-- ══════════════════════════════════════════════════════ -->  <!-- PROTECCIÓN: REDIRIGIR USUARIOS DE CARDIO-FITNESS (NUEVO) -->
+  <!-- ══════════════════════════════════════════════════════ -->  <!-- PROTECCIÓN: REDIRIGIR USUARIOS DE CARDIO-FITNESS -->
   <!-- ══════════════════════════════════════════════════════ -->
   <script type="module">
     import { supabase } from "./js/supabase-config.js";
@@ -251,6 +251,8 @@
     (async () => {
       try {
         const { data: { session } } = await supabase.auth.getSession();
+        
+        // Solo verificar si está logueado
         if (session) {
           const { data: usuario } = await supabase
             .from('usuarios')
@@ -263,6 +265,7 @@
             window.location.href = "sala-cardio.html";
           }
         }
+        // Si no está logueado, permitir ver la página normalmente
       } catch (err) {
         console.error("Error verificando sala:", err);
       }
