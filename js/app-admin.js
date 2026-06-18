@@ -83,7 +83,7 @@ function renderTabs() {
   if (!tabsContainer) return;
 
   const tabs = [
-    { id: "todos", label: " Todos" },
+    { id: "todos", label: "📅 Todos" },
     { id: "j1", label: "Fecha 1" },
     { id: "j2", label: "Fecha 2" },
     { id: "j3", label: "Fecha 3" },
@@ -120,7 +120,7 @@ function getPartidosFase() {
 }
 
 // ═══════════════════════════════════════════════════════
-// RENDER PARTIDOS (simple: todos con inputs de resultado)
+// RENDER PARTIDOS (CON TARJETAS)
 // ═══════════════════════════════════════════════════════
 
 function renderPartidoCard(p) {
@@ -159,6 +159,45 @@ function renderPartidoCard(p) {
     estadoBadge = `<span style="background:var(--bg2); color:var(--text2); padding:3px 10px; border-radius:10px; font-size:10px;">⏳ PRÓXIMO</span>`;
     botonesEstado = `<button class="btn-estado btn-vivo" data-id="${p.id}" style="padding:6px 12px; background:var(--gold); color:#000; border:none; border-radius:6px; font-weight:700; cursor:pointer; font-size:12px;">▶️ Marcar EN JUEGO</button>`;
   }
+  
+  // ══════════════════════════════════════════════════════
+  // NUEVO: SECCIÓN DE TARJETAS
+  // ══════════════════════════════════════════════════════
+  const tarjetasHTML = `
+    <div style="margin-top:12px; padding:12px; background:var(--bg2); border-radius:8px; border:1px solid var(--border);">
+      <div style="font-size:11px; color:var(--gold); font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
+        🟨🟥 Tarjetas del Partido
+      </div>
+      <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+        <div>
+          <div style="font-size:11px; color:var(--text2); margin-bottom:6px; font-weight:600;">${flagL} ${p.local}</div>
+          <div style="display:flex; gap:6px; align-items:center;">
+            <label style="font-size:10px; color:var(--text2); min-width:60px;">🟨 Amarillas:</label>
+            <input type="number" min="0" max="20" class="score-in" id="amarillasL-${p.id}" value="${res?.amarillas_local ?? ''}" placeholder="0" style="width:60px;">
+          </div>
+          <div style="display:flex; gap:6px; align-items:center; margin-top:4px;">
+            <label style="font-size:10px; color:var(--text2); min-width:60px;">🟥 Rojas:</label>
+            <input type="number" min="0" max="10" class="score-in" id="rojasL-${p.id}" value="${res?.rojas_local ?? ''}" placeholder="0" style="width:60px;">
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px; color:var(--text2); margin-bottom:6px; font-weight:600; text-align:right;">${p.visit} ${flagV}</div>
+          <div style="display:flex; gap:6px; align-items:center; justify-content:flex-end;">
+            <input type="number" min="0" max="20" class="score-in" id="amarillasV-${p.id}" value="${res?.amarillas_visit ?? ''}" placeholder="0" style="width:60px;">
+            <label style="font-size:10px; color:var(--text2); min-width:60px; text-align:right;">🟨 Amarillas:</label>
+          </div>
+          <div style="display:flex; gap:6px; align-items:center; justify-content:flex-end; margin-top:4px;">
+            <input type="number" min="0" max="10" class="score-in" id="rojasV-${p.id}" value="${res?.rojas_visit ?? ''}" placeholder="0" style="width:60px;">
+            <label style="font-size:10px; color:var(--text2); min-width:60px; text-align:right;">🟥 Rojas:</label>
+          </div>
+        </div>
+      </div>
+      <div style="font-size:10px; color:var(--text3); margin-top:8px; font-style:italic;">
+        💡 Las tarjetas se usan para desempatar por Fair Play en la clasificación
+      </div>
+    </div>
+  `;
+  // ══════════════════════════════════════════════════════
   
   return `
     <div class="partido-card admin" style="${estiloCard}">
@@ -204,11 +243,13 @@ function renderPartidoCard(p) {
         </div>
       </div>
 
+      ${tarjetasHTML}
+
       <div class="partido-footer" style="display:flex; gap:8px; flex-wrap:wrap; align-items:center;">
         <button class="btn-guardar btn-res" data-id="${p.id}" style="padding:8px 16px;">
           ${res ? "✓ Actualizar resultado" : "💾 Cargar resultado"}
         </button>
-        ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px;">️ Borrar</button>` : ""}
+        ${res ? `<button class="btn-guardar btn-limpiar" data-borrar="${p.id}" style="padding:8px 16px;">🗑️ Borrar</button>` : ""}
         <div style="margin-left:auto; display:flex; gap:6px;">
           ${botonesEstado}
         </div>
@@ -280,7 +321,7 @@ function renderPartidos() {
 
   cont.querySelectorAll(".score-in").forEach(input => {
     input.addEventListener("input", (e) => {
-      const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "");
+      const id = e.target.id.replace("gL-", "").replace("gV-", "").replace("alL-", "").replace("alV-", "").replace("penL-", "").replace("penV-", "");
       const gL = document.getElementById("gL-" + id)?.value;
       const gV = document.getElementById("gV-" + id)?.value;
       const alL = document.getElementById("alL-" + id)?.value;
@@ -392,6 +433,15 @@ async function guardarResultado(id) {
     }
   }
 
+  // ══════════════════════════════════════════════════════
+  // NUEVO: OBTENER TARJETAS
+  // ══════════════════════════════════════════════════════
+  const amarillasLocal = document.getElementById("amarillasL-" + id)?.value;
+  const rojasLocal = document.getElementById("rojasL-" + id)?.value;
+  const amarillasVisit = document.getElementById("amarillasV-" + id)?.value;
+  const rojasVisit = document.getElementById("rojasV-" + id)?.value;
+  // ══════════════════════════════════════════════════════
+
   const datos = {
     id: id,
     partido_id: id,
@@ -402,14 +452,22 @@ async function guardarResultado(id) {
     penales_local: penalesLocal,
     penales_visit: penalesVisit,
     estado: "finalizado",
-    es_prueba: false
+    es_prueba: false,
+    // ══════════════════════════════════════════════════════
+    // NUEVO: GUARDAR TARJETAS
+    // ══════════════════════════════════════════════════════
+    amarillas_local: amarillasLocal !== "" ? parseInt(amarillasLocal) : 0,
+    rojas_local: rojasLocal !== "" ? parseInt(rojasLocal) : 0,
+    amarillas_visit: amarillasVisit !== "" ? parseInt(amarillasVisit) : 0,
+    rojas_visit: rojasVisit !== "" ? parseInt(rojasVisit) : 0
+    // ══════════════════════════════════════════════════════
   };
 
   try {
     const { error } = await supabase.from('resultados').upsert(datos, { onConflict: 'id' });
     if (error) throw error;
 
-    mostrarMensaje("✅ Resultado guardado", "ok");
+    mostrarMensaje("✅ Resultado y tarjetas guardados", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
@@ -436,7 +494,7 @@ async function borrarResultado(id) {
 // ═══════════════════════════════════════════════════════
 
 window.generarPrueba = async () => {
-  if (!confirm("¿Generar resultados de PRUEBA?\n\n️ Los usuarios NO los verán")) return;
+  if (!confirm("¿Generar resultados de PRUEBA?\n\n⚠️ Los usuarios NO los verán")) return;
 
   try {
     const pruebas = TODOS_PARTIDOS.map(p => ({
@@ -449,7 +507,11 @@ window.generarPrueba = async () => {
       penales_local: null,
       penales_visit: null,
       estado: "finalizado",
-      es_prueba: true
+      es_prueba: true,
+      amarillas_local: 0,
+      rojas_local: 0,
+      amarillas_visit: 0,
+      rojas_visit: 0
     }));
 
     await supabase.from('resultados').upsert(pruebas, { onConflict: 'id' });
@@ -487,7 +549,7 @@ window.borrarMisPronosticos = async () => {
 
     if (error) throw error;
 
-    mostrarMensaje("️ Pronósticos borrados", "ok");
+    mostrarMensaje("⚠️ Pronósticos borrados", "ok");
     setTimeout(() => location.reload(), 1500);
   } catch (err) {
     mostrarMensaje("❌ Error: " + err.message, "error");
@@ -495,7 +557,7 @@ window.borrarMisPronosticos = async () => {
 };
 
 window.reiniciar = async () => {
-  if (!confirm("️ ¿REINICIAR TODO?")) return;
+  if (!confirm("⚠️ ¿REINICIAR TODO?")) return;
   if (!confirm("¿ESTÁS SEGURO?")) return;
 
   try {
@@ -505,7 +567,7 @@ window.reiniciar = async () => {
     await supabase.from('config').delete().neq('id', '');
     await supabase.from('clasificados').delete().neq('posicion', '');
 
-    mostrarMensaje("️ Prode reiniciado", "ok");
+    mostrarMensaje("⚠️ Prode reiniciado", "ok");
     await cargarResultados();
     renderPartidos();
   } catch (err) {
@@ -556,7 +618,7 @@ function cargarSelectCampeones() {
   SELECCIONES.sort((a, b) => a.localeCompare(b)).forEach(sel => {
     const opt = document.createElement("option");
     opt.value = sel;
-    opt.textContent = `${FLAGS[sel] || "️"} ${sel}`;
+    opt.textContent = `${FLAGS[sel] || "🏳️"} ${sel}`;
     select.appendChild(opt);
   });
 }
