@@ -21,9 +21,10 @@
   </div>
   <nav class="nav">
     <a href="index.html">🏠 Inicio</a>
-    <a href="grupos.html"> Grupos</a>
+    <a href="grupos.html">📊 Grupos</a>
     <a href="instructivo.html">📘 Reglamento</a>
     <a href="index.html#ranking">🏅 Ranking</a>
+    <a href="sala-cardio.html" id="linkSalaCardio" style="display:none">🏢 Cardio-Fitness</a>
     <a href="admin.html" id="linkAdmin" style="display:none">🔐 Admin</a>
     <a href="chat.html">💬 Chat</a>
     <button class="btn-salir" onclick="cerrarSesion()">Salir</button>
@@ -47,7 +48,6 @@
       <div style="font-size:11px; color:var(--text2); text-transform:uppercase">Bonus +100</div>
     </div>
   </div>
-
   <!-- ═══════════════════════════════════════════════════════ -->
   <!-- GESTIÓN DE GRUPOS (UNIRSE + VER + SALIRSE) -->
   <!-- ═══════════════════════════════════════════════════════ -->
@@ -96,8 +96,7 @@
         Elegí 3 selecciones en orden de preferencia. <strong style="color: var(--text)">Si acertás al campeón, sumás puntos</strong> según cuándo hagas el pronóstico.
       </p>
 
-      <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin-bottom: 20px;">
-        <div style="color: var(--text2); font-size: 12px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
+      <div style="background: var(--bg2); border: 1px solid var(--border); border-radius: var(--r); padding: 16px; margin-bottom: 20px;">        <div style="color: var(--text2); font-size: 12px; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 0.5px;">
           📊 Puntos disponibles según el momento
         </div>
         <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; text-align: center;">
@@ -146,8 +145,7 @@
           <div>
             <label style="display:block; font-size:12px; color:var(--accent); font-weight:700; margin-bottom:8px; text-transform:uppercase; letter-spacing:0.5px;">
               🥉 Opción 3 — Tercer favorito
-            </label>
-            <select id="camp3" class="sel" style="width:100%; padding:12px; font-size:14px;">
+            </label>            <select id="camp3" class="sel" style="width:100%; padding:12px; font-size:14px;">
               <option value="">-- Seleccionar --</option>
             </select>
           </div>
@@ -180,7 +178,7 @@
               <div id="verCamp1Pts" style="font-size:11px; color:var(--text2); margin-top:4px;">—</div>
             </div>
             <div style="background:var(--bg); padding:14px 8px; border-radius:var(--r-sm); border:1px solid var(--border);">
-              <div style="font-size:32px;"></div>
+              <div style="font-size:32px;">🥈</div>
               <div id="verCamp2" style="font-size:15px; font-weight:700; margin-top:6px; color:var(--text);">—</div>
               <div id="verCamp2Pts" style="font-size:11px; color:var(--text2); margin-top:4px;">—</div>
             </div>
@@ -196,8 +194,7 @@
     </div>
   </section>
 
-  <!-- PRONÓSTICOS DE PARTIDOS -->
-  <h2>⚽ Mis Pronósticos</h2>
+  <!-- PRONÓSTICOS DE PARTIDOS -->  <h2>⚽ Mis Pronósticos</h2>
   <p style="color:var(--text2); margin-bottom:16px; font-size:14px;">
     🔒 Una vez guardado, <strong>el pronóstico NO se puede modificar</strong>
   </p>
