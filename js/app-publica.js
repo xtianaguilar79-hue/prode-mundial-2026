@@ -465,24 +465,58 @@ window.mostrarDetallePartido = async function(partidoId) {
   try {
     console.log(`🔍 DIAGNÓSTICO DEL PARTIDO: ${partidoId}`);
     
-    const { lista, resultados, usuarios } = await cargarDatosCompletos();
+    const { data: todasPredicciones, error: predsError } = await supabase
+      .from('predicciones')
+      .select('*')
+      .eq('partido_id', partidoId);
     
-    const partido = TODOS_PARTIDOS.find(p => p.id === partidoId);
-    if (!partido) {
-      console.error(`❌ Partido ${partidoId} no encontrado en TODOS_PARTIDOS`);
-      alert("Partido no encontrado");
-      return;
-    }
+    if (predsError) throw predsError;
     
-    console.log(`⚽ Partido: ${partido.local} vs ${partido.visit}`);
-    console.log(`📋 Resultado oficial:`, resultados[partidoId]);
+    console.log(`📊 Total de predicciones en BD para ${partidoId}: ${todasPredicciones?.length || 0}`);
     
-    const resultado = resultados[partidoId];
-    if (!resultado || resultado.local === null || resultado.local === undefined) {
-      console.error(`❌ El partido ${partidoId} NO tiene resultado oficial cargado`);
+    const { data: usuariosData } = await supabase
+      .from('usuarios')
+      .select('*');
+    
+    const usuariosMap = {};
+    if (usuariosData) usuariosData.forEach(u => { usuariosMap[u.id] = u; });
+    
+    const prediccionesFiltradas = todasPredicciones.filter(pred => {
+      const u = usuariosMap[pred.user_id];
+      if (!u) return false;
+      
+      const enSala = u.grupos && Array.isArray(u.grupos) && u.grupos.includes("Cardio-Fitness");
+      
+      return !enSala;
+    });
+    
+    console.log(`✅ Predicciones después de filtrar Cardio-Fitness: ${prediccionesFiltradas.length}`);
+    
+    const { data: resultadoData } = await supabase
+      .from('resultados')
+      .select('*')
+      .eq('partido_id', partidoId)
+      .single();
+    
+    if (!resultadoData || resultadoData.local === null) {
       alert("Este partido aún no tiene resultado oficial");
       return;
     }
+    
+    const prediccionesConPuntos = prediccionesFiltradas.map(pred => {
+      const u = usuariosMap[pred.user_id];
+      const pts = calcularPuntos(pred, resultadoData);
+      
+      return {
+        nombre: u.nombre || "Jugador",
+        apellido: u.apellido || "",
+        apodo: u.apodo || null,
+        prediccion: pred,
+        puntos: pts
+      };
+    }).sort((a, b) => b.puntos - a.puntos);
+    
+    console.log(`📊 Jugadores que aparecen en el detalle: ${prediccionesConPuntos.length}`);
 
     const modal = document.getElementById("modalDetalle");
     const modalContent = document.getElementById("modalContent");
@@ -492,73 +526,28 @@ window.mostrarDetallePartido = async function(partidoId) {
       return;
     }
 
-    // ═════════════════════════════════════════════════════
-    // DIAGNÓSTICO DETALLADO
-    // ═════════════════════════════════════════════════════
-    console.log(`\n📊 DIAGNÓSTICO DETALLADO:`);
-    console.log(`Total de jugadores en ranking: ${lista.length}`);
-    
-    let jugadoresConPrediccion = 0;
-    let jugadoresSinPrediccion = 0;
-    let prediccionesConResultado = 0;
-    let prediccionesSinResultado = 0;
-    
-    const prediccionesPartido = lista
-      .map(jugador => {
-        const detalle = jugador.detallePartidos.find(d => d.partido.id === partidoId);
-        if (detalle) {
-          jugadoresConPrediccion++;
-          if (detalle.resultado && detalle.resultado.local !== null) {
-            prediccionesConResultado++;
-          } else {
-            prediccionesSinResultado++;
-            console.log(`⚠️ ${jugador.nombre} ${jugador.apellido} tiene predicción pero SIN resultado oficial`);
-          }
-          return {
-            nombre: jugador.nombre,
-            apellido: jugador.apellido,
-            apodo: jugador.apodo,
-            prediccion: detalle.prediccion,
-            puntos: detalle.puntos
-          };
-        } else {
-          jugadoresSinPrediccion++;
-          return null;
-        }
-      })
-      .filter(p => p !== null)
-      .sort((a, b) => b.puntos - a.puntos);
-
-    console.log(`✅ Jugadores CON predicción: ${jugadoresConPrediccion}`);
-    console.log(`❌ Jugadores SIN predicción: ${jugadoresSinPrediccion}`);
-    console.log(`✓ Predicciones CON resultado: ${prediccionesConResultado}`);
-    console.log(`✗ Predicciones SIN resultado: ${prediccionesSinResultado}`);
-    console.log(`\n`);
-    // ═════════════════════════════════════════════════════
-
-    console.log(`📊 Jugadores que pronosticaron partido ${partidoId}: ${prediccionesPartido.length}`);
-
-    const flagL = FLAGS[partido.local] || "🏳️";
-    const flagV = FLAGS[partido.visit] || "🏳️";
+    const partido = TODOS_PARTIDOS.find(p => p.id === partidoId);
+    const flagL = partido ? (FLAGS[partido.local] || "🏳️") : "🏳️";
+    const flagV = partido ? (FLAGS[partido.visit] || "🏳️") : "🏳️";
 
     let html = `
       <div style="text-align:center; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid var(--border);">
         <div style="font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
-          ${partido.grupo ? `Grupo ${partido.grupo}` : partido.fase ? partido.fase.toUpperCase() : ''} · ${partido.fecha} · ${partido.hora} ARG
+          ${partido?.grupo ? `Grupo ${partido.grupo}` : partido?.fase ? partido.fase.toUpperCase() : ''} · ${partido?.fecha || ''} · ${partido?.hora || ''} ARG
         </div>
         <h2 style="font-family:'Anton'; font-size:28px; color:var(--gold); margin-bottom:12px;">
-          ${flagL} ${partido.local} <span style="color:var(--text);">vs</span> ${partido.visit} ${flagV}
+          ${flagL} ${partido?.local || ''} <span style="color:var(--text);">vs</span> ${partido?.visit || ''} ${flagV}
         </h2>
         <div style="font-family:'Anton'; font-size:48px; color:var(--gold); letter-spacing:3px;">
-          ${resultado.local} - ${resultado.visit}
+          ${resultadoData.local} - ${resultadoData.visit}
         </div>
         <div style="font-size:12px; color:var(--text2); margin-top:8px;">
-          ${prediccionesPartido.length} jugador${prediccionesPartido.length === 1 ? '' : 'es'} pronosticaron este partido
+          ${prediccionesConPuntos.length} jugador${prediccionesConPuntos.length === 1 ? '' : 'es'} pronosticaron este partido
         </div>
       </div>
     `;
 
-    if (prediccionesPartido.length === 0) {
+    if (prediccionesConPuntos.length === 0) {
       html += `
         <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
           <div style="font-size:50px; margin-bottom:12px;">🤷</div>
@@ -566,10 +555,10 @@ window.mostrarDetallePartido = async function(partidoId) {
         </div>
       `;
     } else {
-      const totalPuntos = prediccionesPartido.reduce((sum, j) => sum + j.puntos, 0);
-      const promedio = (totalPuntos / prediccionesPartido.length).toFixed(1);
-      const maxPuntos = prediccionesPartido[0].puntos;
-      const acertaron = prediccionesPartido.filter(j => j.puntos > 0).length;
+      const totalPuntos = prediccionesConPuntos.reduce((sum, j) => sum + j.puntos, 0);
+      const promedio = (totalPuntos / prediccionesConPuntos.length).toFixed(1);
+      const maxPuntos = prediccionesConPuntos[0].puntos;
+      const acertaron = prediccionesConPuntos.filter(j => j.puntos > 0).length;
 
       html += `
         <div style="display:grid; grid-template-columns:repeat(3, 1fr); gap:10px; margin-bottom:20px;">
@@ -582,7 +571,7 @@ window.mostrarDetallePartido = async function(partidoId) {
             <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Promedio</div>
           </div>
           <div style="background:var(--bg2); padding:12px; border-radius:6px; text-align:center;">
-            <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${acertaron}/${prediccionesPartido.length}</div>
+            <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${acertaron}/${prediccionesConPuntos.length}</div>
             <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Acertaron</div>
           </div>
         </div>
@@ -595,7 +584,7 @@ window.mostrarDetallePartido = async function(partidoId) {
         </div>
       `;
 
-      prediccionesPartido.forEach((j, index) => {
+      prediccionesConPuntos.forEach((j, index) => {
         const predL = j.prediccion.local !== null && j.prediccion.local !== undefined ? j.prediccion.local : "-";
         const predV = j.prediccion.visit !== null && j.prediccion.visit !== undefined ? j.prediccion.visit : "-";
         
