@@ -18,17 +18,9 @@ function estaEnSalaPrivada(usuario) {
   try {
     if (!usuario) return false;
     const grupos = usuario.grupos;
-    
     if (!grupos) return false;
-    
-    if (typeof grupos === 'string') {
-      return grupos === SALA_PRIVADA;
-    }
-    
-    if (Array.isArray(grupos)) {
-      return grupos.includes(SALA_PRIVADA);
-    }
-    
+    if (typeof grupos === 'string') return grupos === SALA_PRIVADA;
+    if (Array.isArray(grupos)) return grupos.includes(SALA_PRIVADA);
     return false;
   } catch (err) {
     console.error("⚠️ Error verificando sala:", err);
@@ -58,7 +50,7 @@ function getEstadoPartido(partido, resultado) {
 
 async function cargarDatosCompletos() {
   try {
-    console.log(` Modo: ${MODO_SALA ? 'SALA PRIVADA' : 'GENERAL'}`);
+    console.log(`📍 Modo: ${MODO_SALA ? 'SALA PRIVADA' : 'GENERAL'}`);
     
     const { data: usuariosData, error: usuariosError } = await supabase
       .from('usuarios')
@@ -86,6 +78,8 @@ async function cargarDatosCompletos() {
     const resultados = {};
     if (resData) resData.forEach(r => { resultados[r.partido_id] = r; });
 
+    console.log(`📊 Resultados oficiales cargados: ${Object.keys(resultados).length}`);
+
     const { data: campeonesData, error: campeonesError } = await supabase
       .from('campeones')
       .select('*');
@@ -102,9 +96,7 @@ async function cargarDatosCompletos() {
     const campeonReal = !finalError && finalData ? finalData.campeon : null;
 
     const ranking = {};
-    let usuariosFiltradosSet = new Set();
     let usuariosIncluidosSet = new Set();
-    let prediccionesSinUsuario = 0;
 
     if (predsData) {
       predsData.forEach(pred => {
@@ -113,22 +105,12 @@ async function cargarDatosCompletos() {
 
         const u = usuarios[pred.user_id];
         
-        if (!u) {
-          prediccionesSinUsuario++;
-          console.warn(`⚠️ Predicción sin usuario: ${pred.user_id} (partido ${pred.partido_id})`);
-          return;
-        }
+        if (!u) return;
 
         const enSala = estaEnSalaPrivada(u);
         
-        if (!MODO_SALA && enSala) {
-          usuariosFiltradosSet.add(pred.user_id);
-          return;
-        }
-        if (MODO_SALA && !enSala) {
-          usuariosFiltradosSet.add(pred.user_id);
-          return;
-        }
+        if (!MODO_SALA && enSala) return;
+        if (MODO_SALA && !enSala) return;
         
         usuariosIncluidosSet.add(pred.user_id);
 
@@ -165,32 +147,14 @@ async function cargarDatosCompletos() {
       });
     }
 
-    // ═════════════════════════════════════════════════════
-    // LOGS DE DIAGNÓSTICO DETALLADOS
-    // ═════════════════════════════════════════════════════
     console.log(`📊 Usuarios únicos incluidos: ${usuariosIncluidosSet.size}`);
-    console.log(` Usuarios filtrados: ${usuariosFiltradosSet.size}`);
-    
-    if (usuariosFiltradosSet.size > 0) {
-      console.log(`🔍 USUARIOS FILTRADOS (NO aparecen en ranking):`);
-      usuariosFiltradosSet.forEach(uid => {
-        const u = usuarios[uid];
-        if (u) {
-          console.log(`   - ${u.nombre} ${u.apellido} | Grupos: ${JSON.stringify(u.grupos)} | Email: ${u.email}`);
-        }
-      });
-    }
-    
-    console.log(`📊 Predicciones sin usuario: ${prediccionesSinUsuario}`);
-    console.log(` Total de jugadores en ranking: ${Object.keys(ranking).length}`);
-    // ═════════════════════════════════════════════════════
+    console.log(`📊 Total de jugadores en ranking: ${Object.keys(ranking).length}`);
 
     Object.entries(campeones).forEach(([uid, pred]) => {
       const u = usuarios[uid];
       if (!u) return;
       
       const enSala = estaEnSalaPrivada(u);
-      
       if (!MODO_SALA && enSala) return;
       if (MODO_SALA && !enSala) return;
 
@@ -215,7 +179,6 @@ async function cargarDatosCompletos() {
 
     Object.values(usuarios).forEach(u => {
       const enSala = estaEnSalaPrivada(u);
-      
       if (!MODO_SALA && enSala) return;
       if (MODO_SALA && !enSala) return;
 
@@ -304,18 +267,12 @@ function renderRanking(lista, totalUsuarios) {
 
   const jugadoresActivos = lista.filter(u => u.partidosPronosticados > 0);
 
-  console.log(` Jugadores activos en ranking: ${jugadoresActivos.length}`);
-
   if (jugadoresActivos.length === 0) {
     const rankingTabla = document.getElementById("rankingTabla");
     if (rankingTabla) rankingTabla.style.display = "none";
     
     const top3 = document.getElementById("top3");
     if (top3) {
-      const mensajeSala = MODO_SALA 
-        ? `Aún no hay jugadores en la sala <strong style="color:var(--gold)">${NOMBRE_SALA}</strong>.`
-        : 'El ranking se activará cuando comience el Mundial.';
-      
       top3.innerHTML = `
         <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1.5px solid var(--gold);">
           <div style="font-size:70px; margin-bottom:16px;">🏆</div>
@@ -323,9 +280,9 @@ function renderRanking(lista, totalUsuarios) {
           <p style="color:var(--text2); font-size:15px; max-width:450px; margin:0 auto 20px;">
             ${totalUsuarios > 0 
               ? `Ya hay <strong style="color:var(--gold)">${totalUsuarios}</strong> jugador${totalUsuarios === 1 ? '' : 'es'} registrado${totalUsuarios === 1 ? '' : 's'}.`
-              : mensajeSala}
+              : 'El ranking se activará cuando comience el Mundial.'}
           </p>
-          <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none;"> Registrarme</a>
+          <a href="login.html" class="btn" style="display:inline-block; width:auto; padding:12px 32px; text-decoration:none;">🔐 Registrarme</a>
         </div>
       `;
     }
@@ -447,7 +404,6 @@ window.mostrarDetalleJugador = async function(uid) {
         <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
           <div style="font-size:50px; margin-bottom:12px;">⏳</div>
           <p style="color:var(--text2); font-size:14px;">Aún no hay resultados oficiales cargados para este jugador.</p>
-          <p style="color:var(--text3); font-size:12px; margin-top:8px;">Los detalles aparecerán cuando se carguen los resultados oficiales.</p>
         </div>
       `;
     } else {
@@ -465,7 +421,7 @@ window.mostrarDetalleJugador = async function(uid) {
         `;
 
         partidos.forEach(det => {
-          const flagL = FLAGS[det.partido.local] || "️";
+          const flagL = FLAGS[det.partido.local] || "🏳️";
           const flagV = FLAGS[det.partido.visit] || "🏳️";
           const predL = det.prediccion.local !== null && det.prediccion.local !== undefined ? det.prediccion.local : "-";
           const predV = det.prediccion.visit !== null && det.prediccion.visit !== undefined ? det.prediccion.visit : "-";
@@ -507,16 +463,23 @@ window.cerrarModalDetalle = function() {
 
 window.mostrarDetallePartido = async function(partidoId) {
   try {
+    console.log(`🔍 DIAGNÓSTICO DEL PARTIDO: ${partidoId}`);
+    
     const { lista, resultados, usuarios } = await cargarDatosCompletos();
     
     const partido = TODOS_PARTIDOS.find(p => p.id === partidoId);
     if (!partido) {
+      console.error(`❌ Partido ${partidoId} no encontrado en TODOS_PARTIDOS`);
       alert("Partido no encontrado");
       return;
     }
     
+    console.log(`⚽ Partido: ${partido.local} vs ${partido.visit}`);
+    console.log(`📋 Resultado oficial:`, resultados[partidoId]);
+    
     const resultado = resultados[partidoId];
     if (!resultado || resultado.local === null || resultado.local === undefined) {
+      console.error(`❌ El partido ${partidoId} NO tiene resultado oficial cargado`);
       alert("Este partido aún no tiene resultado oficial");
       return;
     }
@@ -529,24 +492,51 @@ window.mostrarDetallePartido = async function(partidoId) {
       return;
     }
 
+    // ═════════════════════════════════════════════════════
+    // DIAGNÓSTICO DETALLADO
+    // ═════════════════════════════════════════════════════
+    console.log(`\n📊 DIAGNÓSTICO DETALLADO:`);
+    console.log(`Total de jugadores en ranking: ${lista.length}`);
+    
+    let jugadoresConPrediccion = 0;
+    let jugadoresSinPrediccion = 0;
+    let prediccionesConResultado = 0;
+    let prediccionesSinResultado = 0;
+    
     const prediccionesPartido = lista
-      .filter(jugador => {
-        const detalle = jugador.detallePartidos.find(d => d.partido.id === partidoId);
-        return detalle !== undefined;
-      })
       .map(jugador => {
         const detalle = jugador.detallePartidos.find(d => d.partido.id === partidoId);
-        return {
-          nombre: jugador.nombre,
-          apellido: jugador.apellido,
-          apodo: jugador.apodo,
-          prediccion: detalle.prediccion,
-          puntos: detalle.puntos
-        };
+        if (detalle) {
+          jugadoresConPrediccion++;
+          if (detalle.resultado && detalle.resultado.local !== null) {
+            prediccionesConResultado++;
+          } else {
+            prediccionesSinResultado++;
+            console.log(`⚠️ ${jugador.nombre} ${jugador.apellido} tiene predicción pero SIN resultado oficial`);
+          }
+          return {
+            nombre: jugador.nombre,
+            apellido: jugador.apellido,
+            apodo: jugador.apodo,
+            prediccion: detalle.prediccion,
+            puntos: detalle.puntos
+          };
+        } else {
+          jugadoresSinPrediccion++;
+          return null;
+        }
       })
+      .filter(p => p !== null)
       .sort((a, b) => b.puntos - a.puntos);
 
-    console.log(` Jugadores que pronosticaron partido ${partidoId}: ${prediccionesPartido.length}`);
+    console.log(`✅ Jugadores CON predicción: ${jugadoresConPrediccion}`);
+    console.log(`❌ Jugadores SIN predicción: ${jugadoresSinPrediccion}`);
+    console.log(`✓ Predicciones CON resultado: ${prediccionesConResultado}`);
+    console.log(`✗ Predicciones SIN resultado: ${prediccionesSinResultado}`);
+    console.log(`\n`);
+    // ═════════════════════════════════════════════════════
+
+    console.log(`📊 Jugadores que pronosticaron partido ${partidoId}: ${prediccionesPartido.length}`);
 
     const flagL = FLAGS[partido.local] || "🏳️";
     const flagV = FLAGS[partido.visit] || "🏳️";
@@ -571,7 +561,7 @@ window.mostrarDetallePartido = async function(partidoId) {
     if (prediccionesPartido.length === 0) {
       html += `
         <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
-          <div style="font-size:50px; margin-bottom:12px;"></div>
+          <div style="font-size:50px; margin-bottom:12px;">🤷</div>
           <p style="color:var(--text2); font-size:14px;">Ningún jugador pronosticó este partido.</p>
         </div>
       `;
@@ -657,7 +647,7 @@ function renderCardPartido(p, resultado) {
 
   let liveBadge = "";
   if (estado === "vivo") {
-    liveBadge = `<span class="live-badge"> EN JUEGO</span>`;
+    liveBadge = `<span class="live-badge">🔴 EN JUEGO</span>`;
   }
 
   let marcadorHTML;
@@ -727,7 +717,7 @@ function renderResultados(resultados) {
     { label: "Cuartos de Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "cuartos") },
     { label: "Semifinales", partidos: PARTIDOS_ELIM.filter(p => p.fase === "semis") },
     { label: "3er Puesto", partidos: PARTIDOS_ELIM.filter(p => p.fase === "3er") },
-    { label: " Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "final") },
+    { label: "🏆 Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "final") },
   ];
 
   let html = "";
@@ -790,7 +780,7 @@ async function cargarYRenderizar() {
 }
 
 (async () => {
-  console.log(" Sincronizando hora con el servidor...");
+  console.log("🕐 Sincronizando hora con el servidor...");
   console.log(`📍 Modo: ${MODO_SALA ? 'SALA PRIVADA (' + NOMBRE_SALA + ')' : 'GENERAL'}`);
   await sincronizarHoraServidor(supabase);
   console.log("✅ Hora sincronizada. Iniciando carga de datos...");
