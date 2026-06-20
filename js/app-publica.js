@@ -45,7 +45,7 @@ function getEstadoPartido(partido, resultado) {
   if (ahora < kickoff) return { estado: "proximo", texto: `${partido.fecha} · ${partido.hora} ARG` };
   if (ahora < finPartido) return { estado: "vivo", texto: "🔴 EN JUEGO" };
   
-  return { estado: "pendiente", texto: "⏳ Pendiente resultado oficial" };
+  return { estado: "pendiente", texto: " Pendiente resultado oficial" };
 }
 
 async function cargarDatosCompletos() {
@@ -69,69 +69,47 @@ async function cargarDatosCompletos() {
 
     console.log(`🎯 Predicciones cargadas: ${predsData?.length || 0}`);
 
-    // ═════════════════════════════════════════════════════
-    // Cargar TODOS los resultados (sin filtrar en la consulta)
-    // ═════════════════════════════════════════════════════
     const { data: resData, error: resError } = await supabase
       .from('resultados')
       .select('*');
     if (resError) throw resError;
 
-    // Filtrar manualmente: excluir SOLO los que tienen es_prueba === true
+    console.log(` Total de resultados en BD: ${resData?.length || 0}`);
+    console.log(` M035 en BD:`, resData?.find(r => r.partido_id === 'M035'));
+    console.log(`📊 M033 en BD:`, resData?.find(r => r.partido_id === 'M033'));
+
     const resultados = {};
-    let resultadosExcluidos = 0;
-    
     if (resData) {
       resData.forEach(r => {
-        if (r.es_prueba === true) {
-          resultadosExcluidos++;
-          return; // Excluir resultados de prueba
+        if (r.es_prueba !== true && r.local !== null && r.local !== undefined) {
+          resultados[r.partido_id] = r;
         }
-        if (r.local === null || r.local === undefined) {
-          return; // Excluir resultados sin marcador
-        }
-        resultados[r.partido_id] = r;
       });
     }
 
-    console.log(`📊 Resultados oficiales cargados: ${Object.keys(resultados).length}`);
-    console.log(`📊 Resultados excluidos (es_prueba=true): ${resultadosExcluidos}`);
+    console.log(` Resultados oficiales cargados: ${Object.keys(resultados).length}`);
     console.log(`📊 IDs de resultados:`, Object.keys(resultados).sort());
 
-    const { data: campeonesData, error: campeonesError } = await supabase
-      .from('campeones')
-      .select('*');
-    if (campeonesError) throw campeonesError;
-
+    const { data: campeonesData } = await supabase.from('campeones').select('*');
     const campeones = {};
     if (campeonesData) campeonesData.forEach(c => { campeones[c.user_id] = c; });
 
-    const { data: finalData, error: finalError } = await supabase
-      .from('config')
-      .select('*')
-      .eq('id', 'final')
-      .single();
-    const campeonReal = !finalError && finalData ? finalData.campeon : null;
+    const { data: finalData } = await supabase.from('config').select('*').eq('id', 'final').single();
+    const campeonReal = finalData?.campeon || null;
 
     const ranking = {};
     let usuariosIncluidosSet = new Set();
     let totalPuntosCalculados = 0;
     let prediccionesConResultado = 0;
-    let prediccionesSinResultado = 0;
 
     if (predsData) {
       predsData.forEach(pred => {
         const res = resultados[pred.partido_id];
-        
         const u = usuarios[pred.user_id];
         
-        if (!u) {
-          console.warn(`⚠️ Predicción sin usuario: ${pred.user_id}`);
-          return;
-        }
+        if (!u) return;
 
         const enSala = estaEnSalaPrivada(u);
-        
         if (!MODO_SALA && enSala) return;
         if (MODO_SALA && !enSala) return;
         
@@ -152,7 +130,6 @@ async function cargarDatosCompletos() {
           };
         }
         
-        // Calcular puntos si hay resultado
         if (res) {
           const pts = calcularPuntos(pred, res);
           ranking[pred.user_id].puntos += pts;
@@ -170,38 +147,43 @@ async function cargarDatosCompletos() {
               puntos: pts
             });
           }
-        } else {
-          prediccionesSinResultado++;
         }
       });
     }
 
     console.log(`📊 Usuarios únicos incluidos: ${usuariosIncluidosSet.size}`);
-    console.log(`📊 Total de jugadores en ranking: ${Object.keys(ranking).length}`);
-    console.log(`📊 Predicciones con resultado: ${prediccionesConResultado}`);
-    console.log(`📊 Predicciones sin resultado: ${prediccionesSinResultado}`);
+    console.log(` Total de jugadores en ranking: ${Object.keys(ranking).length}`);
+    console.log(` Predicciones con resultado: ${prediccionesConResultado}`);
     console.log(`📊 Total de puntos calculados: ${totalPuntosCalculados}`);
+
+    console.log(`\n🔍 DIAGNÓSTICO M035 y M033:`);
+    console.log(`M035 en resultados:`, resultados['M035']);
+    console.log(`M033 en resultados:`, resultados['M033']);
+    
+    Object.values(ranking).forEach(u => {
+      const m035 = u.detallePartidos.find(d => d.partido.id === 'M035');
+      const m033 = u.detallePartidos.find(d => d.partido.id === 'M033');
+      if (m035 || m033) {
+        console.log(`   ${u.nombre} ${u.apellido}:`);
+        if (m035) console.log(`      - M035: ${m035.puntos} pts (pronóstico: ${m035.prediccion.local}-${m035.prediccion.visit})`);
+        if (m033) console.log(`      - M033: ${m033.puntos} pts (pronóstico: ${m033.prediccion.local}-${m033.prediccion.visit})`);
+      }
+    });
+    console.log(`\n`);
 
     Object.entries(campeones).forEach(([uid, pred]) => {
       const u = usuarios[uid];
       if (!u) return;
-      
       const enSala = estaEnSalaPrivada(u);
       if (!MODO_SALA && enSala) return;
       if (MODO_SALA && !enSala) return;
 
       if (!ranking[uid]) {
         ranking[uid] = {
-          uid,
-          nombre: u.nombre || "Jugador",
-          apellido: u.apellido || "",
-          apodo: u.apodo || null,
-          grupos: u.grupos || [],
-          puntos: 0,
-          puntosCampeon: 0,
-          partidosPronosticados: 0,
-          partidosAcertados: 0,
-          detallePartidos: []
+          uid, nombre: u.nombre || "Jugador", apellido: u.apellido || "",
+          apodo: u.apodo || null, grupos: u.grupos || [],
+          puntos: 0, puntosCampeon: 0, partidosPronosticados: 0,
+          partidosAcertados: 0, detallePartidos: []
         };
       }
       if (campeonReal) {
@@ -213,19 +195,12 @@ async function cargarDatosCompletos() {
       const enSala = estaEnSalaPrivada(u);
       if (!MODO_SALA && enSala) return;
       if (MODO_SALA && !enSala) return;
-
       if (!ranking[u.id]) {
         ranking[u.id] = {
-          uid: u.id,
-          nombre: u.nombre,
-          apellido: u.apellido || "",
-          apodo: u.apodo || null,
-          grupos: u.grupos || [],
-          puntos: 0,
-          puntosCampeon: 0,
-          partidosPronosticados: 0,
-          partidosAcertados: 0,
-          detallePartidos: []
+          uid: u.id, nombre: u.nombre, apellido: u.apellido || "",
+          apodo: u.apodo || null, grupos: u.grupos || [],
+          puntos: 0, puntosCampeon: 0, partidosPronosticados: 0,
+          partidosAcertados: 0, detallePartidos: []
         };
       }
     });
@@ -271,7 +246,7 @@ function actualizarSelectorGrupos(usuarios) {
   
   const valorActual = select.value;
   const tituloGeneral = MODO_SALA 
-    ? `🏢 Ranking de ${NOMBRE_SALA}` 
+    ? ` Ranking de ${NOMBRE_SALA}` 
     : '🌍 Ranking General (todos los jugadores)';
   
   select.innerHTML = `<option value="">${tituloGeneral}</option>`;
@@ -434,7 +409,7 @@ window.mostrarDetalleJugador = async function(uid) {
     if (jugador.detallePartidos.length === 0) {
       html += `
         <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
-          <div style="font-size:50px; margin-bottom:12px;">⏳</div>
+          <div style="font-size:50px; margin-bottom:12px;"></div>
           <p style="color:var(--text2); font-size:14px;">Aún no hay resultados oficiales cargados para este jugador.</p>
         </div>
       `;
@@ -453,7 +428,7 @@ window.mostrarDetalleJugador = async function(uid) {
         `;
 
         partidos.forEach(det => {
-          const flagL = FLAGS[det.partido.local] || "🏳️";
+          const flagL = FLAGS[det.partido.local] || "️";
           const flagV = FLAGS[det.partido.visit] || "🏳️";
           const predL = det.prediccion.local !== null && det.prediccion.local !== undefined ? det.prediccion.local : "-";
           const predV = det.prediccion.visit !== null && det.prediccion.visit !== undefined ? det.prediccion.visit : "-";
@@ -495,7 +470,7 @@ window.cerrarModalDetalle = function() {
 
 window.mostrarDetallePartido = async function(partidoId) {
   try {
-    console.log(`🔍 DIAGNÓSTICO DEL PARTIDO: ${partidoId}`);
+    console.log(` DIAGNÓSTICO DEL PARTIDO: ${partidoId}`);
     
     const { data: todasPredicciones, error: predsError } = await supabase
       .from('predicciones')
@@ -559,7 +534,7 @@ window.mostrarDetallePartido = async function(partidoId) {
     }
 
     const partido = TODOS_PARTIDOS.find(p => p.id === partidoId);
-    const flagL = partido ? (FLAGS[partido.local] || "🏳️") : "🏳️";
+    const flagL = partido ? (FLAGS[partido.local] || "🏳️") : "️";
     const flagV = partido ? (FLAGS[partido.visit] || "🏳️") : "🏳️";
 
     let html = `
@@ -659,7 +634,7 @@ window.mostrarDetallePartido = async function(partidoId) {
 
 function renderCardPartido(p, resultado) {
   const flagL = FLAGS[p.local] || "🏳️";
-  const flagV = FLAGS[p.visit] || "🏳️";
+  const flagV = FLAGS[p.visit] || "️";
   const { estado, texto } = getEstadoPartido(p, resultado);
   
   let claseCard = "resultado-card";
@@ -677,7 +652,7 @@ function renderCardPartido(p, resultado) {
       <div class="marcador-final" onclick="window.mostrarDetallePartido('${p.id}')" style="cursor:pointer; text-decoration:underline; text-decoration-color:var(--gold);" title="Ver pronósticos de los jugadores">
         ${resultado.local} - ${resultado.visit}
       </div>
-      <div class="marcador-hora" style="font-size:9px; color:var(--text3);">👆 Tocá para ver pronósticos</div>
+      <div class="marcador-hora" style="font-size:9px; color:var(--text3);"> Tocá para ver pronósticos</div>
     `;
   } else if (estado === "vivo") {
     marcadorHTML = `
@@ -738,7 +713,7 @@ function renderResultados(resultados) {
     { label: "Cuartos de Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "cuartos") },
     { label: "Semifinales", partidos: PARTIDOS_ELIM.filter(p => p.fase === "semis") },
     { label: "3er Puesto", partidos: PARTIDOS_ELIM.filter(p => p.fase === "3er") },
-    { label: "🏆 Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "final") },
+    { label: " Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "final") },
   ];
 
   let html = "";
@@ -801,7 +776,7 @@ async function cargarYRenderizar() {
 }
 
 (async () => {
-  console.log("🕐 Sincronizando hora con el servidor...");
+  console.log(" Sincronizando hora con el servidor...");
   console.log(`📍 Modo: ${MODO_SALA ? 'SALA PRIVADA (' + NOMBRE_SALA + ')' : 'GENERAL'}`);
   await sincronizarHoraServidor(supabase);
   console.log("✅ Hora sincronizada. Iniciando carga de datos...");
