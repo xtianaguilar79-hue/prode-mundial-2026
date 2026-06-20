@@ -70,23 +70,25 @@ async function cargarDatosCompletos() {
     console.log(`🎯 Predicciones cargadas: ${predsData?.length || 0}`);
 
     // ═════════════════════════════════════════════════════
-    // FIX: Cargar TODOS los resultados y filtrar manualmente
+    // Cargar TODOS los resultados (sin filtrar por es_prueba)
     // ═════════════════════════════════════════════════════
     const { data: resData, error: resError } = await supabase
       .from('resultados')
       .select('*');
     if (resError) throw resError;
 
-    // Filtrar manualmente: excluir solo los que tienen es_prueba === true
-    const resultadosFiltrados = (resData || []).filter(r => r.es_prueba !== true);
-    
     const resultados = {};
-    resultadosFiltrados.forEach(r => { 
-      resultados[r.partido_id] = r; 
-    });
+    if (resData) {
+      resData.forEach(r => { 
+        // Solo excluir explícitamente los que son de prueba
+        if (r.es_prueba !== true) {
+          resultados[r.partido_id] = r;
+        }
+      });
+    }
 
     console.log(`📊 Resultados oficiales cargados: ${Object.keys(resultados).length}`);
-    console.log(`📊 Resultados filtrados (es_prueba=true): ${(resData?.length || 0) - resultadosFiltrados.length}`);
+    console.log(`📊 Resultados excluidos (es_prueba=true): ${resData.filter(r => r.es_prueba === true).length}`);
     // ═════════════════════════════════════════════════════
 
     const { data: campeonesData, error: campeonesError } = await supabase
@@ -106,15 +108,29 @@ async function cargarDatosCompletos() {
 
     const ranking = {};
     let usuariosIncluidosSet = new Set();
+    let totalPuntosCalculados = 0;
+    let prediccionesConPuntos = 0;
 
     if (predsData) {
       predsData.forEach(pred => {
         const res = resultados[pred.partido_id];
-        const pts = res ? calcularPuntos(pred, res) : 0;
+        
+        // ═════════════════════════════════════════════════
+        // Calcular puntos SOLO si hay resultado oficial
+        // ═════════════════════════════════════════════════
+        let pts = 0;
+        if (res && res.local !== null && res.local !== undefined) {
+          pts = calcularPuntos(pred, res);
+          prediccionesConPuntos++;
+          totalPuntosCalculados += pts;
+        }
 
         const u = usuarios[pred.user_id];
         
-        if (!u) return;
+        if (!u) {
+          console.warn(`⚠️ Predicción sin usuario: ${pred.user_id} (partido ${pred.partido_id})`);
+          return;
+        }
 
         const enSala = estaEnSalaPrivada(u);
         
@@ -158,6 +174,9 @@ async function cargarDatosCompletos() {
 
     console.log(`📊 Usuarios únicos incluidos: ${usuariosIncluidosSet.size}`);
     console.log(`📊 Total de jugadores en ranking: ${Object.keys(ranking).length}`);
+    console.log(`📊 Predicciones con puntos calculados: ${prediccionesConPuntos}`);
+    console.log(`📊 Total de puntos calculados: ${totalPuntosCalculados}`);
+    // ═════════════════════════════════════════════════════
 
     Object.entries(campeones).forEach(([uid, pred]) => {
       const u = usuarios[uid];
@@ -305,7 +324,7 @@ function renderRanking(lista, totalUsuarios) {
   if (top3Div && lista.length >= 3) {
     const orden = [1, 0, 2];
     const colores = ["p2", "p1", "p3"];
-    const emojis = ["🥈", "🥇", "🥉"];
+    const emojis = ["🥈", "", "🥉"];
     
     top3Div.innerHTML = orden.map((idx, i) => {
       const u = lista[idx];
