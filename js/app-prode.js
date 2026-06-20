@@ -25,7 +25,6 @@ async function init() {
   console.log("🚀 Iniciando prode...");
   
   try {
-    // PRIMERO: Sincronizar hora con el servidor
     await sincronizarHoraServidor(supabase);
     console.log("✅ Hora sincronizada con el servidor");
     
@@ -47,7 +46,9 @@ async function init() {
       console.error("❌ No se encontró el perfil:", userError);
       window.location.href = "login.html";
       return;
-    }    usuarioId = usuario.id;
+    }
+    
+    usuarioId = usuario.id;
     misGrupos = usuario.grupos || [];
     console.log("✅ Autenticado como:", usuario.nombre);
     
@@ -61,9 +62,6 @@ async function init() {
       if (linkAdmin) linkAdmin.style.display = "inline-block";
     }
 
-    // ══════════════════════════════════════════════════════
-    // MOSTRAR LINK A SALA CARDIO-FITNESS SI PERTENECE (NUEVO)
-    // ══════════════════════════════════════════════════════
     if (misGrupos.includes("Cardio-Fitness")) {
       const linkSalaCardio = document.getElementById("linkSalaCardio");
       if (linkSalaCardio) {
@@ -71,7 +69,6 @@ async function init() {
         console.log("✅ Usuario pertenece a Cardio-Fitness, mostrando link");
       }
     }
-    // ══════════════════════════════════════════════════════
 
     await cargarDatos();
     await cargarCampeon();
@@ -96,7 +93,8 @@ function renderMisGrupos() {
   const list = document.getElementById("misGruposList");
   
   if (!container || !list) return;
-    if (misGrupos.length === 0) {
+  
+  if (misGrupos.length === 0) {
     container.style.display = "none";
     return;
   }
@@ -145,7 +143,8 @@ async function unirseAGrupo() {
   
   if (misGrupos.includes(nombre)) {
     mostrarMsgGrupo("⚠️ Ya estás en ese grupo", "error");
-    return;  }
+    return;
+  }
   
   if (misGrupos.length >= 10) {
     mostrarMsgGrupo("⚠️ Máximo 10 grupos permitidos", "error");
@@ -167,16 +166,12 @@ async function unirseAGrupo() {
     mostrarMsgGrupo(`✅ Te uniste al grupo "${nombre}"`, "ok");
     renderMisGrupos();
     
-    // ══════════════════════════════════════════════════════
-    // SI SE UNIÓ A CARDIO-FITNESS, MOSTRAR EL LINK (NUEVO)
-    // ══════════════════════════════════════════════════════
     if (nombre === "Cardio-Fitness") {
       const linkSalaCardio = document.getElementById("linkSalaCardio");
       if (linkSalaCardio) {
         linkSalaCardio.style.display = "inline";
       }
     }
-    // ══════════════════════════════════════════════════════
   } catch (err) {
     console.error(err);
     mostrarMsgGrupo("❌ Error: " + err.message, "error");
@@ -194,7 +189,8 @@ window.salirDeGrupo = async (index) => {
   try {
     const nuevosGrupos = misGrupos.filter((_, i) => i !== index);
     
-    const { error } = await supabase      .from('usuarios')
+    const { error } = await supabase
+      .from('usuarios')
       .update({ grupos: nuevosGrupos })
       .eq('id', usuarioId);
     
@@ -204,16 +200,12 @@ window.salirDeGrupo = async (index) => {
     mostrarMsgGrupo(`✅ Te saliste del grupo "${nombre}"`, "ok");
     renderMisGrupos();
     
-    // ══════════════════════════════════════════════════════
-    // SI SE SALIÓ DE CARDIO-FITNESS, OCULTAR EL LINK (NUEVO)
-    // ══════════════════════════════════════════════════════
     if (nombre === "Cardio-Fitness") {
       const linkSalaCardio = document.getElementById("linkSalaCardio");
       if (linkSalaCardio) {
         linkSalaCardio.style.display = "none";
       }
     }
-    // ══════════════════════════════════════════════════════
   } catch (err) {
     console.error(err);
     mostrarMsgGrupo("❌ Error: " + err.message, "error");
@@ -241,25 +233,87 @@ function mostrarMsgGrupo(texto, tipo) {
 }
 
 // ═══════════════════════════════════════════════════════
-// CARGA DE DATOS
+// CARGA DE DATOS (CON DIAGNÓSTICO DETALLADO)
 // ═══════════════════════════════════════════════════════
 async function cargarDatos() {
   try {
-    const { data: predsData } = await supabase
+    const { data: predsData, error: predsError } = await supabase
       .from('predicciones')
       .select('*')
       .eq('user_id', usuarioId);
 
-    predicciones = {};
-    if (predsData) predsData.forEach(p => { predicciones[p.partido_id] = p; });
+    if (predsError) {
+      console.error("❌ Error cargando predicciones:", predsError);
+    }
 
-    const { data: resData } = await supabase
+    predicciones = {};
+    if (predsData) {
+      predsData.forEach(p => { 
+        predicciones[p.partido_id] = p; 
+      });
+    }
+    
+    console.log(`🎯 Predicciones cargadas para el usuario: ${Object.keys(predicciones).length}`);
+    
+    // ═════════════════════════════════════════════════════
+    // LOG DETALLADO DE PREDICCIONES
+    // ═════════════════════════════════════════════════════
+    if (Object.keys(predicciones).length > 0) {
+      console.log(`📋 IDs de partidos pronosticados:`);
+      Object.keys(predicciones).sort().forEach(id => {
+        const pred = predicciones[id];
+        console.log(`   - ${id}: ${pred.local}-${pred.visit}`);
+      });
+    }
+    // ═════════════════════════════════════════════════════
+
+    const { data: resData, error: resError } = await supabase
       .from('resultados')
       .select('*')
       .eq('es_prueba', false);
 
+    if (resError) {
+      console.error("❌ Error cargando resultados:", resError);
+    }
+
     resultados = {};
-    if (resData) resData.forEach(r => { resultados[r.partido_id] = r; });
+    if (resData) {
+      resData.forEach(r => { 
+        resultados[r.partido_id] = r; 
+      });
+    }
+
+    console.log(`📊 Resultados oficiales cargados: ${Object.keys(resultados).length}`);
+    
+    // ═════════════════════════════════════════════════════
+    // LOG DETALLADO DE RESULTADOS
+    // ═════════════════════════════════════════════════════
+    if (Object.keys(resultados).length > 0) {
+      console.log(`📋 IDs de partidos con resultado oficial:`);
+      Object.keys(resultados).sort().forEach(id => {
+        const res = resultados[id];
+        console.log(`   - ${id}: ${res.local}-${res.visit} (es_prueba: ${res.es_prueba})`);
+      });
+    }
+    // ═════════════════════════════════════════════════════
+
+    // ═════════════════════════════════════════════════════
+    // VERIFICACIÓN DE COINCIDENCIA DE IDs
+    // ═════════════════════════════════════════════════════
+    const idsPartidosDatos = new Set(TODOS_PARTIDOS.map(p => p.id));
+    const idsPredicciones = new Set(Object.keys(predicciones));
+    const idsResultados = new Set(Object.keys(resultados));
+    
+    const predsNoEnDatos = [...idsPredicciones].filter(id => !idsPartidosDatos.has(id));
+    const resNoEnDatos = [...idsResultados].filter(id => !idsPartidosDatos.has(id));
+    
+    if (predsNoEnDatos.length > 0) {
+      console.warn(`⚠️ Predicciones con IDs que NO están en datos-partidos.js:`, predsNoEnDatos);
+    }
+    if (resNoEnDatos.length > 0) {
+      console.warn(`⚠️ Resultados con IDs que NO están en datos-partidos.js:`, resNoEnDatos);
+    }
+    // ═════════════════════════════════════════════════════
 
     actualizarStats();
   } catch (err) {
@@ -291,8 +345,15 @@ async function cargarCampeon() {
 
 function actualizarStats() {
   let total = 0;
+  let partidosConPuntos = 0;
+  
   Object.values(predicciones).forEach(pred => {
-    const res = resultados[pred.partido_id];    if (res) total += calcularPuntos(pred, res);
+    const res = resultados[pred.partido_id];
+    if (res) {
+      const pts = calcularPuntos(pred, res);
+      total += pts;
+      if (pts > 0) partidosConPuntos++;
+    }
   });
 
   if (prediccionCampeon && resultadoFinal?.campeon) {
@@ -301,6 +362,8 @@ function actualizarStats() {
 
   const bonus = Object.keys(predicciones).length >= 104 ? 100 : 0;
   total += bonus;
+
+  console.log(`📊 Total de puntos calculado: ${total} (con ${partidosConPuntos} partidos acertados)`);
 
   const statPts = document.getElementById("statPts");
   const statPred = document.getElementById("statPred");
@@ -341,7 +404,8 @@ function renderTabs() {
       faseActiva = btn.dataset.fase;
       renderTabs();
       renderPartidos();
-    };  });
+    };
+  });
 }
 
 function getPartidosFase() {
@@ -353,7 +417,11 @@ function getPartidosFase() {
 }
 
 function renderPartidos() {
-  console.log("⚽ Renderizando partidos, fase:", faseActiva);
+  console.log(`⚽ Renderizando partidos, fase: ${faseActiva}`);
+  
+  // Limpiar intervalos anteriores
+  intervalosCrono.forEach(interval => clearInterval(interval));
+  intervalosCrono = [];
   
   const loader = document.getElementById("partidosLoader");
   const grid = document.getElementById("partidosGrid");
@@ -374,13 +442,24 @@ function renderPartidos() {
     return;
   }
 
+  // ═════════════════════════════════════════════════════
+  // LOG DE PARTIDOS EN LA FASE ACTIVA
+  // ═════════════════════════════════════════════════════
+  console.log(`📋 Detalle de partidos en fase ${faseActiva}:`);
+  partidos.forEach(p => {
+    const tienePred = !!predicciones[p.id];
+    const tieneRes = !!resultados[p.id];
+    const pts = tienePred && tieneRes ? calcularPuntos(predicciones[p.id], resultados[p.id]) : 0;
+    console.log(`   - ${p.id}: ${p.local} vs ${p.visit} | Pred: ${tienePred ? '✓' : '✗'} | Res: ${tieneRes ? '✓' : '✗'} | Pts: ${pts}`);
+  });
+  // ═════════════════════════════════════════════════════
+
   grid.innerHTML = partidos.map(p => renderTarjeta(p)).join("");
 
   grid.querySelectorAll(".btn-guardar").forEach(btn => {
     btn.onclick = () => guardarPrediccion(btn.dataset.id);
   });
 
-  // Iniciar cronómetro para partidos NO bloqueados (tengan o no pronóstico)
   partidos.forEach(p => {
     if (!partidoBloqueado(p)) {
       iniciarCronometro(p);
@@ -390,7 +469,8 @@ function renderPartidos() {
   console.log("✅ Partidos renderizados");
 }
 
-function iniciarCronometro(partido) {  const el = document.getElementById("crono-" + partido.id);
+function iniciarCronometro(partido) {
+  const el = document.getElementById("crono-" + partido.id);
   if (!el) return;
 
   const actualizar = () => {
@@ -405,11 +485,12 @@ function iniciarCronometro(partido) {  const el = document.getElementById("crono
   };
 
   actualizar();
-  intervalosCrono.push(setInterval(actualizar, 1000));
+  const interval = setInterval(actualizar, 1000);
+  intervalosCrono.push(interval);
 }
 
 // ═══════════════════════════════════════════════════════
-// RENDERIZAR TARJETA (MODIFICADO PARA PERMITIR EDICIÓN)
+// RENDERIZAR TARJETA
 // ═══════════════════════════════════════════════════════
 
 function renderTarjeta(p) {
@@ -419,7 +500,6 @@ function renderTarjeta(p) {
   const esElim = !p.j || p.fase;
   const bloqueado = partidoBloqueado(p);
   
-  // NUEVA LÓGICA: se puede editar si está guardado PERO el partido no está bloqueado
   const editable = guardado && !bloqueado;
 
   const flagL = FLAGS[p.local] || "🏳️";
@@ -429,7 +509,6 @@ function renderTarjeta(p) {
   let marcadorHTML;
   
   if (guardado && !editable) {
-    // CASO 1: Guardado y bloqueado (o con resultado oficial) → solo lectura
     marcadorHTML = `
       <div class="score-saved">
         <span>${pred.local}</span>
@@ -439,11 +518,11 @@ function renderTarjeta(p) {
       ${esElim && pred.alargue_local !== null ? `
         <div style="font-size:10px; color:var(--text2); margin-top:4px; text-align:center;">
           Alargue: <strong>${pred.alargue_local} - ${pred.alargue_visit}</strong>
-          ${pred.penales_local !== null ? ` · Penales: <strong>${pred.penales_local} - ${pred.penales_visit}</strong>` : ''}        </div>
+          ${pred.penales_local !== null ? ` · Penales: <strong>${pred.penales_local} - ${pred.penales_visit}</strong>` : ''}
+        </div>
       ` : ''}
     `;
   } else {
-    // CASO 2: Nuevo o editable → mostrar inputs (precargados si es editable)
     const valL = guardado ? pred.local : "";
     const valV = guardado ? pred.visit : "";
     const valAlL = guardado && pred.alargue_local !== null ? pred.alargue_local : "";
@@ -451,7 +530,6 @@ function renderTarjeta(p) {
     const valPenL = guardado && pred.penales_local !== null ? pred.penales_local : "";
     const valPenV = guardado && pred.penales_visit !== null ? pred.penales_visit : "";
     
-    // Determinar si mostrar alargue/penales (si ya están guardados o si hay empate)
     const mostrarAlargue = esElim && (valAlL !== "" || (valL !== "" && valV !== "" && parseInt(valL) === parseInt(valV)));
     const mostrarPenales = esElim && (valPenL !== "" || (valAlL !== "" && valAlV !== "" && parseInt(valAlL) === parseInt(valAlV)));
     
@@ -480,45 +558,39 @@ function renderTarjeta(p) {
     `;
   }
 
-  // Texto del botón según el estado
   let footerHTML = "";
   
-  if (res) {
+  if (res && res.local !== null && res.local !== undefined) {
     footerHTML += `
       <div class="resultado-real">
         Resultado: <strong>${res.local} – ${res.visit}</strong>
         ${pts !== null ? `<span class="pts-badge">+${pts} pts</span>` : ""}
-      </div>    `;
+      </div>
+    `;
   }
   
   if (bloqueado) {
-    // Partido bloqueado → solo mostrar estado
     if (guardado) {
       footerHTML += `<span class="tag-bloqueado">🔒 Pronóstico definitivo</span>`;
     } else {
       footerHTML += `<span class="tag-bloqueado" style="color:var(--red);">🔒 No se pudo pronosticar</span>`;
     }
   } else if (editable) {
-    // Guardado pero editable → botón para actualizar
     footerHTML += `<button class="btn-guardar" data-id="${p.id}" style="background:var(--green);">🔄 Actualizar pronóstico</button>`;
   } else {
-    // Nuevo → botón para guardar
     footerHTML += `<button class="btn-guardar" data-id="${p.id}">💾 Guardar pronóstico</button>`;
   }
 
-  // Cronómetro: mostrar siempre que no esté bloqueado
   let cronoHTML = "";
   if (!bloqueado) {
-    const cronoLabel = editable ? "Se bloquea en: " : "Se bloquea en: ";
     cronoHTML = `
       <div class="crono-box">
-        <span style="font-size:11px;">${cronoLabel}</span>
+        <span style="font-size:11px;">Se bloquea en: </span>
         <span id="crono-${p.id}" style="font-family:'Anton'; font-size:14px; color:var(--gold);">--:--:--</span>
       </div>
     `;
   }
   
-  // Badge de estado
   let estadoBadge = "";
   if (editable) {
     estadoBadge = `<span style="background:var(--green-soft); color:var(--green); padding:3px 10px; border-radius:10px; font-size:10px; font-weight:700;">✏️ EDITABLE</span>`;
@@ -537,7 +609,8 @@ function renderTarjeta(p) {
       </div>
 
       <div class="partido-equipos">
-        <div class="equipo">          <span class="flag">${flagL}</span>
+        <div class="equipo">
+          <span class="flag">${flagL}</span>
           <span>${p.local}</span>
         </div>
         <div style="display:flex; flex-direction:column; align-items:center; gap:4px;">
@@ -586,11 +659,12 @@ document.addEventListener("input", (e) => {
       penDiv.style.display = "flex";
     } else {
       penDiv.style.display = "none";
-    }  }
+    }
+  }
 });
 
 // ═══════════════════════════════════════════════════════
-// GUARDAR/ACTUALIZAR PREDICCIÓN (MODIFICADO)
+// GUARDAR/ACTUALIZAR PREDICCIÓN
 // ═══════════════════════════════════════════════════════
 
 async function guardarPrediccion(id) {
@@ -635,7 +709,8 @@ async function guardarPrediccion(id) {
       if (penL === "" || penV === "") {
         alert("⚠️ Elegí el marcador de penales");
         return;
-      }      
+      }
+      
       if (parseInt(penL) === parseInt(penV)) {
         alert("⚠️ En penales NO puede haber empate");
         return;
@@ -646,7 +721,6 @@ async function guardarPrediccion(id) {
     }
   }
 
-  // Detectar si es nueva predicción o actualización
   const esNueva = !predicciones[id];
   const mensajeConfirm = esNueva
     ? `¿Confirmás tu pronóstico?\n\n🏳️ ${p.local} ${gL} - ${gV} ${p.visit} 🏳️\n\nPodrás modificarlo hasta 5 minutos antes del inicio.`
@@ -684,7 +758,8 @@ async function guardarPrediccion(id) {
       alert("✅ Pronóstico actualizado correctamente.");
     }
     
-    await cargarDatos();    renderPartidos();
+    await cargarDatos();
+    renderPartidos();
   } catch (err) {
     console.error(err);
     alert("❌ Error al guardar: " + err.message);
@@ -692,7 +767,7 @@ async function guardarPrediccion(id) {
 }
 
 // ═══════════════════════════════════════════════════════
-// CAMPEÓN (sin cambios)
+// CAMPEÓN
 // ═══════════════════════════════════════════════════════
 
 function renderCampeon() {
@@ -733,6 +808,7 @@ function renderCampeon() {
     if (form) form.style.display = "none";
     if (cerrado) cerrado.style.display = "none";
     if (guardado) guardado.style.display = "block";
+
     const verCamp1 = document.getElementById("verCamp1");
     const verCamp2 = document.getElementById("verCamp2");
     const verCamp3 = document.getElementById("verCamp3");
@@ -782,7 +858,8 @@ function renderCampeon() {
 
     const btnGuardar = document.getElementById("btnGuardarCampeon");
     if (btnGuardar) btnGuardar.onclick = guardarCampeon;
-        ["camp1", "camp2", "camp3"].forEach(id => {
+    
+    ["camp1", "camp2", "camp3"].forEach(id => {
       const el = document.getElementById(id);
       if (el) el.onchange = validarCampeon;
     });
@@ -831,7 +908,8 @@ async function guardarCampeon() {
   const v2 = document.getElementById("camp2")?.value;
   const v3 = document.getElementById("camp3")?.value;
 
-  if (!v1 || !v2 || !v3) {    alert("Debés elegir las 3 opciones");
+  if (!v1 || !v2 || !v3) {
+    alert("Debés elegir las 3 opciones");
     return;
   }
 
@@ -880,7 +958,8 @@ async function guardarCampeon() {
     actualizarStats();
   } catch (err) {
     console.error(err);
-    alert("❌ Error al guardar: " + err.message);  }
+    alert("❌ Error al guardar: " + err.message);
+  }
 }
 
 // INICIAR
