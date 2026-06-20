@@ -19,7 +19,7 @@ let filtroGrupoActual = "";
 
 // ══════════════════════════════════════════════════════
 // FUNCIÓN AUXILIAR: Verificar si usuario está en sala privada
-// ══════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════
 function estaEnSalaPrivada(usuario) {
   try {
     if (!usuario) return false;
@@ -40,14 +40,14 @@ function estaEnSalaPrivada(usuario) {
     
     return false;
   } catch (err) {
-    console.error(" Error verificando sala de usuario:", err);
+    console.error("⚠️ Error verificando sala de usuario:", err);
     return false;
   }
 }
 
 // ══════════════════════════════════════════════════════
 // DETECTAR ESTADO DEL PARTIDO
-// ══════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════
 
 function getEstadoPartido(partido, resultado) {
   if (resultado && resultado.estado) {
@@ -75,11 +75,11 @@ function getEstadoPartido(partido, resultado) {
     return { estado: "vivo", texto: "🔴 EN JUEGO" };
   }
   
-  return { estado: "pendiente", texto: "⏳ Pendiente resultado oficial" };
+  return { estado: "pendiente", texto: " Pendiente resultado oficial" };
 }
 
 // ══════════════════════════════════════════════════════
-// CARGA DE DATOS COMPLETA CON LOGS DE DIAGNÓSTICO
+// CARGA DE DATOS COMPLETA CON DIAGNÓSTICO DETALLADO
 // ══════════════════════════════════════════════════════
 async function cargarDatosCompletos() {
   try {
@@ -100,7 +100,7 @@ async function cargarDatosCompletos() {
       .select('*');
     if (predsError) throw predsError;
 
-    console.log(` Predicciones cargadas: ${predsData?.length || 0}`);
+    console.log(`🎯 Predicciones cargadas: ${predsData?.length || 0}`);
 
     const { data: resData, error: resError } = await supabase
       .from('resultados')
@@ -129,6 +129,7 @@ async function cargarDatosCompletos() {
     const ranking = {};
     let usuariosFiltrados = 0;
     let usuariosIncluidos = 0;
+    let prediccionesSinUsuario = 0;
 
     if (predsData) {
       predsData.forEach(pred => {
@@ -141,6 +142,7 @@ async function cargarDatosCompletos() {
         // DIAGNÓSTICO: Log de usuarios sin perfil
         // ══════════════════════════════════════════════════════
         if (!u) {
+          prediccionesSinUsuario++;
           console.warn(`⚠️ Predicción sin usuario: ${pred.user_id} (partido ${pred.partido_id})`);
           return;
         }
@@ -195,7 +197,8 @@ async function cargarDatosCompletos() {
 
     console.log(`📊 Usuarios incluidos en ranking: ${usuariosIncluidos}`);
     console.log(`📊 Usuarios filtrados: ${usuariosFiltrados}`);
-    console.log(`📊 Total de jugadores en ranking: ${Object.keys(ranking).length}`);
+    console.log(`📊 Predicciones sin usuario: ${prediccionesSinUsuario}`);
+    console.log(` Total de jugadores en ranking: ${Object.keys(ranking).length}`);
 
     Object.entries(campeones).forEach(([uid, pred]) => {
       const u = usuarios[uid];
@@ -274,7 +277,7 @@ async function cargarDatosCompletos() {
 
 // ══════════════════════════════════════════════════════
 // SELECTOR DE GRUPOS
-// ══════════════════════════════════════════════════════
+// ═════════════════════════════════════════════════════
 
 function actualizarSelectorGrupos(usuarios) {
   const gruposSet = new Set();
@@ -293,7 +296,7 @@ function actualizarSelectorGrupos(usuarios) {
   const valorActual = select.value;
   const tituloGeneral = MODO_SALA 
     ? `🏢 Ranking de ${NOMBRE_SALA}` 
-    : ' Ranking General (todos los jugadores)';
+    : '🌍 Ranking General (todos los jugadores)';
   
   select.innerHTML = `<option value="">${tituloGeneral}</option>`;
   
@@ -359,7 +362,7 @@ function renderRanking(lista, totalUsuarios) {
   if (top3Div && lista.length >= 3) {
     const orden = [1, 0, 2];
     const colores = ["p2", "p1", "p3"];
-    const emojis = ["🥈", "🥇", "🥉"];
+    const emojis = ["🥈", "", "🥉"];
     
     top3Div.innerHTML = orden.map((idx, i) => {
       const u = lista[idx];
@@ -382,7 +385,7 @@ function renderRanking(lista, totalUsuarios) {
   if (tbody) {
     tbody.innerHTML = lista.map(u => {
       const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
-      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","","🥉"][u.pos-1]}</span>` : u.pos;
+      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["","🥈","🥉"][u.pos-1]}</span>` : u.pos;
       const gruposHTML = u.grupos && u.grupos.length > 0 
         ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
         : '<span style="color:var(--text3); font-size:11px;">—</span>';
@@ -490,7 +493,7 @@ window.mostrarDetalleJugador = async function(uid) {
 
         partidos.forEach(det => {
           const flagL = FLAGS[det.partido.local] || "🏳️";
-          const flagV = FLAGS[det.partido.visit] || "🏳️";
+          const flagV = FLAGS[det.partido.visit] || "️";
           const predL = det.prediccion.local !== null && det.prediccion.local !== undefined ? det.prediccion.local : "-";
           const predV = det.prediccion.visit !== null && det.prediccion.visit !== undefined ? det.prediccion.visit : "-";
           const resL = det.resultado.local !== null && det.resultado.local !== undefined ? det.resultado.local : "-";
@@ -573,6 +576,8 @@ window.mostrarDetallePartido = async function(partidoId) {
         };
       })
       .sort((a, b) => b.puntos - a.puntos);
+
+    console.log(`📊 Jugadores que pronosticaron partido ${partidoId}: ${prediccionesPartido.length}`);
 
     const flagL = FLAGS[partido.local] || "🏳️";
     const flagV = FLAGS[partido.visit] || "🏳️";
@@ -677,7 +682,7 @@ window.mostrarDetallePartido = async function(partidoId) {
 // ══════════════════════════════════════════════════════
 
 function renderCardPartido(p, resultado) {
-  const flagL = FLAGS[p.local] || "️";
+  const flagL = FLAGS[p.local] || "🏳️";
   const flagV = FLAGS[p.visit] || "🏳️";
   const { estado, texto } = getEstadoPartido(p, resultado);
   
@@ -687,7 +692,7 @@ function renderCardPartido(p, resultado) {
 
   let liveBadge = "";
   if (estado === "vivo") {
-    liveBadge = `<span class="live-badge">🔴 EN JUEGO</span>`;
+    liveBadge = `<span class="live-badge"> EN JUEGO</span>`;
   }
 
   let marcadorHTML;
