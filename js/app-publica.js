@@ -6,7 +6,7 @@ import {
   sincronizarHoraServidor, horaReal
 } from "../datos-partidos.js";
 
-console.log(" app-publica.js cargado");
+console.log("📊 app-publica.js cargado");
 
 const SALA_PRIVADA = "Cardio-Fitness";
 const MODO_SALA = window.location.pathname.includes("sala-cardio");
@@ -48,32 +48,6 @@ function getEstadoPartido(partido, resultado) {
   return { estado: "pendiente", texto: "⏳ Pendiente resultado oficial" };
 }
 
-// ══════════════════════════════════════════════════════
-// FUNCIÓN PARA CARGAR TODAS LAS PREDICCIONES SIN LÍMITE
-// ══════════════════════════════════════════════════════
-async function cargarTodasLasPredicciones() {
-  const todasPredicciones = [];
-  let desde = 0;
-  const limite = 1000;
-  
-  while (true) {
-    const { data, error } = await supabase
-      .from('predicciones')
-      .select('*')
-      .range(desde, desde + limite - 1);
-    
-    if (error) throw error;
-    if (!data || data.length === 0) break;
-    
-    todasPredicciones.push(...data);
-    
-    if (data.length < limite) break;
-    desde += limite;
-  }
-  
-  return todasPredicciones;
-}
-
 async function cargarDatosCompletos() {
   try {
     console.log(`📍 Modo: ${MODO_SALA ? 'SALA PRIVADA' : 'GENERAL'}`);
@@ -89,9 +63,27 @@ async function cargarDatosCompletos() {
     if (usuariosData) usuariosData.forEach(u => { usuarios[u.id] = u; });
 
     // ══════════════════════════════════════════════════════
-    // CARGAR TODAS LAS PREDICCIONES SIN LÍMITE DE 1000
+    // Cargar predicciones con paginación (sin límite de 1000)
     // ══════════════════════════════════════════════════════
-    const predsData = await cargarTodasLasPredicciones();
+    const predsData = [];
+    let desde = 0;
+    const limite = 1000;
+    
+    while (true) {
+      const { data, error } = await supabase
+        .from('predicciones')
+        .select('*')
+        .range(desde, desde + limite - 1);
+      
+      if (error) throw error;
+      if (!data || data.length === 0) break;
+      
+      predsData.push(...data);
+      
+      if (data.length < limite) break;
+      desde += limite;
+    }
+
     console.log(`🎯 Predicciones cargadas: ${predsData?.length || 0}`);
 
     const { data: resData, error: resError } = await supabase
@@ -174,8 +166,8 @@ async function cargarDatosCompletos() {
     }
 
     console.log(`📊 Usuarios únicos incluidos: ${usuariosIncluidosSet.size}`);
-    console.log(` Total de jugadores en ranking: ${Object.keys(ranking).length}`);
-    console.log(` Predicciones con resultado: ${prediccionesConResultado}`);
+    console.log(`📊 Total de jugadores en ranking: ${Object.keys(ranking).length}`);
+    console.log(`📊 Predicciones con resultado: ${prediccionesConResultado}`);
     console.log(`📊 Total de puntos calculados: ${totalPuntosCalculados}`);
 
     Object.entries(campeones).forEach(([uid, pred]) => {
@@ -253,7 +245,7 @@ function actualizarSelectorGrupos(usuarios) {
   
   const valorActual = select.value;
   const tituloGeneral = MODO_SALA 
-    ? ` Ranking de ${NOMBRE_SALA}` 
+    ? `🏢 Ranking de ${NOMBRE_SALA}` 
     : '🌍 Ranking General (todos los jugadores)';
   
   select.innerHTML = `<option value="">${tituloGeneral}</option>`;
@@ -333,7 +325,7 @@ function renderRanking(lista, totalUsuarios) {
   if (tbody) {
     tbody.innerHTML = lista.map(u => {
       const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
-      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","🥈","🥉"][u.pos-1]}</span>` : u.pos;
+      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","","🥉"][u.pos-1]}</span>` : u.pos;
       const gruposHTML = u.grupos && u.grupos.length > 0 
         ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
         : '<span style="color:var(--text3); font-size:11px;">—</span>';
@@ -651,7 +643,7 @@ function renderCardPartido(p, resultado) {
       <div class="marcador-final" onclick="window.mostrarDetallePartido('${p.id}')" style="cursor:pointer; text-decoration:underline; text-decoration-color:var(--gold);" title="Ver pronósticos de los jugadores">
         ${resultado.local} - ${resultado.visit}
       </div>
-      <div class="marcador-hora" style="font-size:9px; color:var(--text3);"> Tocá para ver pronósticos</div>
+      <div class="marcador-hora" style="font-size:9px; color:var(--text3);">👆 Tocá para ver pronósticos</div>
     `;
   } else if (estado === "vivo") {
     marcadorHTML = `
