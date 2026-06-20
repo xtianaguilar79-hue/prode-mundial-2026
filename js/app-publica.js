@@ -78,7 +78,9 @@ async function cargarDatosCompletos() {
       if (error) throw error;
       if (!data || data.length === 0) break;
       
-      predsData.push(...data);
+      // Filtrar predicciones de prueba
+      const predValidas = data.filter(p => p.bloqueado !== true || p.es_prueba !== true);
+      predsData.push(...predValidas);
       
       if (data.length < limite) break;
       desde += limite;
@@ -86,19 +88,22 @@ async function cargarDatosCompletos() {
 
     console.log(`🎯 Predicciones cargadas: ${predsData?.length || 0}`);
 
+    // ══════════════════════════════════════════════════════
+    // Cargar resultados oficiales (igual que en app-prode.js)
+    // ══════════════════════════════════════════════════════
     const { data: resData, error: resError } = await supabase
       .from('resultados')
-      .select('*');
+      .select('*')
+      .eq('es_prueba', false);
+    
     if (resError) throw resError;
 
     console.log(`📊 Total de resultados en BD: ${resData?.length || 0}`);
 
     const resultados = {};
     if (resData) {
-      resData.forEach(r => {
-        if (r.es_prueba !== true && r.local !== null && r.local !== undefined) {
-          resultados[r.partido_id] = r;
-        }
+      resData.forEach(r => { 
+        resultados[r.partido_id] = r; 
       });
     }
 
@@ -302,7 +307,7 @@ function renderRanking(lista, totalUsuarios) {
   if (top3Div && lista.length >= 3) {
     const orden = [1, 0, 2];
     const colores = ["p2", "p1", "p3"];
-    const emojis = ["🥈", "🥇", "🥉"];
+    const emojis = ["🥈", "", "🥉"];
     
     top3Div.innerHTML = orden.map((idx, i) => {
       const u = lista[idx];
@@ -325,7 +330,7 @@ function renderRanking(lista, totalUsuarios) {
   if (tbody) {
     tbody.innerHTML = lista.map(u => {
       const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
-      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","","🥉"][u.pos-1]}</span>` : u.pos;
+      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","",""][u.pos-1]}</span>` : u.pos;
       const gruposHTML = u.grupos && u.grupos.length > 0 
         ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
         : '<span style="color:var(--text3); font-size:11px;">—</span>';
