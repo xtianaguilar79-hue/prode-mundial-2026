@@ -69,16 +69,25 @@ async function cargarDatosCompletos() {
 
     console.log(`🎯 Predicciones cargadas: ${predsData?.length || 0}`);
 
+    // ═════════════════════════════════════════════════════
+    // FIX: Cargar TODOS los resultados y filtrar manualmente
+    // ═════════════════════════════════════════════════════
     const { data: resData, error: resError } = await supabase
       .from('resultados')
-      .select('*')
-      .eq('es_prueba', false);
+      .select('*');
     if (resError) throw resError;
 
+    // Filtrar manualmente: excluir solo los que tienen es_prueba === true
+    const resultadosFiltrados = (resData || []).filter(r => r.es_prueba !== true);
+    
     const resultados = {};
-    if (resData) resData.forEach(r => { resultados[r.partido_id] = r; });
+    resultadosFiltrados.forEach(r => { 
+      resultados[r.partido_id] = r; 
+    });
 
     console.log(`📊 Resultados oficiales cargados: ${Object.keys(resultados).length}`);
+    console.log(`📊 Resultados filtrados (es_prueba=true): ${(resData?.length || 0) - resultadosFiltrados.length}`);
+    // ═════════════════════════════════════════════════════
 
     const { data: campeonesData, error: campeonesError } = await supabase
       .from('campeones')
