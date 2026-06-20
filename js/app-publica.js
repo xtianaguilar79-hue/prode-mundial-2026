@@ -9,13 +9,41 @@ import {
 console.log("📊 app-publica.js cargado");
 
 // ══════════════════════════════════════════════════════
-// CONFIGURACIÓN DE SALAS (NUEVO)
+// CONFIGURACIÓN DE SALAS
 // ══════════════════════════════════════════════════════
 const SALA_PRIVADA = "Cardio-Fitness";
 const MODO_SALA = window.location.pathname.includes("sala-cardio");
 const NOMBRE_SALA = "Cardio-Fitness";
 
 let filtroGrupoActual = "";
+
+// ══════════════════════════════════════════════════════
+// FUNCIÓN AUXILIAR: Verificar si usuario está en sala privada
+// ══════════════════════════════════════════════════════
+function estaEnSalaPrivada(usuario) {
+  try {
+    if (!usuario) return false;
+    const grupos = usuario.grupos;
+    
+    // Si es null o undefined, no está en ninguna sala
+    if (!grupos) return false;
+    
+    // Si es un string (caso raro), convertir a array
+    if (typeof grupos === 'string') {
+      return grupos === SALA_PRIVADA;
+    }
+    
+    // Si es un array, usar includes
+    if (Array.isArray(grupos)) {
+      return grupos.includes(SALA_PRIVADA);
+    }
+    
+    return false;
+  } catch (err) {
+    console.error(" Error verificando sala de usuario:", err);
+    return false;
+  }
+}
 
 // ══════════════════════════════════════════════════════
 // DETECTAR ESTADO DEL PARTIDO
@@ -47,17 +75,22 @@ function getEstadoPartido(partido, resultado) {
     return { estado: "vivo", texto: "🔴 EN JUEGO" };
   }
   
-  return { estado: "pendiente", texto: "⏳ Pendiente resultado oficial" };}
+  return { estado: "pendiente", texto: "⏳ Pendiente resultado oficial" };
+}
 
 // ══════════════════════════════════════════════════════
-// CARGA DE DATOS
+// CARGA DE DATOS COMPLETA CON LOGS DE DIAGNÓSTICO
 // ══════════════════════════════════════════════════════
 async function cargarDatosCompletos() {
   try {
+    console.log(`📍 Modo: ${MODO_SALA ? 'SALA PRIVADA' : 'GENERAL'}`);
+    
     const { data: usuariosData, error: usuariosError } = await supabase
       .from('usuarios')
       .select('*');
     if (usuariosError) throw usuariosError;
+
+    console.log(`👥 Usuarios cargados: ${usuariosData?.length || 0}`);
 
     const usuarios = {};
     if (usuariosData) usuariosData.forEach(u => { usuarios[u.id] = u; });
@@ -66,6 +99,8 @@ async function cargarDatosCompletos() {
       .from('predicciones')
       .select('*');
     if (predsError) throw predsError;
+
+    console.log(` Predicciones cargadas: ${predsData?.length || 0}`);
 
     const { data: resData, error: resError } = await supabase
       .from('resultados')
@@ -92,27 +127,39 @@ async function cargarDatosCompletos() {
     const campeonReal = !finalError && finalData ? finalData.campeon : null;
 
     const ranking = {};
+    let usuariosFiltrados = 0;
+    let usuariosIncluidos = 0;
 
     if (predsData) {
       predsData.forEach(pred => {
         const res = resultados[pred.partido_id];
         const pts = res ? calcularPuntos(pred, res) : 0;
-        // ══════════════════════════════════════════════════════
-        // FILTRO DE SALA (NUEVO)
-        // ══════════════════════════════════════════════════════
-        const u = usuarios[pred.user_id] || {};
-        const gruposUsuario = u.grupos || [];
-        const estaEnSalaPrivada = gruposUsuario.includes(SALA_PRIVADA);
+
+        const u = usuarios[pred.user_id];
         
-        // Si estamos en modo general, excluir usuarios de la sala privada
-        // Si estamos en modo sala, solo incluir usuarios de la sala privada
-        if (!MODO_SALA && estaEnSalaPrivada) {
-          return; // Saltar este usuario en el ranking general
-        }
-        if (MODO_SALA && !estaEnSalaPrivada) {
-          return; // Saltar este usuario en el ranking de sala
-        }
+        // ═════════════════════════════════════════════════════
+        // DIAGNÓSTICO: Log de usuarios sin perfil
         // ══════════════════════════════════════════════════════
+        if (!u) {
+          console.warn(`⚠️ Predicción sin usuario: ${pred.user_id} (partido ${pred.partido_id})`);
+          return;
+        }
+
+        const enSala = estaEnSalaPrivada(u);
+        
+        // ═════════════════════════════════════════════════════
+        // FILTRO DE SALA
+        // ══════════════════════════════════════════════════════
+        if (!MODO_SALA && enSala) {
+          usuariosFiltrados++;
+          return;
+        }
+        if (MODO_SALA && !enSala) {
+          usuariosFiltrados++;
+          return;
+        }
+        
+        usuariosIncluidos++;
 
         if (!ranking[pred.user_id]) {
           ranking[pred.user_id] = {
@@ -120,7 +167,7 @@ async function cargarDatosCompletos() {
             nombre: u.nombre || "Jugador",
             apellido: u.apellido || "",
             apodo: u.apodo || null,
-            grupos: gruposUsuario,
+            grupos: u.grupos || [],
             puntos: 0,
             puntosCampeon: 0,
             partidosPronosticados: 0,
@@ -145,21 +192,19 @@ async function cargarDatosCompletos() {
         }
       });
     }
+
+    console.log(`📊 Usuarios incluidos en ranking: ${usuariosIncluidos}`);
+    console.log(`📊 Usuarios filtrados: ${usuariosFiltrados}`);
+    console.log(`📊 Total de jugadores en ranking: ${Object.keys(ranking).length}`);
+
     Object.entries(campeones).forEach(([uid, pred]) => {
-      // ══════════════════════════════════════════════════════
-      // FILTRO DE SALA (NUEVO) - Campeones
-      // ══════════════════════════════════════════════════════
-      const u = usuarios[uid] || {};
-      const gruposUsuario = u.grupos || [];
-      const estaEnSalaPrivada = gruposUsuario.includes(SALA_PRIVADA);
+      const u = usuarios[uid];
+      if (!u) return;
       
-      if (!MODO_SALA && estaEnSalaPrivada) {
-        return;
-      }
-      if (MODO_SALA && !estaEnSalaPrivada) {
-        return;
-      }
-      // ══════════════════════════════════════════════════════
+      const enSala = estaEnSalaPrivada(u);
+      
+      if (!MODO_SALA && enSala) return;
+      if (MODO_SALA && !enSala) return;
 
       if (!ranking[uid]) {
         ranking[uid] = {
@@ -167,7 +212,7 @@ async function cargarDatosCompletos() {
           nombre: u.nombre || "Jugador",
           apellido: u.apellido || "",
           apodo: u.apodo || null,
-          grupos: gruposUsuario,
+          grupos: u.grupos || [],
           puntos: 0,
           puntosCampeon: 0,
           partidosPronosticados: 0,
@@ -181,26 +226,18 @@ async function cargarDatosCompletos() {
     });
 
     Object.values(usuarios).forEach(u => {
-      // ══════════════════════════════════════════════════════
-      // FILTRO DE SALA (NUEVO) - Usuarios sin predicciones
-      // ══════════════════════════════════════════════════════
-      const gruposUsuario = u.grupos || [];
-      const estaEnSalaPrivada = gruposUsuario.includes(SALA_PRIVADA);
+      const enSala = estaEnSalaPrivada(u);
       
-      if (!MODO_SALA && estaEnSalaPrivada) {
-        return;
-      }
-      if (MODO_SALA && !estaEnSalaPrivada) {
-        return;
-      }
-      // ══════════════════════════════════════════════════════
+      if (!MODO_SALA && enSala) return;
+      if (MODO_SALA && !enSala) return;
+
       if (!ranking[u.id]) {
         ranking[u.id] = {
           uid: u.id,
           nombre: u.nombre,
           apellido: u.apellido || "",
           apodo: u.apodo || null,
-          grupos: gruposUsuario,
+          grupos: u.grupos || [],
           puntos: 0,
           puntosCampeon: 0,
           partidosPronosticados: 0,
@@ -243,13 +280,8 @@ function actualizarSelectorGrupos(usuarios) {
   const gruposSet = new Set();
   Object.values(usuarios).forEach(u => {
     if (u.grupos && Array.isArray(u.grupos)) {
-      u.grupos.forEach(g => {        // ══════════════════════════════════════════════════════
-        // EXCLUIR SALA PRIVADA DEL SELECTOR EN MODO GENERAL (NUEVO)
-        // ══════════════════════════════════════════════════════
-        if (!MODO_SALA && g === SALA_PRIVADA) {
-          return; // No agregar la sala privada al selector general
-        }
-        // ══════════════════════════════════════════════════════
+      u.grupos.forEach(g => {
+        if (!MODO_SALA && g === SALA_PRIVADA) return;
         gruposSet.add(g);
       });
     }
@@ -259,14 +291,9 @@ function actualizarSelectorGrupos(usuarios) {
   if (!select) return;
   
   const valorActual = select.value;
-  
-  // ══════════════════════════════════════════════════════
-  // TÍTULO DEL SELECTOR SEGÚN MODO (NUEVO)
-  // ══════════════════════════════════════════════════════
   const tituloGeneral = MODO_SALA 
     ? `🏢 Ranking de ${NOMBRE_SALA}` 
-    : '🌍 Ranking General (todos los jugadores)';
-  // ══════════════════════════════════════════════════════
+    : ' Ranking General (todos los jugadores)';
   
   select.innerHTML = `<option value="">${tituloGeneral}</option>`;
   
@@ -292,9 +319,12 @@ function renderRanking(lista, totalUsuarios) {
   const rankingLoader = document.getElementById("rankingLoader");
   const actualizado = document.getElementById("actualizado");
   
-  if (rankingLoader) rankingLoader.style.display = "none";  if (actualizado) actualizado.textContent = "Actualizado: " + new Date(horaReal()).toLocaleTimeString();
+  if (rankingLoader) rankingLoader.style.display = "none";
+  if (actualizado) actualizado.textContent = "Actualizado: " + new Date(horaReal()).toLocaleTimeString();
 
   const jugadoresActivos = lista.filter(u => u.partidosPronosticados > 0);
+
+  console.log(`📊 Jugadores activos en ranking: ${jugadoresActivos.length}`);
 
   if (jugadoresActivos.length === 0) {
     const rankingTabla = document.getElementById("rankingTabla");
@@ -302,13 +332,9 @@ function renderRanking(lista, totalUsuarios) {
     
     const top3 = document.getElementById("top3");
     if (top3) {
-      // ══════════════════════════════════════════════════════
-      // MENSAJE SEGÚN MODO (NUEVO)
-      // ══════════════════════════════════════════════════════
       const mensajeSala = MODO_SALA 
         ? `Aún no hay jugadores en la sala <strong style="color:var(--gold)">${NOMBRE_SALA}</strong>.`
         : 'El ranking se activará cuando comience el Mundial.';
-      // ══════════════════════════════════════════════════════
       
       top3.innerHTML = `
         <div style="grid-column: 1/-1; text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1.5px solid var(--gold);">
@@ -341,7 +367,8 @@ function renderRanking(lista, totalUsuarios) {
       return `
         <div class="top3-card ${colores[i]}" onclick="window.mostrarDetalleJugador('${u.uid}')" style="cursor:pointer;" title="Ver detalle de ${u.nombre}">
           <div class="emoji">${emojis[i]}</div>
-          <div class="nombre">${u.nombre} ${u.apellido}</div>          ${u.apodo ? `<div style="font-size:11px; color:var(--text2); margin-bottom:4px;">"${u.apodo}"</div>` : ""}
+          <div class="nombre">${u.nombre} ${u.apellido}</div>
+          ${u.apodo ? `<div style="font-size:11px; color:var(--text2); margin-bottom:4px;">"${u.apodo}"</div>` : ""}
           <div class="pts">${u.total}</div>
           <div class="meta">${u.partidosPronosticados} partidos · ${u.partidosAcertados} acertados</div>
         </div>
@@ -355,7 +382,7 @@ function renderRanking(lista, totalUsuarios) {
   if (tbody) {
     tbody.innerHTML = lista.map(u => {
       const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
-      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","🥈","🥉"][u.pos-1]}</span>` : u.pos;
+      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","","🥉"][u.pos-1]}</span>` : u.pos;
       const gruposHTML = u.grupos && u.grupos.length > 0 
         ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
         : '<span style="color:var(--text3); font-size:11px;">—</span>';
@@ -390,7 +417,8 @@ window.mostrarDetalleJugador = async function(uid) {
     
     if (!jugador) {
       alert("Jugador no encontrado");
-      return;    }
+      return;
+    }
 
     const modal = document.getElementById("modalDetalle");
     const modalContent = document.getElementById("modalContent");
@@ -439,8 +467,9 @@ window.mostrarDetalleJugador = async function(uid) {
     `;
 
     if (jugador.detallePartidos.length === 0) {
-      html += `        <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
-          <div style="font-size:50px; margin-bottom:12px;">⏳</div>
+      html += `
+        <div style="text-align:center; padding:40px 20px; background:var(--bg2); border-radius:var(--r);">
+          <div style="font-size:50px; margin-bottom:12px;"></div>
           <p style="color:var(--text2); font-size:14px;">Aún no hay resultados oficiales cargados para este jugador.</p>
           <p style="color:var(--text3); font-size:12px; margin-top:8px;">Los detalles aparecerán cuando se carguen los resultados oficiales.</p>
         </div>
@@ -488,7 +517,8 @@ window.mostrarDetalleJugador = async function(uid) {
     }
 
     modalContent.innerHTML = html;
-    modal.style.display = "flex";  } catch (err) {
+    modal.style.display = "flex";
+  } catch (err) {
     console.error("Error en mostrarDetalleJugador:", err);
     alert("Error al cargar el detalle: " + err.message);
   }
@@ -537,7 +567,8 @@ window.mostrarDetallePartido = async function(partidoId) {
         return {
           nombre: jugador.nombre,
           apellido: jugador.apellido,
-          apodo: jugador.apodo,          prediccion: detalle.prediccion,
+          apodo: jugador.apodo,
+          prediccion: detalle.prediccion,
           puntos: detalle.puntos
         };
       })
@@ -586,7 +617,8 @@ window.mostrarDetallePartido = async function(partidoId) {
             <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${promedio}</div>
             <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Promedio</div>
           </div>
-          <div style="background:var(--bg2); padding:12px; border-radius:6px; text-align:center;">            <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${acertaron}/${prediccionesPartido.length}</div>
+          <div style="background:var(--bg2); padding:12px; border-radius:6px; text-align:center;">
+            <div style="font-family:'Anton'; font-size:24px; color:var(--gold);">${acertaron}/${prediccionesPartido.length}</div>
             <div style="font-size:10px; color:var(--text2); text-transform:uppercase;">Acertaron</div>
           </div>
         </div>
@@ -635,7 +667,8 @@ window.mostrarDetallePartido = async function(partidoId) {
     modalContent.innerHTML = html;
     modal.style.display = "flex";
   } catch (err) {
-    console.error("Error en mostrarDetallePartido:", err);    alert("Error al cargar el detalle del partido: " + err.message);
+    console.error("Error en mostrarDetallePartido:", err);
+    alert("Error al cargar el detalle del partido: " + err.message);
   }
 };
 
@@ -644,7 +677,7 @@ window.mostrarDetallePartido = async function(partidoId) {
 // ══════════════════════════════════════════════════════
 
 function renderCardPartido(p, resultado) {
-  const flagL = FLAGS[p.local] || "🏳️";
+  const flagL = FLAGS[p.local] || "️";
   const flagV = FLAGS[p.visit] || "🏳️";
   const { estado, texto } = getEstadoPartido(p, resultado);
   
@@ -684,11 +717,12 @@ function renderCardPartido(p, resultado) {
 
   return `
     <div class="${claseCard}">
-      <div class="resultado-meta">        <span class="badge badge-id">${p.id}</span>
+      <div class="resultado-meta">
+        <span class="badge badge-id">${p.id}</span>
         ${p.grupo ? `<span class="badge badge-grupo">Grupo ${p.grupo}</span>` : ""}
         ${p.fase ? `<span class="badge badge-grupo">${p.fase.toUpperCase()}</span>` : ""}
         ${liveBadge}
-        <span class="badge badge-fecha" style="margin-left:auto;">📍 ${p.sede}</span>
+        <span class="badge badge-fecha" style="margin-left:auto;"> ${p.sede}</span>
       </div>
       <div class="resultado-equipos">
         <div class="resultado-equipo">
@@ -733,7 +767,8 @@ function renderResultados(resultados) {
     if (sec.partidos.length === 0) return;
 
     const enJuego = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "vivo");
-    const finalizados = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "finalizado");    const pendientes = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "pendiente");
+    const finalizados = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "finalizado");
+    const pendientes = sec.partidos.filter(p => getEstadoPartido(p, resultados[p.id]).estado === "pendiente");
 
     if (enJuego.length === 0 && finalizados.length === 0 && pendientes.length === 0) return;
 
@@ -753,7 +788,7 @@ function renderResultados(resultados) {
   if (!hayContenido) {
     cont.innerHTML = `
       <div style="text-align:center; padding:50px 20px; background:var(--card); border-radius:var(--r-lg); border:1px solid var(--border);">
-        <div style="font-size:60px; margin-bottom:16px;">⏳</div>
+        <div style="font-size:60px; margin-bottom:16px;"></div>
         <h3 style="color:var(--gold); font-family:'Anton'; font-size:24px; margin-bottom:12px;">Los resultados se publicarán durante el torneo</h3>
         <p style="color:var(--text2); font-size:14px; max-width:450px; margin:0 auto;">
           Los partidos en juego aparecerán en vivo. Los resultados oficiales se cargarán al finalizar cada partido.
@@ -782,17 +817,18 @@ async function cargarYRenderizar() {
     
     const resultadosLoader = document.getElementById("resultadosLoader");
     if (resultadosLoader) resultadosLoader.style.display = "none";
-        const resultadosContenido = document.getElementById("resultadosContenido");
+    
+    const resultadosContenido = document.getElementById("resultadosContenido");
     if (resultadosContenido) resultadosContenido.innerHTML = "<p style='color:var(--red); text-align:center; padding:30px;'>Error al cargar resultados</p>";
   }
 }
 
 // ══════════════════════════════════════════════════════
-// INICIALIZACIÓN CON SINCRONIZACIÓN DE HORA
+// INICIALIZACIÓN
 // ══════════════════════════════════════════════════════
 
 (async () => {
-  console.log("🕐 Sincronizando hora con el servidor...");
+  console.log(" Sincronizando hora con el servidor...");
   console.log(`📍 Modo: ${MODO_SALA ? 'SALA PRIVADA (' + NOMBRE_SALA + ')' : 'GENERAL'}`);
   await sincronizarHoraServidor(supabase);
   console.log("✅ Hora sincronizada. Iniciando carga de datos...");
