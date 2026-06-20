@@ -305,9 +305,12 @@ function renderRanking(lista, totalUsuarios) {
 
   const top3Div = document.getElementById("top3");
   if (top3Div && lista.length >= 3) {
-    const orden = [1, 0, 2];
-    const colores = ["p2", "p1", "p3"];
-    const emojis = ["🥈", "", "🥉"];
+    // ══════════════════════════════════════════════════════
+    // ORDEN CORREGIDO: 1ro, 2do, 3ro
+    // ══════════════════════════════════════════════════════
+    const orden = [0, 1, 2];
+    const colores = ["p1", "p2", "p3"];
+    const emojis = ["🥇", "🥈", ""];
     
     top3Div.innerHTML = orden.map((idx, i) => {
       const u = lista[idx];
@@ -330,7 +333,7 @@ function renderRanking(lista, totalUsuarios) {
   if (tbody) {
     tbody.innerHTML = lista.map(u => {
       const claseFila = u.pos === 1 ? "top1" : u.pos === 2 ? "top2" : u.pos === 3 ? "top3" : "";
-      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","",""][u.pos-1]}</span>` : u.pos;
+      const posText = u.pos <= 3 ? `<span class="pos-${u.pos}">${["🥇","🥈","🥉"][u.pos-1]}</span>` : u.pos;
       const gruposHTML = u.grupos && u.grupos.length > 0 
         ? u.grupos.map(g => `<span style="display:inline-block; background:var(--bg3); padding:2px 6px; border-radius:4px; font-size:10px; margin:1px;">${g}</span>`).join("")
         : '<span style="color:var(--text3); font-size:11px;">—</span>';
