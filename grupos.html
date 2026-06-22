@@ -6,10 +6,214 @@
   <title>Clasificación · Prode Mundial 2026</title>
   <link rel="stylesheet" href="style.css">
   <style>
-    .grupos-container { max-width: 1200px; margin: 0 auto; padding: 40px 20px; }
+    .grupos-container { max-width: 1400px; margin: 0 auto; padding: 40px 20px; }
     .hero-grupos { text-align: center; margin-bottom: 40px; }
     .hero-grupos h1 { font-family: 'Anton', sans-serif; font-size: 42px; color: var(--gold); letter-spacing: 2px; }
     .hero-grupos p { color: var(--text2); font-size: 16px; }
+
+    /* ═══════════════════════════════════════════════════════ */
+    /* BRACKET STYLE FIFA */
+    /* ═══════════════════════════════════════════════════════ */
+    .bracket-section {
+      margin-bottom: 60px;
+      padding: 40px 20px;
+      background: linear-gradient(135deg, rgba(139, 0, 0, 0.3) 0%, rgba(0, 0, 139, 0.3) 100%);
+      border-radius: var(--r-lg);
+      border: 2px solid var(--gold);
+      overflow-x: auto;
+    }
+
+    .bracket-header {
+      text-align: center;
+      margin-bottom: 30px;
+    }
+
+    .bracket-header h2 {
+      font-family: 'Anton', sans-serif;
+      font-size: 32px;
+      color: var(--gold);
+      letter-spacing: 2px;
+      margin-bottom: 8px;
+    }
+
+    .bracket-header p {
+      color: var(--text2);
+      font-size: 14px;
+    }
+
+    .bracket-wrapper {
+      display: flex;
+      justify-content: center;
+      min-width: 1200px;
+    }
+
+    .bracket {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 40px;
+      width: 100%;
+      max-width: 1400px;
+    }
+
+    .bracket-column {
+      display: flex;
+      flex-direction: column;
+      justify-content: space-around;
+      gap: 20px;
+    }
+
+    .bracket-column.center {
+      justify-content: center;
+      align-items: center;
+    }
+
+    .round-label {
+      text-align: center;
+      font-family: 'Anton', sans-serif;
+      font-size: 12px;
+      color: var(--text2);
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin-bottom: 20px;
+    }
+
+    .bracket-match {
+      background: var(--card);
+      border: 2px solid var(--border);
+      border-radius: var(--r);
+      padding: 12px;
+      position: relative;
+      transition: all 0.3s ease;
+      min-height: 80px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+
+    .bracket-match:hover {
+      border-color: var(--gold);
+      box-shadow: 0 0 20px rgba(255, 201, 60, 0.2);
+    }
+
+    .bracket-match.winner {
+      border-color: var(--gold);
+      background: rgba(255, 201, 60, 0.1);
+    }
+
+    .match-team {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 12px;
+    }
+
+    .match-team.winner {
+      font-weight: 700;
+      color: var(--gold);
+    }
+
+    .team-info {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .team-flag {
+      font-size: 18px;
+      width: 24px;
+      text-align: center;
+    }
+
+    .team-position {
+      font-size: 9px;
+      color: var(--text3);
+      background: var(--bg2);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-weight: 700;
+    }
+
+    .match-connector {
+      position: absolute;
+      right: -40px;
+      top: 50%;
+      width: 40px;
+      height: 2px;
+      background: var(--border);
+    }
+
+    .trophy-center {
+      text-align: center;
+      padding: 40px 20px;
+    }
+
+    .trophy-icon {
+      font-size: 100px;
+      margin-bottom: 20px;
+      filter: drop-shadow(0 0 20px rgba(255, 201, 60, 0.5));
+    }
+
+    .final-info {
+      font-family: 'Anton', sans-serif;
+      font-size: 28px;
+      color: var(--gold);
+      margin-bottom: 10px;
+      letter-spacing: 2px;
+    }
+
+    .final-date {
+      font-size: 16px;
+      color: var(--text);
+      margin-bottom: 5px;
+    }
+
+    .final-venue {
+      font-size: 13px;
+      color: var(--text2);
+    }
+
+    .bracket-footer {
+      text-align: center;
+      margin-top: 40px;
+      padding-top: 20px;
+      border-top: 2px solid var(--border);
+    }
+
+    .footer-logo {
+      font-family: 'Anton', sans-serif;
+      font-size: 36px;
+      color: var(--gold);
+      letter-spacing: 3px;
+      margin-bottom: 5px;
+    }
+
+    .footer-subtitle {
+      color: var(--text2);
+      font-size: 12px;
+    }
+
+    @media (max-width: 1200px) {
+      .bracket-wrapper {
+        min-width: 1000px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .bracket {
+        gap: 20px;
+      }
+      .bracket-wrapper {
+        min-width: 800px;
+      }
+      .trophy-icon {
+        font-size: 60px;
+      }
+      .final-info {
+        font-size: 20px;
+      }
+    }
+    /* ═══════════════════════════════════════════════════════ */
 
     .grupo-section { margin-bottom: 40px; }
     .grupo-title { 
@@ -213,6 +417,28 @@
     <p>Posiciones actualizadas en tiempo real según los resultados oficiales</p>
   </div>
 
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <!-- BRACKET TIPO FIFA -->
+  <!-- ═══════════════════════════════════════════════════════ -->
+  <div class="bracket-section" id="bracketSection" style="display:none;">
+    <div class="bracket-header">
+      <h2>🏆 CRUCES DEL MUNDIAL</h2>
+      <p>Eliminatorias desde 16avos hasta la Final</p>
+    </div>
+    
+    <div class="bracket-wrapper">
+      <div class="bracket" id="bracket">
+        <!-- Se genera dinámicamente -->
+      </div>
+    </div>
+
+    <div class="bracket-footer">
+      <div class="footer-logo">PRODE MUNDIAL 2026</div>
+      <div class="footer-subtitle">Cruces y Eliminatorias</div>
+    </div>
+  </div>
+  <!-- ═══════════════════════════════════════════════════════ -->
+
   <div id="loader" style="text-align:center; padding:40px;">
     <div class="spinner"></div> Cargando tablas...
   </div>
@@ -242,7 +468,7 @@
     "Japón": 18, "Suiza": 19, "Irán": 20, "Turquía": 22,
     "Ecuador": 23, "Austria": 24, "Corea del Sur": 25, "Australia": 27,
     "Argelia": 28, "Egipto": 29, "Canadá": 30, "Noruega": 31,
-    "Costa de Marfil": 33, "Panamá": 34, "Suecia": 38, "Rep. Checa": 40,
+    "Costa de Marfil": 33, "Suecia": 38, "Rep. Checa": 40,
     "Paraguay": 41, "Escocia": 42, "Túnez": 45, "RD Congo": 46,
     "Uzbekistán": 50, "Qatar": 56, "Irak": 57, "Arabia Saudita": 60,
     "Sudáfrica": 61, "Jordania": 63, "Bosnia-Herzegovina": 64,
@@ -384,16 +610,6 @@
   // ═══════════════════════════════════════════════════════
   // FAIR PLAY (JUEGO LIMPIO)
   // ═══════════════════════════════════════════════════════
-  // Columnas existentes en la BD:
-  // - amarillas_local, amarillas_visit
-  // - rojas_local, rojas_visit
-  //
-  // Puntuación según reglamento FIFA:
-  // - Amarilla: -1 punto
-  // - Roja (directa o doble amarilla): -4 puntos
-  // (No distinguimos entre roja directa y doble amarilla porque
-  //  la BD solo tiene una columna "rojas")
-  // ═══════════════════════════════════════════════════════
 
   function calcularFairPlay(equipo, partidosGrupo, resultados) {
     let puntos = 0;
@@ -419,38 +635,23 @@
   // ═══════════════════════════════════════════════════════
   // COMPARADOR CON DESEMPATE OLÍMPICO COMPLETO
   // ═══════════════════════════════════════════════════════
-  // Orden según reglamento FIFA:
-  // 1. Puntos generales
-  // 2. Enfrentamiento directo (pts, DG, GF entre empatados)
-  // 3. Diferencia de goles general
-  // 4. Goles a favor general
-  // 5. Fair Play (más puntos = mejor)
-  // 6. Ranking FIFA (menor número = mejor)
-  // ═══════════════════════════════════════════════════════
 
   function compararEquipos(a, b, tabla, partidosGrupo, resultados) {
-    // 1. Puntos generales
     if (b.pts !== a.pts) return b.pts - a.pts;
 
-    // 2. Enfrentamiento directo (SOLO entre A y B)
     const { statsA, statsB } = calcularEstadisticasDirectas(a.equipo, b.equipo, partidosGrupo, resultados);
     
     if (statsB.pts !== statsA.pts) return statsB.pts - statsA.pts;
     if (statsB.dg !== statsA.dg) return statsB.dg - statsA.dg;
     if (statsB.gf !== statsA.gf) return statsB.gf - statsA.gf;
 
-    // 3. Diferencia de goles general
     if (b.dg !== a.dg) return b.dg - a.dg;
-
-    // 4. Goles a favor general
     if (b.gf !== a.gf) return b.gf - a.gf;
 
-    // 5. Fair Play (MÁS puntos = MEJOR, porque son negativos)
     const fairPlayA = calcularFairPlay(a.equipo, partidosGrupo, resultados);
     const fairPlayB = calcularFairPlay(b.equipo, partidosGrupo, resultados);
     if (fairPlayA !== fairPlayB) return fairPlayB - fairPlayA;
 
-    // 6. Ranking FIFA (menor número = mejor posición)
     const rA = RANKING_FIFA[a.equipo] || 100;
     const rB = RANKING_FIFA[b.equipo] || 100;
     return rA - rB;
@@ -481,7 +682,6 @@
         }
       });
 
-      // Ordenar usando el comparador completo
       const ordenados = Object.values(tabla).sort((a, b) => 
         compararEquipos(a, b, tabla, partidosGrupo, resultados)
       );
@@ -534,6 +734,169 @@
   }
 
   // ═══════════════════════════════════════════════════════
+  // RENDERIZAR BRACKET TIPO FIFA
+  // ═══════════════════════════════════════════════════════
+
+  function renderBracket(clasificacion) {
+    try {
+      const bracket = document.getElementById('bracket');
+      const tercerosOrdenados = obtenerMejoresTerceros(clasificacion, []);
+      
+      let html = '';
+
+      // Columna 1: 16avos (izquierda)
+      html += '<div class="bracket-column">';
+      html += '<div class="round-label">16vos</div>';
+      
+      ESTRUCTURA_16AVOS.slice(0, 8).forEach(cruce => {
+        const local = obtenerEquipoCruce(cruce.local, clasificacion, tercerosOrdenados);
+        const visit = obtenerEquipoCruce(cruce.visit, clasificacion, tercerosOrdenados);
+        
+        html += `
+          <div class="bracket-match">
+            <div class="match-team">
+              <div class="team-info">
+                <span class="team-flag">${local ? (FLAGS[local.equipo] || '🏳️') : '❓'}</span>
+                <span>${local ? local.equipo : 'Por definir'}</span>
+              </div>
+              <span class="team-position">${cruce.local}</span>
+            </div>
+            <div class="match-team">
+              <div class="team-info">
+                <span class="team-flag">${visit ? (FLAGS[visit.equipo] || '🏳️') : '❓'}</span>
+                <span>${visit ? visit.equipo : 'Por definir'}</span>
+              </div>
+              <span class="team-position">${cruce.visit}</span>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      // Columna 2: 16avos (derecha)
+      html += '<div class="bracket-column">';
+      html += '<div class="round-label">16vos</div>';
+      
+      ESTRUCTURA_16AVOS.slice(8, 16).forEach(cruce => {
+        const local = obtenerEquipoCruce(cruce.local, clasificacion, tercerosOrdenados);
+        const visit = obtenerEquipoCruce(cruce.visit, clasificacion, tercerosOrdenados);
+        
+        html += `
+          <div class="bracket-match">
+            <div class="match-team">
+              <div class="team-info">
+                <span class="team-flag">${local ? (FLAGS[local.equipo] || '🏳️') : '❓'}</span>
+                <span>${local ? local.equipo : 'Por definir'}</span>
+              </div>
+              <span class="team-position">${cruce.local}</span>
+            </div>
+            <div class="match-team">
+              <div class="team-info">
+                <span class="team-flag">${visit ? (FLAGS[visit.equipo] || '🏳️') : '❓'}</span>
+                <span>${visit ? visit.equipo : 'Por definir'}</span>
+              </div>
+              <span class="team-position">${cruce.visit}</span>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      // Columna 3: Centro (Trofeo)
+      html += '<div class="bracket-column center">';
+      html += `
+        <div class="trophy-center">
+          <div class="trophy-icon">🏆</div>
+          <div class="final-info">FINAL</div>
+          <div class="final-date">19 DE JULIO</div>
+          <div class="final-venue">METLIFE NJ</div>
+        </div>
+      `;
+      html += '</div>';
+
+      // Columna 4: 8vos (derecha)
+      html += '<div class="bracket-column">';
+      html += '<div class="round-label">8vos</div>';
+      
+      ESTRUCTURA_OCTAVOS.slice(4, 8).forEach(cruce => {
+        html += `
+          <div class="bracket-match">
+            <div class="match-team">
+              <div class="team-info">
+                <span class="team-flag">🏳️</span>
+                <span>Por definir</span>
+              </div>
+              <span class="team-position">${cruce.local}</span>
+            </div>
+            <div class="match-team">
+              <div class="team-info">
+                <span class="team-flag">🏳️</span>
+                <span>Por definir</span>
+              </div>
+              <span class="team-position">${cruce.visit}</span>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      // Columna 5: 8vos (izquierda)
+      html += '<div class="bracket-column">';
+      html += '<div class="round-label">8vos</div>';
+      
+      ESTRUCTURA_OCTAVOS.slice(0, 4).forEach(cruce => {
+        html += `
+          <div class="bracket-match">
+            <div class="match-team">
+              <div class="team-info">
+                <span class="team-flag">🏳️</span>
+                <span>Por definir</span>
+              </div>
+              <span class="team-position">${cruce.local}</span>
+            </div>
+            <div class="match-team">
+              <div class="team-info">
+                <span class="team-flag">🏳️</span>
+                <span>Por definir</span>
+              </div>
+              <span class="team-position">${cruce.visit}</span>
+            </div>
+          </div>
+        `;
+      });
+      html += '</div>';
+
+      bracket.innerHTML = html;
+      document.getElementById('bracketSection').style.display = 'block';
+    } catch (err) {
+      console.error("Error en renderBracket:", err);
+    }
+  }
+
+  function obtenerEquipoCruce(posicion, clasificacion, tercerosOrdenados) {
+    if (!posicion) return null;
+    
+    if (posicion.startsWith('1°')) {
+      const grupo = posicion.substring(2);
+      const equipo = clasificacion[grupo]?.primero;
+      return equipo ? { equipo, grupo } : null;
+    }
+    
+    if (posicion.startsWith('2°')) {
+      const grupo = posicion.substring(2);
+      const equipo = clasificacion[grupo]?.segundo;
+      return equipo ? { equipo, grupo } : null;
+    }
+    
+    if (posicion === '3°') {
+      // Los terceros se asignan según la estructura FIFA
+      return tercerosOrdenados[0] || null;
+    }
+    
+    return null;
+  }
+
+  // ═══════════════════════════════════════════════════════
   // INICIALIZACIÓN
   // ═══════════════════════════════════════════════════════
 
@@ -551,6 +914,10 @@
       console.log("✅ Resultados cargados:", resultados?.length || 0);
 
       const clasificacion = calcularClasificacion(resultados || []);
+      
+      // Renderizar bracket primero
+      renderBracket(clasificacion);
+      
       renderClasificados(clasificacion, resultados || []);
       renderTablas(resultados || []);
       renderEliminatorias(resultados || [], clasificacion);
@@ -650,7 +1017,7 @@
               ${segundos.map((eq, i) => `
                 <tr>
                   <td>${i + 1}</td>
-                  <td><span class="flag-sm">${FLAGS[eq.equipo] || '️'}</span> ${eq.equipo}</td>
+                  <td><span class="flag-sm">${FLAGS[eq.equipo] || '🏳️'}</span> ${eq.equipo}</td>
                   <td><span class="grupo-badge">${eq.grupo}</span></td>
                   <td><strong>${eq.pts}</strong></td>
                   <td>${eq.dg > 0 ? '+' + eq.dg : eq.dg}</td>
@@ -996,7 +1363,7 @@
       : 'Por definir';
 
     const localFlag = localEquipo ? (FLAGS[localEquipo] || '🏳️') : '❓';
-    const visitFlag = visitEquipo ? (FLAGS[visitEquipo] || '️') : '❓';
+    const visitFlag = visitEquipo ? (FLAGS[visitEquipo] || '🏳️') : '❓';
 
     return `
       <div class="cruce-card ${estado}">
