@@ -12,12 +12,12 @@
     .hero-grupos p { color: var(--text2); font-size: 16px; }
 
     /* ═══════════════════════════════════════════════════════ */
-    /* BRACKET STYLE FIFA - SIMÉTRICO */
+    /* BRACKET FIFA - SIMÉTRICO */
     /* ═══════════════════════════════════════════════════════ */
     .bracket-section {
       margin-bottom: 60px;
-      padding: 30px 20px;
-      background: linear-gradient(135deg, rgba(139, 0, 0, 0.4) 0%, rgba(0, 0, 139, 0.4) 100%);
+      padding: 40px 20px;
+      background: linear-gradient(135deg, rgba(139, 0, 0, 0.3) 0%, rgba(0, 0, 139, 0.3) 100%);
       border-radius: var(--r-lg);
       border: 2px solid var(--gold);
       overflow-x: auto;
@@ -25,35 +25,33 @@
 
     .bracket-header {
       text-align: center;
-      margin-bottom: 20px;
+      margin-bottom: 30px;
     }
 
     .bracket-header h2 {
       font-family: 'Anton', sans-serif;
-      font-size: 28px;
+      font-size: 32px;
       color: var(--gold);
       letter-spacing: 2px;
-      margin-bottom: 5px;
+      margin-bottom: 8px;
     }
 
     .bracket-header p {
       color: var(--text2);
-      font-size: 12px;
+      font-size: 14px;
     }
 
-    .bracket-container {
+    .bracket-wrapper {
       display: flex;
       justify-content: center;
-      align-items: center;
-      min-width: 1100px;
+      overflow-x: auto;
     }
 
     .bracket {
       display: grid;
       grid-template-columns: repeat(9, 1fr);
-      gap: 15px;
-      width: 100%;
-      max-width: 1300px;
+      gap: 20px;
+      min-width: 1100px;
     }
 
     .bracket-col {
@@ -67,24 +65,24 @@
       align-items: center;
     }
 
-    .round-title {
+    .round-label {
       text-align: center;
       font-family: 'Anton', sans-serif;
-      font-size: 10px;
+      font-size: 11px;
       color: var(--text2);
       text-transform: uppercase;
       letter-spacing: 1px;
-      margin-bottom: 10px;
+      margin-bottom: 15px;
     }
 
     .match-box {
       background: var(--card);
-      border: 1px solid var(--border);
-      border-radius: 4px;
-      padding: 6px;
-      margin-bottom: 8px;
-      font-size: 10px;
-      position: relative;
+      border: 2px solid var(--border);
+      border-radius: 6px;
+      padding: 10px;
+      margin-bottom: 10px;
+      font-size: 11px;
+      transition: all 0.3s ease;
     }
 
     .match-box.confirmed {
@@ -96,90 +94,90 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 2px 0;
+      padding: 3px 0;
     }
 
     .team-info {
       display: flex;
       align-items: center;
-      gap: 4px;
+      gap: 6px;
     }
 
     .team-flag {
-      font-size: 14px;
+      font-size: 16px;
     }
 
     .team-pos {
-      font-size: 8px;
+      font-size: 9px;
       color: var(--text3);
       background: var(--bg2);
-      padding: 1px 4px;
-      border-radius: 2px;
+      padding: 2px 5px;
+      border-radius: 3px;
+      font-weight: 700;
     }
 
     .trophy-box {
       text-align: center;
-      padding: 20px 10px;
+      padding: 40px 20px;
     }
 
     .trophy {
-      font-size: 60px;
-      margin-bottom: 10px;
+      font-size: 80px;
+      margin-bottom: 15px;
+      filter: drop-shadow(0 0 20px rgba(255, 201, 60, 0.5));
     }
 
     .final-text {
       font-family: 'Anton', sans-serif;
-      font-size: 18px;
+      font-size: 24px;
       color: var(--gold);
-      margin-bottom: 5px;
+      margin-bottom: 8px;
+      letter-spacing: 2px;
     }
 
     .final-date {
-      font-size: 11px;
+      font-size: 14px;
       color: var(--text);
-      margin-bottom: 2px;
+      margin-bottom: 4px;
     }
 
     .final-venue {
-      font-size: 9px;
+      font-size: 11px;
       color: var(--text2);
     }
 
     .third-place {
-      margin-top: 15px;
-      padding: 10px;
+      margin-top: 20px;
+      padding: 15px;
       background: var(--card);
       border-radius: var(--r);
-      text-align: center;
+      border: 1px solid var(--border);
     }
 
     .third-place-title {
       font-family: 'Anton', sans-serif;
-      font-size: 12px;
+      font-size: 14px;
       color: var(--gold);
-      margin-bottom: 5px;
+      margin-bottom: 8px;
     }
 
     .bracket-footer {
       text-align: center;
-      margin-top: 20px;
-      padding-top: 15px;
-      border-top: 1px solid var(--border);
+      margin-top: 30px;
+      padding-top: 20px;
+      border-top: 2px solid var(--border);
     }
 
     .footer-logo {
       font-family: 'Anton', sans-serif;
-      font-size: 24px;
+      font-size: 32px;
       color: var(--gold);
-      letter-spacing: 2px;
+      letter-spacing: 3px;
     }
 
     @media (max-width: 1200px) {
-      .bracket-container {
-        min-width: 900px;
-      }
       .bracket {
-        gap: 10px;
+        min-width: 900px;
       }
     }
     /* ═══════════════════════════════════════════════════════ */
@@ -387,7 +385,7 @@
   </div>
 
   <!-- ═══════════════════════════════════════════════════════ -->
-  <!-- BRACKET TIPO FIFA - SIMÉTRICO -->
+  <!-- BRACKET TIPO FIFA -->
   <!-- ═══════════════════════════════════════════════════════ -->
   <div class="bracket-section" id="bracketSection" style="display:none;">
     <div class="bracket-header">
@@ -395,7 +393,7 @@
       <p>Equipos confirmados · Final 19 de Julio - MetLife NJ</p>
     </div>
     
-    <div class="bracket-container">
+    <div class="bracket-wrapper">
       <div class="bracket" id="bracket">
         <!-- Se genera dinámicamente -->
       </div>
@@ -436,7 +434,7 @@
     "Japón": 18, "Suiza": 19, "Irán": 20, "Turquía": 22,
     "Ecuador": 23, "Austria": 24, "Corea del Sur": 25, "Australia": 27,
     "Argelia": 28, "Egipto": 29, "Canadá": 30, "Noruega": 31,
-    "Costa de Marfil": 33, "Suecia": 38, "Rep. Checa": 40,
+    "Costa de Marfil": 33, "Panamá": 34, "Suecia": 38, "Rep. Checa": 40,
     "Paraguay": 41, "Escocia": 42, "Túnez": 45, "RD Congo": 46,
     "Uzbekistán": 50, "Qatar": 56, "Irak": 57, "Arabia Saudita": 60,
     "Sudáfrica": 61, "Jordania": 63, "Bosnia-Herzegovina": 64,
@@ -474,6 +472,34 @@
     { id: 'M088', local: '2°D', visit: '2°G' }
   ];
 
+  const ESTRUCTURA_OCTAVOS = [
+    { id: 'M089', local: 'G073', visit: 'G074' },
+    { id: 'M090', local: 'G075', visit: 'G076' },
+    { id: 'M091', local: 'G077', visit: 'G078' },
+    { id: 'M092', local: 'G079', visit: 'G080' },
+    { id: 'M093', local: 'G081', visit: 'G082' },
+    { id: 'M094', local: 'G083', visit: 'G084' },
+    { id: 'M095', local: 'G085', visit: 'G086' },
+    { id: 'M096', local: 'G087', visit: 'G088' }
+  ];
+
+  const ESTRUCTURA_CUARTOS = [
+    { id: 'M097', local: 'G089', visit: 'G090' },
+    { id: 'M098', local: 'G091', visit: 'G092' },
+    { id: 'M099', local: 'G093', visit: 'G094' },
+    { id: 'M100', local: 'G095', visit: 'G096' }
+  ];
+
+  const ESTRUCTURA_SEMIS = [
+    { id: 'M101', local: 'G097', visit: 'G098' },
+    { id: 'M102', local: 'G099', visit: 'G100' }
+  ];
+
+  const ESTRUCTURA_FINAL = [
+    { id: 'M103', local: 'P101', visit: 'P102' },
+    { id: 'M104', local: 'G101', visit: 'G102' }
+  ];
+
   // ═══════════════════════════════════════════════════════
   // FUNCIONES AUXILIARES
   // ═══════════════════════════════════════════════════════
@@ -491,6 +517,10 @@
     else if (golesFavor === golesContra) { eq.pe++; eq.pts += 1; }
     else { eq.pp++; }
   }
+
+  // ═══════════════════════════════════════════════════════
+  // ESTADÍSTICAS DIRECTAS (HEAD-TO-HEAD)
+  // ═══════════════════════════════════════════════════════
 
   function calcularEstadisticasDirectas(equipoA, equipoB, partidosGrupo, resultados) {
     const statsA = { pts: 0, gf: 0, gc: 0, dg: 0 };
@@ -510,50 +540,92 @@
       const gV = parseInt(res.visit);
 
       if (p.local === equipoA) {
-        statsA.gf += gL; statsA.gc += gV; statsA.dg += (gL - gV);
-        statsB.gf += gV; statsB.gc += gL; statsB.dg += (gV - gL);
+        statsA.gf += gL;
+        statsA.gc += gV;
+        statsA.dg += (gL - gV);
+        statsB.gf += gV;
+        statsB.gc += gL;
+        statsB.dg += (gV - gL);
+
         if (gL > gV) statsA.pts += 3;
         else if (gV > gL) statsB.pts += 3;
-        else { statsA.pts += 1; statsB.pts += 1; }
+        else {
+          statsA.pts += 1;
+          statsB.pts += 1;
+        }
       } else {
-        statsB.gf += gL; statsB.gc += gV; statsB.dg += (gL - gV);
-        statsA.gf += gV; statsA.gc += gL; statsA.dg += (gV - gL);
+        statsB.gf += gL;
+        statsB.gc += gV;
+        statsB.dg += (gL - gV);
+        statsA.gf += gV;
+        statsA.gc += gL;
+        statsA.dg += (gV - gL);
+
         if (gL > gV) statsB.pts += 3;
         else if (gV > gL) statsA.pts += 3;
-        else { statsB.pts += 1; statsA.pts += 1; }
+        else {
+          statsB.pts += 1;
+          statsA.pts += 1;
+        }
       }
     });
 
     return { statsA, statsB };
   }
 
+  // ═══════════════════════════════════════════════════════
+  // FAIR PLAY (JUEGO LIMPIO)
+  // ═══════════════════════════════════════════════════════
+
   function calcularFairPlay(equipo, partidosGrupo, resultados) {
     let puntos = 0;
+    
     partidosGrupo.forEach(p => {
       const res = resultados.find(r => r.partido_id === p.id);
       if (!res) return;
+      
       if (p.local === equipo) {
-        puntos += (parseInt(res.amarillas_local) || 0) * -1 + (parseInt(res.rojas_local) || 0) * -4;
+        const amarillas = parseInt(res.amarillas_local) || 0;
+        const rojas = parseInt(res.rojas_local) || 0;
+        puntos += (amarillas * -1) + (rojas * -4);
       } else if (p.visit === equipo) {
-        puntos += (parseInt(res.amarillas_visit) || 0) * -1 + (parseInt(res.rojas_visit) || 0) * -4;
+        const amarillas = parseInt(res.amarillas_visit) || 0;
+        const rojas = parseInt(res.rojas_visit) || 0;
+        puntos += (amarillas * -1) + (rojas * -4);
       }
     });
+    
     return puntos;
   }
 
+  // ═══════════════════════════════════════════════════════
+  // COMPARADOR CON DESEMPATE OLÍMPICO COMPLETO
+  // ═══════════════════════════════════════════════════════
+
   function compararEquipos(a, b, tabla, partidosGrupo, resultados) {
     if (b.pts !== a.pts) return b.pts - a.pts;
+
     const { statsA, statsB } = calcularEstadisticasDirectas(a.equipo, b.equipo, partidosGrupo, resultados);
+    
     if (statsB.pts !== statsA.pts) return statsB.pts - statsA.pts;
     if (statsB.dg !== statsA.dg) return statsB.dg - statsA.dg;
     if (statsB.gf !== statsA.gf) return statsB.gf - statsA.gf;
+
     if (b.dg !== a.dg) return b.dg - a.dg;
     if (b.gf !== a.gf) return b.gf - a.gf;
+
     const fairPlayA = calcularFairPlay(a.equipo, partidosGrupo, resultados);
     const fairPlayB = calcularFairPlay(b.equipo, partidosGrupo, resultados);
     if (fairPlayA !== fairPlayB) return fairPlayB - fairPlayA;
-    return (RANKING_FIFA[a.equipo] || 100) - (RANKING_FIFA[b.equipo] || 100);
+
+    const rA = RANKING_FIFA[a.equipo] || 100;
+    const rB = RANKING_FIFA[b.equipo] || 100;
+    return rA - rB;
   }
+
+  // ═══════════════════════════════════════════════════════
+  // CÁLCULO DE CLASIFICACIÓN POR GRUPO
+  // ═══════════════════════════════════════════════════════
 
   function calcularClasificacion(resultados) {
     const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
@@ -566,10 +638,13 @@
       partidosGrupo.forEach(p => {
         if (!tabla[p.local]) initEquipo(tabla, p.local);
         if (!tabla[p.visit]) initEquipo(tabla, p.visit);
+
         const res = resultados.find(r => r.partido_id === p.id);
         if (res && res.local !== null && res.visit !== null) {
-          actualizarStats(tabla[p.local], parseInt(res.local), parseInt(res.visit));
-          actualizarStats(tabla[p.visit], parseInt(res.visit), parseInt(res.local));
+          const gL = parseInt(res.local);
+          const gV = parseInt(res.visit);
+          actualizarStats(tabla[p.local], gL, gV);
+          actualizarStats(tabla[p.visit], gV, gL);
         }
       });
 
@@ -588,15 +663,22 @@
     return clasificacion;
   }
 
+  // ═══════════════════════════════════════════════════════
+  // OBTENER 8 MEJORES TERCEROS
+  // ═══════════════════════════════════════════════════════
+
   function obtenerMejoresTerceros(clasificacion, resultados) {
-    return Object.entries(clasificacion)
+    const terceros = Object.entries(clasificacion)
       .map(([grupo, data]) => {
         const equipo = data.tercero;
         if (!equipo) return null;
+
         const partidosGrupo = PARTIDOS_GRUPOS.filter(p => p.grupo === grupo);
         const statsEquipo = data.stats.find(s => s.equipo === equipo);
+        
         return {
-          grupo, equipo,
+          grupo,
+          equipo,
           pts: statsEquipo?.pts || 0,
           dg: statsEquipo?.dg || 0,
           gf: statsEquipo?.gf || 0,
@@ -613,48 +695,50 @@
         return a.rankingFifa - b.rankingFifa;
       })
       .slice(0, 8);
+
+    return terceros;
   }
 
   // ═══════════════════════════════════════════════════════
-  // RENDERIZAR BRACKET SIMÉTRICO
+  // RENDERIZAR BRACKET FIFA - USANDO determi narCruces16avos
   // ═══════════════════════════════════════════════════════
 
-  function renderBracket(clasificacion) {
+  function renderBracketFIFA(clasificacion) {
     try {
       const bracket = document.getElementById('bracket');
-      const terceros = obtenerMejoresTerceros(clasificacion, []);
+      
+      // USAR LA MISMA FUNCIÓN QUE YA FUNCIONA ABAJO
+      const cruces16avos = determinarCruces16avos(clasificacion);
       
       let html = '';
 
-      // Columna 1: 16avos IZQUIERDA (8 partidos)
-      html += '<div class="bracket-col"><div class="round-title">16vos</div>';
-      ESTRUCTURA_16AVOS.slice(0, 8).forEach(cruce => {
-        const local = obtenerEquipoCruce(cruce.local, clasificacion, terceros);
-        const visit = obtenerEquipoCruce(cruce.visit, clasificacion, terceros);
-        html += renderMatchBox(local, visit, cruce.local, cruce.visit);
+      // Columna 1: 16avos IZQUIERDA (primeros 8 partidos)
+      html += '<div class="bracket-col"><div class="round-label">16vos</div>';
+      cruces16avos.slice(0, 8).forEach(cruce => {
+        html += renderMatchBox(cruce.local, cruce.visit, cruce.id);
       });
       html += '</div>';
 
       // Columna 2: 8vos IZQUIERDA (4 partidos)
-      html += '<div class="bracket-col"><div class="round-title">8vos</div>';
+      html += '<div class="bracket-col"><div class="round-label">8vos</div>';
       for (let i = 0; i < 4; i++) {
         html += `<div class="match-box"><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G0${73+i*2}</span></div><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G0${74+i*2}</span></div></div>`;
       }
       html += '</div>';
 
       // Columna 3: 4tos IZQUIERDA (2 partidos)
-      html += '<div class="bracket-col"><div class="round-title">4tos</div>';
+      html += '<div class="bracket-col"><div class="round-label">4tos</div>';
       for (let i = 0; i < 2; i++) {
         html += `<div class="match-box"><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G0${89+i*2}</span></div><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G0${90+i*2}</span></div></div>`;
       }
       html += '</div>';
 
-      // Columna 4: SEMIS IZQUIERDA (1 partido)
-      html += '<div class="bracket-col"><div class="round-title">Semis</div>';
+      // Columna 4: SEMIS IZQUIERDA
+      html += '<div class="bracket-col"><div class="round-label">Semis</div>';
       html += `<div class="match-box"><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G097</span></div><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G098</span></div></div>`;
       html += '</div>';
 
-      // Columna 5: CENTRO - Final
+      // Columna 5: CENTRO - Trofeo
       html += '<div class="bracket-col center"><div class="trophy-box">';
       html += '<div class="trophy">🏆</div>';
       html += '<div class="final-text">FINAL</div>';
@@ -663,47 +747,47 @@
       html += '<div class="third-place"><div class="third-place-title">3° PUESTO</div><div style="font-size:10px;color:var(--text2)">Por definir</div></div>';
       html += '</div></div>';
 
-      // Columna 6: SEMIS DERECHA (1 partido)
-      html += '<div class="bracket-col"><div class="round-title">Semis</div>';
+      // Columna 6: SEMIS DERECHA
+      html += '<div class="bracket-col"><div class="round-label">Semis</div>';
       html += `<div class="match-box"><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G099</span></div><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G100</span></div></div>`;
       html += '</div>';
 
-      // Columna 7: 4tos DERECHA (2 partidos)
-      html += '<div class="bracket-col"><div class="round-title">4tos</div>';
+      // Columna 7: 4tos DERECHA
+      html += '<div class="bracket-col"><div class="round-label">4tos</div>';
       for (let i = 0; i < 2; i++) {
         html += `<div class="match-box"><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G0${93+i*2}</span></div><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G0${94+i*2}</span></div></div>`;
       }
       html += '</div>';
 
-      // Columna 8: 8vos DERECHA (4 partidos)
-      html += '<div class="bracket-col"><div class="round-title">8vos</div>';
+      // Columna 8: 8vos DERECHA
+      html += '<div class="bracket-col"><div class="round-label">8vos</div>';
       for (let i = 0; i < 4; i++) {
         html += `<div class="match-box"><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G0${93+i*2}</span></div><div class="team-row"><div class="team-info"><span class="team-flag">🏳️</span><span>Por definir</span></div><span class="team-pos">G0${94+i*2}</span></div></div>`;
       }
       html += '</div>';
 
-      // Columna 9: 16avos DERECHA (8 partidos)
-      html += '<div class="bracket-col"><div class="round-title">16vos</div>';
-      ESTRUCTURA_16AVOS.slice(8, 16).forEach(cruce => {
-        const local = obtenerEquipoCruce(cruce.local, clasificacion, terceros);
-        const visit = obtenerEquipoCruce(cruce.visit, clasificacion, terceros);
-        html += renderMatchBox(local, visit, cruce.local, cruce.visit);
+      // Columna 9: 16avos DERECHA (últimos 8 partidos)
+      html += '<div class="bracket-col"><div class="round-label">16vos</div>';
+      cruces16avos.slice(8, 16).forEach(cruce => {
+        html += renderMatchBox(cruce.local, cruce.visit, cruce.id);
       });
       html += '</div>';
 
       bracket.innerHTML = html;
       document.getElementById('bracketSection').style.display = 'block';
     } catch (err) {
-      console.error("Error en renderBracket:", err);
+      console.error("Error en renderBracketFIFA:", err);
     }
   }
 
-  function renderMatchBox(local, visit, posLocal, posVisit) {
-    const localFlag = local ? (FLAGS[local.equipo] || '🏳️') : '❓';
-    const visitFlag = visit ? (FLAGS[visit.equipo] || '🏳️') : '❓';
-    const localName = local ? local.equipo : 'Por definir';
-    const visitName = visit ? visit.equipo : 'Por definir';
-    const confirmed = local && visit ? 'confirmed' : '';
+  function renderMatchBox(local, visit, matchId) {
+    const localFlag = local?.equipo ? (FLAGS[local.equipo] || '🏳️') : '❓';
+    const visitFlag = visit?.equipo ? (FLAGS[visit.equipo] || '🏳️') : '❓';
+    const localName = local?.equipo || 'Por definir';
+    const visitName = visit?.equipo || 'Por definir';
+    const localPos = local?.grupo ? `${local.grupo}` : '';
+    const visitPos = visit?.grupo ? `${visit.grupo}` : '';
+    const confirmed = local?.equipo && visit?.equipo ? 'confirmed' : '';
     
     return `
       <div class="match-box ${confirmed}">
@@ -712,39 +796,17 @@
             <span class="team-flag">${localFlag}</span>
             <span>${localName}</span>
           </div>
-          <span class="team-pos">${posLocal}</span>
+          <span class="team-pos">${localPos}</span>
         </div>
         <div class="team-row">
           <div class="team-info">
             <span class="team-flag">${visitFlag}</span>
             <span>${visitName}</span>
           </div>
-          <span class="team-pos">${posVisit}</span>
+          <span class="team-pos">${visitPos}</span>
         </div>
       </div>
     `;
-  }
-
-  function obtenerEquipoCruce(posicion, clasificacion, terceros) {
-    if (!posicion) return null;
-    
-    if (posicion.startsWith('1°')) {
-      const grupo = posicion.substring(2);
-      const equipo = clasificacion[grupo]?.primero;
-      return equipo ? { equipo, grupo } : null;
-    }
-    
-    if (posicion.startsWith('2°')) {
-      const grupo = posicion.substring(2);
-      const equipo = clasificacion[grupo]?.segundo;
-      return equipo ? { equipo, grupo } : null;
-    }
-    
-    if (posicion === '3°') {
-      return terceros[0] || null;
-    }
-    
-    return null;
   }
 
   // ═══════════════════════════════════════════════════════
@@ -753,15 +815,21 @@
 
   (async () => {
     try {
-      const { data: resultados, error } = await supabase.from('resultados').select('*');
-      if (error) throw error;
+      const { data: resultados, error } = await supabase
+        .from('resultados')
+        .select('*');
+
+      if (error) {
+        console.error("Error al cargar resultados:", error);
+        throw error;
+      }
 
       console.log("✅ Resultados cargados:", resultados?.length || 0);
 
       const clasificacion = calcularClasificacion(resultados || []);
       
-      // Renderizar bracket primero
-      renderBracket(clasificacion);
+      // Renderizar bracket PRIMERO (usa determinarCruces16avos)
+      renderBracketFIFA(clasificacion);
       
       renderClasificados(clasificacion, resultados || []);
       renderTablas(resultados || []);
@@ -776,9 +844,588 @@
   })();
 
   // ═══════════════════════════════════════════════════════
-  // RESTO DE FUNCIONES (renderClasificados, renderTablas, etc.)
+  // RENDERIZADO: CLASIFICADOS
   // ═══════════════════════════════════════════════════════
-  // [Mantener las mismas funciones que ya tenías]
+
+  function renderClasificados(clasificacion, resultados) {
+    try {
+      const contenedor = document.getElementById('contenido-clasificados');
+      
+      const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+      
+      const primeros = GRUPOS.map(grupo => {
+        const data = clasificacion[grupo];
+        const equipo = data.primero;
+        const statsEquipo = data.stats.find(s => s.equipo === equipo);
+        return {
+          grupo,
+          equipo,
+          pts: statsEquipo?.pts || 0,
+          dg: statsEquipo?.dg || 0,
+          gf: statsEquipo?.gf || 0,
+          rankingFifa: RANKING_FIFA[equipo] || 100
+        };
+      }).sort((a, b) => {
+        if (b.pts !== a.pts) return b.pts - a.pts;
+        if (b.dg !== a.dg) return b.dg - a.dg;
+        if (b.gf !== a.gf) return b.gf - a.gf;
+        return a.rankingFifa - b.rankingFifa;
+      });
+
+      const segundos = GRUPOS.map(grupo => {
+        const data = clasificacion[grupo];
+        const equipo = data.segundo;
+        const statsEquipo = data.stats.find(s => s.equipo === equipo);
+        return {
+          grupo,
+          equipo,
+          pts: statsEquipo?.pts || 0,
+          dg: statsEquipo?.dg || 0,
+          gf: statsEquipo?.gf || 0,
+          rankingFifa: RANKING_FIFA[equipo] || 100
+        };
+      }).sort((a, b) => {
+        if (b.pts !== a.pts) return b.pts - a.pts;
+        if (b.dg !== a.dg) return b.dg - a.dg;
+        if (b.gf !== a.gf) return b.gf - a.gf;
+        return a.rankingFifa - b.rankingFifa;
+      });
+
+      const terceros = obtenerMejoresTerceros(clasificacion, resultados);
+
+      let html = '<div class="clasificados-title">🏆 CLASIFICADOS A 16AVOS DE FINAL</div>';
+      html += '<div class="clasificados-grid">';
+
+      html += `
+        <div class="clasificados-columna">
+          <h3>🥇 PRIMEROS (12)</h3>
+          <table>
+            <thead>
+              <tr><th>#</th><th>Equipo</th><th>Grupo</th><th>PTS</th><th>DG</th><th>GF</th></tr>
+            </thead>
+            <tbody>
+              ${primeros.map((eq, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td><span class="flag-sm">${FLAGS[eq.equipo] || '🏳️'}</span> ${eq.equipo}</td>
+                  <td><span class="grupo-badge">${eq.grupo}</span></td>
+                  <td><strong>${eq.pts}</strong></td>
+                  <td>${eq.dg > 0 ? '+' + eq.dg : eq.dg}</td>
+                  <td>${eq.gf}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      html += `
+        <div class="clasificados-columna">
+          <h3>🥈 SEGUNDOS (12)</h3>
+          <table>
+            <thead>
+              <tr><th>#</th><th>Equipo</th><th>Grupo</th><th>PTS</th><th>DG</th><th>GF</th></tr>
+            </thead>
+            <tbody>
+              ${segundos.map((eq, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td><span class="flag-sm">${FLAGS[eq.equipo] || '🏳️'}</span> ${eq.equipo}</td>
+                  <td><span class="grupo-badge">${eq.grupo}</span></td>
+                  <td><strong>${eq.pts}</strong></td>
+                  <td>${eq.dg > 0 ? '+' + eq.dg : eq.dg}</td>
+                  <td>${eq.gf}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      html += `
+        <div class="clasificados-columna">
+          <h3>🥉 MEJORES TERCEROS (8)</h3>
+          <table>
+            <thead>
+              <tr><th>#</th><th>Equipo</th><th>Grupo</th><th>PTS</th><th>DG</th><th>GF</th></tr>
+            </thead>
+            <tbody>
+              ${terceros.map((eq, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td><span class="flag-sm">${FLAGS[eq.equipo] || '🏳️'}</span> ${eq.equipo}</td>
+                  <td><span class="grupo-badge">${eq.grupo}</span></td>
+                  <td><strong>${eq.pts}</strong></td>
+                  <td>${eq.dg > 0 ? '+' + eq.dg : eq.dg}</td>
+                  <td>${eq.gf}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+      `;
+
+      html += '</div>';
+      contenedor.innerHTML = html;
+      contenedor.style.display = 'block';
+    } catch (err) {
+      console.error("Error en renderClasificados:", err);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // RENDERIZADO: TABLAS POR GRUPO
+  // ═══════════════════════════════════════════════════════
+
+  function renderTablas(resultados) {
+    try {
+      const contenedor = document.getElementById('contenido-grupos');
+      const GRUPOS = ["A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L"];
+      let html = "";
+
+      GRUPOS.forEach(grupo => {
+        const partidosGrupo = PARTIDOS_GRUPOS.filter(p => p.grupo === grupo);
+        const tabla = {};
+
+        partidosGrupo.forEach(p => {
+          if (!tabla[p.local]) initEquipo(tabla, p.local);
+          if (!tabla[p.visit]) initEquipo(tabla, p.visit);
+
+          const res = resultados.find(r => r.partido_id === p.id);
+          if (res && res.local !== null && res.visit !== null) {
+            const gL = parseInt(res.local);
+            const gV = parseInt(res.visit);
+            actualizarStats(tabla[p.local], gL, gV);
+            actualizarStats(tabla[p.visit], gV, gL);
+          }
+        });
+
+        const clasificados = Object.values(tabla).sort((a, b) => 
+          compararEquipos(a, b, tabla, partidosGrupo, resultados)
+        );
+
+        html += `
+          <div class="grupo-section">
+            <div class="grupo-title">GRUPO ${grupo}</div>
+            <div class="tabla-wrap">
+              <table>
+                <thead>
+                  <tr>
+                    <th>#</th>
+                    <th class="left">Equipo</th>
+                    <th>PTS</th>
+                    <th>PJ</th>
+                    <th>PG</th>
+                    <th>PE</th>
+                    <th>PP</th>
+                    <th>GF</th>
+                    <th>GC</th>
+                    <th>DG</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  ${clasificados.map((eq, i) => `
+                    <tr class="pos-${i + 1}">
+                      <td>${i + 1}</td>
+                      <td class="left">
+                        <div class="equipo-cell">
+                          <span class="flag-sm">${FLAGS[eq.equipo] || "🏳️"}</span>
+                          <span>${eq.equipo}</span>
+                        </div>
+                      </td>
+                      <td>${eq.pts}</td>
+                      <td>${eq.pj}</td>
+                      <td>${eq.pg}</td>
+                      <td>${eq.pe}</td>
+                      <td>${eq.pp}</td>
+                      <td>${eq.gf}</td>
+                      <td>${eq.gc}</td>
+                      <td>${eq.dg > 0 ? '+' + eq.dg : eq.dg}</td>
+                    </tr>
+                  `).join('')}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        `;
+      });
+
+      contenedor.innerHTML = html;
+    } catch (err) {
+      console.error("Error en renderTablas:", err);
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // DETERMINAR CRUCES DE 16AVOS (LA MISMA FUNCIÓN DE ANTES)
+  // ═══════════════════════════════════════════════════════
+
+  function determinarCruces16avos(clasificacion) {
+    try {
+      const tercerosOrdenados = Object.entries(clasificacion)
+        .map(([grupo, data]) => ({
+          grupo,
+          equipo: data.tercero,
+          pts: data.stats[2]?.pts || 0,
+          dg: data.stats[2]?.dg || 0,
+          gf: data.stats[2]?.gf || 0,
+          rankingFifa: RANKING_FIFA[data.tercero] || 100
+        }))
+        .filter(t => t.equipo !== null && t.equipo !== undefined)
+        .sort((a, b) => {
+          if (b.pts !== a.pts) return b.pts - a.pts;
+          if (b.dg !== a.dg) return b.dg - a.dg;
+          if (b.gf !== a.gf) return b.gf - a.gf;
+          return a.rankingFifa - b.rankingFifa;
+        })
+        .slice(0, 8);
+
+      console.log("🥉 8 mejores terceros:", tercerosOrdenados.map(t => `${t.equipo} (${t.grupo}) - ${t.pts}pts`));
+
+      const tercerosAsignados = new Set();
+      const asignacionCruces = {};
+      
+      function asignarTerceros(crucesRestantes) {
+        if (crucesRestantes.length === 0) return true;
+        
+        const cruceActual = crucesRestantes.reduce((min, cruce) => {
+          const opcionesMin = tercerosOrdenados.filter(t => 
+            min.gruposPermitidos.includes(t.grupo) && !tercerosAsignados.has(t.equipo)
+          ).length;
+          const opcionesCruce = tercerosOrdenados.filter(t => 
+            cruce.gruposPermitidos.includes(t.grupo) && !tercerosAsignados.has(t.equipo)
+          ).length;
+          return opcionesCruce < opcionesMin ? cruce : min;
+        });
+        
+        const otrosCruces = crucesRestantes.filter(c => c.cruceId !== cruceActual.cruceId);
+        
+        for (const tercero of tercerosOrdenados) {
+          if (cruceActual.gruposPermitidos.includes(tercero.grupo) && !tercerosAsignados.has(tercero.equipo)) {
+            asignacionCruces[cruceActual.cruceId] = tercero;
+            tercerosAsignados.add(tercero.equipo);
+            
+            if (asignarTerceros(otrosCruces)) {
+              return true;
+            }
+            
+            delete asignacionCruces[cruceActual.cruceId];
+            tercerosAsignados.delete(tercero.equipo);
+          }
+        }
+        
+        return false;
+      }
+      
+      const crucesParaAsignar = Object.entries(CRUCES_TERCIEROS_FIFA).map(([cruceId, gruposPermitidos]) => ({
+        cruceId,
+        gruposPermitidos
+      }));
+      
+      const exito = asignarTerceros(crucesParaAsignar);
+      
+      if (!exito) {
+        console.warn("⚠️ No se pudo encontrar asignación perfecta. Asignando parcialmente...");
+        
+        tercerosAsignados.clear();
+        Object.keys(asignacionCruces).forEach(key => delete asignacionCruces[key]);
+        
+        const crucesOrdenados = Object.entries(CRUCES_TERCIEROS_FIFA)
+          .map(([cruceId, gruposPermitidos]) => {
+            const opciones = tercerosOrdenados.filter(t => gruposPermitidos.includes(t.grupo));
+            return { cruceId, gruposPermitidos, opciones };
+          })
+          .sort((a, b) => a.opciones.length - b.opciones.length);
+        
+        for (const { cruceId, gruposPermitidos } of crucesOrdenados) {
+          for (const tercero of tercerosOrdenados) {
+            if (gruposPermitidos.includes(tercero.grupo) && !tercerosAsignados.has(tercero.equipo)) {
+              asignacionCruces[cruceId] = tercero;
+              tercerosAsignados.add(tercero.equipo);
+              console.log(`✅ ${cruceId}: ${tercero.equipo} (Grupo ${tercero.grupo})`);
+              break;
+            }
+          }
+        }
+      }
+      
+      console.log("📋 Asignación final:", asignacionCruces);
+      console.log(`📊 Terceros asignados: ${Object.keys(asignacionCruces).length} de 8`);
+
+      const cruces = ESTRUCTURA_16AVOS.map(estructura => {
+        let local = null;
+        let visit = null;
+
+        if (estructura.local.startsWith('1°')) {
+          const grupo = estructura.local.substring(2);
+          local = {
+            equipo: clasificacion[grupo]?.primero || null,
+            grupo: grupo,
+            pts: clasificacion[grupo]?.stats[0]?.pts || 0
+          };
+        } else if (estructura.local.startsWith('2°')) {
+          const grupo = estructura.local.substring(2);
+          local = {
+            equipo: clasificacion[grupo]?.segundo || null,
+            grupo: grupo,
+            pts: clasificacion[grupo]?.stats[1]?.pts || 0
+          };
+        }
+
+        if (estructura.visit.startsWith('1°')) {
+          const grupo = estructura.visit.substring(2);
+          visit = {
+            equipo: clasificacion[grupo]?.primero || null,
+            grupo: grupo,
+            pts: clasificacion[grupo]?.stats[0]?.pts || 0
+          };
+        } else if (estructura.visit.startsWith('2°')) {
+          const grupo = estructura.visit.substring(2);
+          visit = {
+            equipo: clasificacion[grupo]?.segundo || null,
+            grupo: grupo,
+            pts: clasificacion[grupo]?.stats[1]?.pts || 0
+          };
+        } else if (estructura.visit === '3°') {
+          visit = asignacionCruces[estructura.id] || null;
+        }
+
+        return {
+          id: estructura.id,
+          local: local,
+          visit: visit
+        };
+      });
+
+      return cruces;
+    } catch (err) {
+      console.error("Error en determinarCruces16avos:", err);
+      return [];
+    }
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // FUNCIONES AUXILIARES PARA ELIMINATORIAS
+  // ═══════════════════════════════════════════════════════
+
+  function resolverGanador(partidoId, resultados) {
+    const res = resultados.find(r => r.partido_id === partidoId);
+    if (!res || res.local === null || res.visit === null) return null;
+    
+    const gL = parseInt(res.local);
+    const gV = parseInt(res.visit);
+    
+    if (gL > gV) return 'local';
+    if (gV > gL) return 'visit';
+    
+    if (res.alargue_local !== null && res.alargue_visit !== null) {
+      const alL = parseInt(res.alargue_local);
+      const alV = parseInt(res.alargue_visit);
+      if (alL > alV) return 'local';
+      if (alV > alL) return 'visit';
+      
+      if (res.penales_local !== null && res.penales_visit !== null) {
+        return parseInt(res.penales_local) > parseInt(res.penales_visit) ? 'local' : 'visit';
+      }
+    }
+    
+    return null;
+  }
+
+  function obtenerEquipoDeCruce(posicion, resultados, clasificacion) {
+    if (!posicion) return null;
+    if (posicion.equipo) return posicion;
+    
+    if (posicion.startsWith('G')) {
+      const partidoId = 'M' + posicion.substring(1);
+      const ganador = resolverGanador(partidoId, resultados);
+      if (!ganador) return null;
+      
+      const partido = TODOS_PARTIDOS.find(p => p.id === partidoId);
+      if (!partido) return null;
+      
+      const equipoNombre = ganador === 'local' ? partido.local : partido.visit;
+      return { equipo: equipoNombre, grupo: null, pts: 0 };
+    }
+    
+    if (posicion.startsWith('P')) {
+      const partidoId = 'M' + posicion.substring(1);
+      const ganador = resolverGanador(partidoId, resultados);
+      if (!ganador) return null;
+      
+      const partido = TODOS_PARTIDOS.find(p => p.id === partidoId);
+      if (!partido) return null;
+      
+      const perdedorNombre = ganador === 'local' ? partido.visit : partido.local;
+      return { equipo: perdedorNombre, grupo: null, pts: 0 };
+    }
+    
+    return null;
+  }
+
+  function renderCruceCard(cruce, estado, ganador, res, partido) {
+    const localEquipo = cruce.local?.equipo || null;
+    const visitEquipo = cruce.visit?.equipo || null;
+    
+    const localLabel = localEquipo 
+      ? `${localEquipo} ${cruce.local?.grupo ? `<span class="grupo-badge">${cruce.local.grupo}</span>` : ''}`
+      : 'Por definir';
+    
+    const visitLabel = visitEquipo 
+      ? `${visitEquipo} ${cruce.visit?.grupo ? `<span class="grupo-badge">${cruce.visit.grupo}</span>` : ''}`
+      : 'Por definir';
+
+    const localFlag = localEquipo ? (FLAGS[localEquipo] || '🏳️') : '❓';
+    const visitFlag = visitEquipo ? (FLAGS[visitEquipo] || '🏳️') : '❓';
+
+    return `
+      <div class="cruce-card ${estado}">
+        <div class="cruce-header">
+          <span class="cruce-id">${cruce.id}</span>
+          <span class="cruce-estado ${estado}">${estado === 'vivo' ? '🔴 EN JUEGO' : estado === 'finalizado' ? '✅ FINALIZADO' : '⏳ PRÓXIMO'}</span>
+        </div>
+        <div class="cruce-equipos">
+          <div class="cruce-equipo ${ganador === 'local' ? 'ganador' : ''}">
+            <div class="cruce-equipo-info">
+              <span class="flag-sm">${localFlag}</span>
+              <span>${localLabel}</span>
+            </div>
+            ${res && res.local !== null ? `<span class="cruce-equipo-score">${res.local}</span>` : ''}
+          </div>
+          <div class="cruce-vs">${partido ? `${partido.fecha} · ${partido.hora}` : 'Por definir'}</div>
+          <div class="cruce-equipo ${ganador === 'visit' ? 'ganador' : ''}">
+            <div class="cruce-equipo-info">
+              <span class="flag-sm">${visitFlag}</span>
+              <span>${visitLabel}</span>
+            </div>
+            ${res && res.visit !== null ? `<span class="cruce-equipo-score">${res.visit}</span>` : ''}
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  function getEstadoPartido(partido, resultado) {
+    if (resultado && resultado.estado) {
+      return resultado.estado;
+    }
+    const kickoff = getKickoffTimestamp(partido);
+    const ahora = Date.now();
+    const finPartido = kickoff + (120 * 60 * 1000);
+    if (ahora < kickoff) return 'proximo';
+    if (ahora < finPartido) return 'vivo';
+    return 'finalizado';
+  }
+
+  // ═══════════════════════════════════════════════════════
+  // RENDERIZADO: ELIMINATORIAS
+  // ═══════════════════════════════════════════════════════
+
+  function renderEliminatorias(resultados, clasificacion) {
+    try {
+      const contenedor = document.getElementById('contenido-eliminatorias');
+      
+      const cruces16avos = determinarCruces16avos(clasificacion);
+      console.log("🎯 Cruces de 16avos definidos:", cruces16avos);
+
+      let html = '<div class="eliminatorias-title">FASES ELIMINATORIAS</div>';
+
+      // 16AVOS
+      html += '<div class="fase-title">DIECISEISAVOS DE FINAL</div>';
+      html += '<div class="cruces-grid">';
+      
+      cruces16avos.forEach(cruce => {
+        const partido = PARTIDOS_ELIM.find(p => p.id === cruce.id);
+        const res = resultados.find(r => r.partido_id === cruce.id);
+        const estado = partido ? getEstadoPartido(partido, res) : 'proximo';
+        const ganador = resolverGanador(cruce.id, resultados);
+        html += renderCruceCard(cruce, estado, ganador, res, partido);
+      });
+      
+      html += '</div>';
+
+      // OCTAVOS
+      html += '<div class="fase-title">OCTAVOS DE FINAL</div>';
+      html += '<div class="cruces-grid">';
+      
+      ESTRUCTURA_OCTAVOS.forEach(estructura => {
+        const partido = PARTIDOS_ELIM.find(p => p.id === estructura.id);
+        const res = resultados.find(r => r.partido_id === estructura.id);
+        const estado = partido ? getEstadoPartido(partido, res) : 'proximo';
+        
+        const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
+        const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
+        const ganador = resolverGanador(estructura.id, resultados);
+
+        const cruce = { id: estructura.id, local, visit };
+        html += renderCruceCard(cruce, estado, ganador, res, partido);
+      });
+      
+      html += '</div>';
+
+      // CUARTOS
+      html += '<div class="fase-title">CUARTOS DE FINAL</div>';
+      html += '<div class="cruces-grid">';
+      
+      ESTRUCTURA_CUARTOS.forEach(estructura => {
+        const partido = PARTIDOS_ELIM.find(p => p.id === estructura.id);
+        const res = resultados.find(r => r.partido_id === estructura.id);
+        const estado = partido ? getEstadoPartido(partido, res) : 'proximo';
+        
+        const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
+        const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
+        const ganador = resolverGanador(estructura.id, resultados);
+
+        const cruce = { id: estructura.id, local, visit };
+        html += renderCruceCard(cruce, estado, ganador, res, partido);
+      });
+      
+      html += '</div>';
+
+      // SEMIS
+      html += '<div class="fase-title">SEMIFINALES</div>';
+      html += '<div class="cruces-grid">';
+      
+      ESTRUCTURA_SEMIS.forEach(estructura => {
+        const partido = PARTIDOS_ELIM.find(p => p.id === estructura.id);
+        const res = resultados.find(r => r.partido_id === estructura.id);
+        const estado = partido ? getEstadoPartido(partido, res) : 'proximo';
+        
+        const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
+        const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
+        const ganador = resolverGanador(estructura.id, resultados);
+
+        const cruce = { id: estructura.id, local, visit };
+        html += renderCruceCard(cruce, estado, ganador, res, partido);
+      });
+      
+      html += '</div>';
+
+      // FINAL Y TERCER PUESTO
+      html += '<div class="fase-title">🏆 TERCER PUESTO Y FINAL</div>';
+      html += '<div class="cruces-grid">';
+      
+      ESTRUCTURA_FINAL.forEach(estructura => {
+        const partido = PARTIDOS_ELIM.find(p => p.id === estructura.id);
+        const res = resultados.find(r => r.partido_id === estructura.id);
+        const estado = partido ? getEstadoPartido(partido, res) : 'proximo';
+        
+        const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
+        const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
+        const ganador = resolverGanador(estructura.id, resultados);
+
+        const cruce = { id: estructura.id, local, visit };
+        html += renderCruceCard(cruce, estado, ganador, res, partido);
+      });
+      
+      html += '</div>';
+      
+      contenedor.innerHTML = html;
+      contenedor.style.display = 'block';
+    } catch (err) {
+      console.error("Error en renderEliminatorias:", err);
+    }
+  }
 </script>
 
 </body>
