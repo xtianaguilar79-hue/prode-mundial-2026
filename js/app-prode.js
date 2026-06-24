@@ -233,7 +233,7 @@ function mostrarMsgGrupo(texto, tipo) {
 }
 
 // ═══════════════════════════════════════════════════════
-// CARGA DE DATOS (CON DIAGNÓSTICO DETALLADO)
+// CARGA DE DATOS
 // ═══════════════════════════════════════════════════════
 async function cargarDatos() {
   try {
@@ -254,18 +254,6 @@ async function cargarDatos() {
     }
     
     console.log(`🎯 Predicciones cargadas para el usuario: ${Object.keys(predicciones).length}`);
-    
-    // ═════════════════════════════════════════════════════
-    // LOG DETALLADO DE PREDICCIONES
-    // ═════════════════════════════════════════════════════
-    if (Object.keys(predicciones).length > 0) {
-      console.log(`📋 IDs de partidos pronosticados:`);
-      Object.keys(predicciones).sort().forEach(id => {
-        const pred = predicciones[id];
-        console.log(`   - ${id}: ${pred.local}-${pred.visit}`);
-      });
-    }
-    // ═════════════════════════════════════════════════════
 
     const { data: resData, error: resError } = await supabase
       .from('resultados')
@@ -284,36 +272,6 @@ async function cargarDatos() {
     }
 
     console.log(`📊 Resultados oficiales cargados: ${Object.keys(resultados).length}`);
-    
-    // ═════════════════════════════════════════════════════
-    // LOG DETALLADO DE RESULTADOS
-    // ═════════════════════════════════════════════════════
-    if (Object.keys(resultados).length > 0) {
-      console.log(`📋 IDs de partidos con resultado oficial:`);
-      Object.keys(resultados).sort().forEach(id => {
-        const res = resultados[id];
-        console.log(`   - ${id}: ${res.local}-${res.visit} (es_prueba: ${res.es_prueba})`);
-      });
-    }
-    // ═════════════════════════════════════════════════════
-
-    // ═════════════════════════════════════════════════════
-    // VERIFICACIÓN DE COINCIDENCIA DE IDs
-    // ═════════════════════════════════════════════════════
-    const idsPartidosDatos = new Set(TODOS_PARTIDOS.map(p => p.id));
-    const idsPredicciones = new Set(Object.keys(predicciones));
-    const idsResultados = new Set(Object.keys(resultados));
-    
-    const predsNoEnDatos = [...idsPredicciones].filter(id => !idsPartidosDatos.has(id));
-    const resNoEnDatos = [...idsResultados].filter(id => !idsPartidosDatos.has(id));
-    
-    if (predsNoEnDatos.length > 0) {
-      console.warn(`⚠️ Predicciones con IDs que NO están en datos-partidos.js:`, predsNoEnDatos);
-    }
-    if (resNoEnDatos.length > 0) {
-      console.warn(`⚠️ Resultados con IDs que NO están en datos-partidos.js:`, resNoEnDatos);
-    }
-    // ═════════════════════════════════════════════════════
 
     actualizarStats();
   } catch (err) {
@@ -416,10 +374,52 @@ function getPartidosFase() {
   return PARTIDOS_ELIM.filter(p => p.fase === faseActiva);
 }
 
+// ═══════════════════════════════════════════════════════
+// FUNCIÓN AUXILIAR: FORMATEAR FECHA
+// ═══════════════════════════════════════════════════════
+function formatearFecha(fechaStr) {
+  // fechaStr viene en formato "DD/MM" (ej: "24/06")
+  const meses = [
+    "enero", "febrero", "marzo", "abril", "mayo", "junio",
+    "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
+  ];
+  
+  if (!fechaStr || typeof fechaStr !== 'string') return fechaStr;
+  
+  const partes = fechaStr.split('/');
+  if (partes.length !== 2) return fechaStr;
+  
+  const dia = parseInt(partes[0]);
+  const mesIndex = parseInt(partes[1]) - 1;
+  
+  if (isNaN(dia) || isNaN(mesIndex) || mesIndex < 0 || mesIndex > 11) {
+    return fechaStr;
+  }
+  
+  return `📅 ${dia} de ${meses[mesIndex]}`;
+}
+
+// ═══════════════════════════════════════════════════════
+// FUNCIÓN AUXILIAR: ORDENAR FECHAS (MÁS RECIENTE PRIMERO)
+// ═══════════════════════════════════════════════════════
+function ordenarFechas(fechas) {
+  return fechas.sort((a, b) => {
+    const [diaA, mesA] = a.split('/').map(Number);
+    const [diaB, mesB] = b.split('/').map(Number);
+    
+    // Primero por mes (descendente - más reciente primero)
+    if (mesA !== mesB) return mesB - mesA;
+    // Luego por día (descendente)
+    return diaB - diaA;
+  });
+}
+
+// ═══════════════════════════════════════════════════════
+// RENDERIZAR PARTIDOS AGRUPADOS POR FECHA
+// ═══════════════════════════════════════════════════════
 function renderPartidos() {
   console.log(`⚽ Renderizando partidos, fase: ${faseActiva}`);
   
-  // Limpiar intervalos anteriores
   intervalosCrono.forEach(interval => clearInterval(interval));
   intervalosCrono = [];
   
@@ -442,19 +442,51 @@ function renderPartidos() {
     return;
   }
 
-  // ═════════════════════════════════════════════════════
-  // LOG DE PARTIDOS EN LA FASE ACTIVA
-  // ═════════════════════════════════════════════════════
-  console.log(`📋 Detalle de partidos en fase ${faseActiva}:`);
+  // ══════════════════════════════════════════════════════
+  // AGRUPAR PARTIDOS POR FECHA
+  // ══════════════════════════════════════════════════════
+  const partidosPorFecha = {};
   partidos.forEach(p => {
-    const tienePred = !!predicciones[p.id];
-    const tieneRes = !!resultados[p.id];
-    const pts = tienePred && tieneRes ? calcularPuntos(predicciones[p.id], resultados[p.id]) : 0;
-    console.log(`   - ${p.id}: ${p.local} vs ${p.visit} | Pred: ${tienePred ? '✓' : '✗'} | Res: ${tieneRes ? '✓' : '✗'} | Pts: ${pts}`);
+    const fecha = p.fecha || "Sin fecha";
+    if (!partidosPorFecha[fecha]) {
+      partidosPorFecha[fecha] = [];
+    }
+    partidosPorFecha[fecha].push(p);
   });
-  // ═════════════════════════════════════════════════════
 
-  grid.innerHTML = partidos.map(p => renderTarjeta(p)).join("");
+  // ══════════════════════════════════════════════════════
+  // ORDENAR FECHAS: MÁS RECIENTES PRIMERO
+  // ══════════════════════════════════════════════════════
+  const fechasOrdenadas = ordenarFechas(Object.keys(partidosPorFecha));
+
+  // ══════════════════════════════════════════════════════
+  // GENERAR HTML CON SUBTÍTULOS POR FECHA
+  // ══════════════════════════════════════════════════════
+  let html = "";
+  
+  fechasOrdenadas.forEach(fecha => {
+    const partidosDeFecha = partidosPorFecha[fecha];
+    const fechaFormateada = formatearFecha(fecha);
+    
+    // Subtítulo de la fecha
+    html += `
+      <div style="grid-column: 1/-1; margin: 20px 0 10px 0; padding: 12px 16px; background: linear-gradient(135deg, var(--gold) 0%, rgba(255,201,60,0.3) 100%); border-radius: var(--r); border-left: 4px solid var(--gold);">
+        <h3 style="margin: 0; font-family: 'Anton', sans-serif; font-size: 22px; color: var(--text); letter-spacing: 1px;">
+          ${fechaFormateada}
+          <span style="font-size: 13px; color: var(--text2); font-family: inherit; margin-left: 10px; font-weight: normal;">
+            (${partidosDeFecha.length} partido${partidosDeFecha.length !== 1 ? 's' : ''})
+          </span>
+        </h3>
+      </div>
+    `;
+    
+    // Partidos de esa fecha
+    partidosDeFecha.forEach(p => {
+      html += renderTarjeta(p);
+    });
+  });
+
+  grid.innerHTML = html;
 
   grid.querySelectorAll(".btn-guardar").forEach(btn => {
     btn.onclick = () => guardarPrediccion(btn.dataset.id);
@@ -632,7 +664,7 @@ function renderTarjeta(p) {
 }
 
 // ═══════════════════════════════════════════════════════
-// EVENTO INPUT (para mostrar/ocultar alargue y penales)
+// EVENTO INPUT
 // ═══════════════════════════════════════════════════════
 
 document.addEventListener("input", (e) => {
