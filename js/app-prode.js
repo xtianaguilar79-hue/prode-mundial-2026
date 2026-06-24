@@ -378,7 +378,6 @@ function getPartidosFase() {
 // FUNCIÓN AUXILIAR: FORMATEAR FECHA
 // ═══════════════════════════════════════════════════════
 function formatearFecha(fechaStr) {
-  // fechaStr viene en formato "DD/MM" (ej: "24/06")
   const meses = [
     "enero", "febrero", "marzo", "abril", "mayo", "junio",
     "julio", "agosto", "septiembre", "octubre", "noviembre", "diciembre"
@@ -400,17 +399,20 @@ function formatearFecha(fechaStr) {
 }
 
 // ═══════════════════════════════════════════════════════
-// FUNCIÓN AUXILIAR: ORDENAR FECHAS (MÁS RECIENTE PRIMERO)
+// FUNCIÓN AUXILIAR: ORDENAR FECHAS (ASCENDENTE)
+// ═══════════════════════════════════════════════════════
+// ORDEN: Del más antiguo al más reciente
+// Ejemplo: 24/06 → 25/06 → 26/06 → 27/06
 // ═══════════════════════════════════════════════════════
 function ordenarFechas(fechas) {
   return fechas.sort((a, b) => {
     const [diaA, mesA] = a.split('/').map(Number);
     const [diaB, mesB] = b.split('/').map(Number);
     
-    // Primero por mes (descendente - más reciente primero)
-    if (mesA !== mesB) return mesB - mesA;
-    // Luego por día (descendente)
-    return diaB - diaA;
+    // Primero por mes (ASCENDENTE - más antiguo primero)
+    if (mesA !== mesB) return mesA - mesB;
+    // Luego por día (ASCENDENTE)
+    return diaA - diaB;
   });
 }
 
@@ -455,7 +457,7 @@ function renderPartidos() {
   });
 
   // ══════════════════════════════════════════════════════
-  // ORDENAR FECHAS: MÁS RECIENTES PRIMERO
+  // ORDENAR FECHAS: MÁS ANTIGUAS PRIMERO (ASCENDENTE)
   // ══════════════════════════════════════════════════════
   const fechasOrdenadas = ordenarFechas(Object.keys(partidosPorFecha));
 
