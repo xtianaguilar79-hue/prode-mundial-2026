@@ -62,9 +62,6 @@ async function cargarDatosCompletos() {
     const usuarios = {};
     if (usuariosData) usuariosData.forEach(u => { usuarios[u.id] = u; });
 
-    // ══════════════════════════════════════════════════════
-    // Cargar predicciones con paginación (sin límite de 1000)
-    // ══════════════════════════════════════════════════════
     const predsData = [];
     let desde = 0;
     const limite = 1000;
@@ -78,7 +75,6 @@ async function cargarDatosCompletos() {
       if (error) throw error;
       if (!data || data.length === 0) break;
       
-      // Filtrar predicciones de prueba
       const predValidas = data.filter(p => p.bloqueado !== true || p.es_prueba !== true);
       predsData.push(...predValidas);
       
@@ -88,9 +84,6 @@ async function cargarDatosCompletos() {
 
     console.log(`🎯 Predicciones cargadas: ${predsData?.length || 0}`);
 
-    // ══════════════════════════════════════════════════════
-    // Cargar resultados oficiales (igual que en app-prode.js)
-    // ══════════════════════════════════════════════════════
     const { data: resData, error: resError } = await supabase
       .from('resultados')
       .select('*')
@@ -305,9 +298,6 @@ function renderRanking(lista, totalUsuarios) {
 
   const top3Div = document.getElementById("top3");
   if (top3Div && lista.length >= 3) {
-    // ══════════════════════════════════════════════════════
-    // ORDEN CORREGIDO: 1ro, 2do, 3ro
-    // ══════════════════════════════════════════════════════
     const orden = [0, 1, 2];
     const colores = ["p1", "p2", "p3"];
     const emojis = ["🥇", "🥈", "🥉"];
@@ -696,6 +686,9 @@ function renderCardPartido(p, resultado) {
   `;
 }
 
+// ═══════════════════════════════════════════════════════
+// RENDERIZADO DE RESULTADOS (ORDEN INVERTIDO)
+// ═══════════════════════════════════════════════════════
 function renderResultados(resultados) {
   const cont = document.getElementById("resultadosContenido");
   const loader = document.getElementById("resultadosLoader");
@@ -703,16 +696,19 @@ function renderResultados(resultados) {
   if (loader) loader.style.display = "none";
   if (!cont) return;
 
+  // ══════════════════════════════════════════════════════
+  // ORDEN INVERTIDO: Los más recientes primero
+  // ══════════════════════════════════════════════════════
   const secciones = [
-    { label: "Fase de Grupos · Fecha 1", partidos: PARTIDOS_GRUPOS.filter(p => p.j === 1) },
-    { label: "Fase de Grupos · Fecha 2", partidos: PARTIDOS_GRUPOS.filter(p => p.j === 2) },
-    { label: "Fase de Grupos · Fecha 3", partidos: PARTIDOS_GRUPOS.filter(p => p.j === 3) },
-    { label: "Dieciseisavos de Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "16avos") },
-    { label: "Octavos de Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "octavos") },
-    { label: "Cuartos de Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "cuartos") },
-    { label: "Semifinales", partidos: PARTIDOS_ELIM.filter(p => p.fase === "semis") },
-    { label: "3er Puesto", partidos: PARTIDOS_ELIM.filter(p => p.fase === "3er") },
     { label: "🏆 Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "final") },
+    { label: "🥉 3er Puesto", partidos: PARTIDOS_ELIM.filter(p => p.fase === "3er") },
+    { label: "Semifinales", partidos: PARTIDOS_ELIM.filter(p => p.fase === "semis") },
+    { label: "Cuartos de Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "cuartos") },
+    { label: "Octavos de Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "octavos") },
+    { label: "Dieciseisavos de Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "16avos") },
+    { label: "Fase de Grupos · Fecha 3", partidos: PARTIDOS_GRUPOS.filter(p => p.j === 3) },
+    { label: "Fase de Grupos · Fecha 2", partidos: PARTIDOS_GRUPOS.filter(p => p.j === 2) },
+    { label: "Fase de Grupos · Fecha 1", partidos: PARTIDOS_GRUPOS.filter(p => p.j === 1) },
   ];
 
   let html = "";
@@ -728,7 +724,10 @@ function renderResultados(resultados) {
     if (enJuego.length === 0 && finalizados.length === 0 && pendientes.length === 0) return;
 
     hayContenido = true;
-    const ordenados = [...enJuego, ...finalizados, ...pendientes];
+    // ══════════════════════════════════════════════════════
+    // INVERTIR ORDEN: Los más recientes primero
+    // ══════════════════════════════════════════════════════
+    const ordenados = [...enJuego, ...finalizados, ...pendientes].reverse();
 
     html += `<h3 class="seccion-titulo">${sec.label}</h3>`;
     html += `<div class="resultados-grid">`;
