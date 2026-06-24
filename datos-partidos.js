@@ -162,7 +162,7 @@ export const PARTIDOS_GRUPOS = [
 
 // ─── PARTIDOS ELIMINATORIOS (32 partidos) ───
 export const PARTIDOS_ELIM = [
-  { id:"M073", fase:"16avos", local:"2°A", visit:"2°B", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
+  { id:"M073", fase:"16avos", local:"2°A", visit:"Canadá", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M076", fase:"16avos", local:"1°C", visit:"2°F", fecha:"29/06", hora:"14:00", sede:"Houston, USA" },
   { id:"M074", fase:"16avos", local:"Alemania", visit:"3° A/B/C/D/F", fecha:"29/06", hora:"17:30", sede:"Boston, USA" },
   { id:"M075", fase:"16avos", local:"1°F", visit:"2°C", fecha:"29/06", hora:"22:00", sede:"BBVA, MTY" },
@@ -174,7 +174,7 @@ export const PARTIDOS_ELIM = [
   { id:"M081", fase:"16avos", local:"Estados Unidos", visit:"3° B/E/F/I/J", fecha:"01/07", hora:"21:00", sede:"San Francisco, USA" },
   { id:"M084", fase:"16avos", local:"1°H", visit:"2°J", fecha:"02/07", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M083", fase:"16avos", local:"2°K", visit:"2°L", fecha:"02/07", hora:"20:00", sede:"Toronto, CAN" },
-  { id:"M085", fase:"16avos", local:"1°B", visit:"3° E/F/G/I/J", fecha:"03/07", hora:"00:00", sede:"Vancouver, CAN" },
+  { id:"M085", fase:"16avos", local:"Suiza", visit:"3° E/F/G/I/J", fecha:"03/07", hora:"00:00", sede:"Vancouver, CAN" },
   { id:"M088", fase:"16avos", local:"2°D", visit:"2°G", fecha:"03/07", hora:"15:00", sede:"Dallas, USA" },
   { id:"M086", fase:"16avos", local:"Argentina", visit:"2°H", fecha:"03/07", hora:"19:00", sede:"Miami, USA" },
   { id:"M087", fase:"16avos", local:"1°K", visit:"3° D/E/I/J/L", fecha:"03/07", hora:"22:30", sede:"Kansas City, USA" },
