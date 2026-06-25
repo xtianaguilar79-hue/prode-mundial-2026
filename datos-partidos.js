@@ -162,7 +162,7 @@ export const PARTIDOS_GRUPOS = [
 
 // ─── PARTIDOS ELIMINATORIOS (32 partidos) ───
 export const PARTIDOS_ELIM = [
-  { id:"M073", fase:"16avos", local:"2°A", visit:"Canadá", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
+  { id:"M073", fase:"16avos", local:"Sudáfrica", visit:"Canadá", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M076", fase:"16avos", local:"Brasil", visit:"2°F", fecha:"29/06", hora:"14:00", sede:"Houston, USA" },
   { id:"M074", fase:"16avos", local:"Alemania", visit:"3° A/B/C/D/F", fecha:"29/06", hora:"17:30", sede:"Boston, USA" },
   { id:"M075", fase:"16avos", local:"1°F", visit:"Marruecos", fecha:"29/06", hora:"22:00", sede:"BBVA, MTY" },
