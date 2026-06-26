@@ -163,10 +163,10 @@ export const PARTIDOS_GRUPOS = [
 // ─── PARTIDOS ELIMINATORIOS (32 partidos) ───
 export const PARTIDOS_ELIM = [
   { id:"M073", fase:"16avos", local:"Sudáfrica", visit:"Canadá", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
-  { id:"M076", fase:"16avos", local:"Brasil", visit:"2°F", fecha:"29/06", hora:"14:00", sede:"Houston, USA" },
+  { id:"M076", fase:"16avos", local:"Brasil", visit:"Japón", fecha:"29/06", hora:"14:00", sede:"Houston, USA" },
   { id:"M074", fase:"16avos", local:"Alemania", visit:"3° A/B/C/D/F", fecha:"29/06", hora:"17:30", sede:"Boston, USA" },
-  { id:"M075", fase:"16avos", local:"1°F", visit:"Marruecos", fecha:"29/06", hora:"22:00", sede:"BBVA, MTY" },
-  { id:"M078", fase:"16avos", local:"2°E", visit:"2°I", fecha:"30/06", hora:"14:00", sede:"Dallas, USA" },
+  { id:"M075", fase:"16avos", local:"Países Bajos", visit:"Marruecos", fecha:"29/06", hora:"22:00", sede:"BBVA, MTY" },
+  { id:"M078", fase:"16avos", local:"Costa de Marfil", visit:"2°I", fecha:"30/06", hora:"14:00", sede:"Dallas, USA" },
   { id:"M077", fase:"16avos", local:"1°I", visit:"3° C/D/F/G/H", fecha:"30/06", hora:"18:00", sede:"Nueva York/NJ, USA" },
   { id:"M079", fase:"16avos", local:"México", visit:"3° C/E/F/H/I", fecha:"30/06", hora:"22:00", sede:"Azteca, CDMX" },
   { id:"M080", fase:"16avos", local:"1°L", visit:"3° E/H/I/J/K", fecha:"01/07", hora:"13:00", sede:"Atlanta, USA" },
@@ -175,7 +175,7 @@ export const PARTIDOS_ELIM = [
   { id:"M084", fase:"16avos", local:"1°H", visit:"2°J", fecha:"02/07", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M083", fase:"16avos", local:"2°K", visit:"2°L", fecha:"02/07", hora:"20:00", sede:"Toronto, CAN" },
   { id:"M085", fase:"16avos", local:"Suiza", visit:"3° E/F/G/I/J", fecha:"03/07", hora:"00:00", sede:"Vancouver, CAN" },
-  { id:"M088", fase:"16avos", local:"2°D", visit:"2°G", fecha:"03/07", hora:"15:00", sede:"Dallas, USA" },
+  { id:"M088", fase:"16avos", local:"Australia", visit:"2°G", fecha:"03/07", hora:"15:00", sede:"Dallas, USA" },
   { id:"M086", fase:"16avos", local:"Argentina", visit:"2°H", fecha:"03/07", hora:"19:00", sede:"Miami, USA" },
   { id:"M087", fase:"16avos", local:"1°K", visit:"3° D/E/I/J/L", fecha:"03/07", hora:"22:30", sede:"Kansas City, USA" },
   { id:"M090", fase:"octavos", local:"G73", visit:"G75", fecha:"04/07", hora:"14:00", sede:"Houston, USA" },
