@@ -164,7 +164,7 @@ export const PARTIDOS_GRUPOS = [
 export const PARTIDOS_ELIM = [
   { id:"M073", fase:"16avos", local:"Sudáfrica", visit:"Canadá", fecha:"28/06", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M076", fase:"16avos", local:"Brasil", visit:"Japón", fecha:"29/06", hora:"14:00", sede:"Houston, USA" },
-  { id:"M074", fase:"16avos", local:"Alemania", visit:"3° A/B/C/D/F", fecha:"29/06", hora:"17:30", sede:"Boston, USA" },
+  { id:"M074", fase:"16avos", local:"Alemania", visit:"Paraguay", fecha:"29/06", hora:"17:30", sede:"Boston, USA" },
   { id:"M075", fase:"16avos", local:"Países Bajos", visit:"Marruecos", fecha:"29/06", hora:"22:00", sede:"BBVA, MTY" },
   { id:"M078", fase:"16avos", local:"Costa de Marfil", visit:"Noruega", fecha:"30/06", hora:"14:00", sede:"Dallas, USA" },
   { id:"M077", fase:"16avos", local:"Francia", visit:"Suecia", fecha:"30/06", hora:"18:00", sede:"Nueva York/NJ, USA" },
