@@ -171,7 +171,7 @@ export const PARTIDOS_ELIM = [
   { id:"M079", fase:"16avos", local:"México", visit:"3° C/E/F/H/I", fecha:"30/06", hora:"22:00", sede:"Azteca, CDMX" },
   { id:"M080", fase:"16avos", local:"1°L", visit:"3° E/H/I/J/K", fecha:"01/07", hora:"13:00", sede:"Atlanta, USA" },
   { id:"M082", fase:"16avos", local:"Bélgica", visit:"3° A/E/H/I/J", fecha:"01/07", hora:"17:00", sede:"Seattle, USA" },
-  { id:"M081", fase:"16avos", local:"Estados Unidos", visit:"3° B/E/F/I/J", fecha:"01/07", hora:"21:00", sede:"San Francisco, USA" },
+  { id:"M081", fase:"16avos", local:"Estados Unidos", visit:"Bosnia-Herzegovina", fecha:"01/07", hora:"21:00", sede:"San Francisco, USA" },
   { id:"M084", fase:"16avos", local:"España", visit:"2°J", fecha:"02/07", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M083", fase:"16avos", local:"2°K", visit:"2°L", fecha:"02/07", hora:"20:00", sede:"Toronto, CAN" },
   { id:"M085", fase:"16avos", local:"Suiza", visit:"3° E/F/G/I/J", fecha:"03/07", hora:"00:00", sede:"Vancouver, CAN" },
