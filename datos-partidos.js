@@ -167,7 +167,7 @@ export const PARTIDOS_ELIM = [
   { id:"M074", fase:"16avos", local:"Alemania", visit:"3° A/B/C/D/F", fecha:"29/06", hora:"17:30", sede:"Boston, USA" },
   { id:"M075", fase:"16avos", local:"Países Bajos", visit:"Marruecos", fecha:"29/06", hora:"22:00", sede:"BBVA, MTY" },
   { id:"M078", fase:"16avos", local:"Costa de Marfil", visit:"Noruega", fecha:"30/06", hora:"14:00", sede:"Dallas, USA" },
-  { id:"M077", fase:"16avos", local:"Francia", visit:"3° C/D/F/G/H", fecha:"30/06", hora:"18:00", sede:"Nueva York/NJ, USA" },
+  { id:"M077", fase:"16avos", local:"Francia", visit:"Suecia", fecha:"30/06", hora:"18:00", sede:"Nueva York/NJ, USA" },
   { id:"M079", fase:"16avos", local:"México", visit:"3° C/E/F/H/I", fecha:"30/06", hora:"22:00", sede:"Azteca, CDMX" },
   { id:"M080", fase:"16avos", local:"1°L", visit:"3° E/H/I/J/K", fecha:"01/07", hora:"13:00", sede:"Atlanta, USA" },
   { id:"M082", fase:"16avos", local:"Bélgica", visit:"3° A/E/H/I/J", fecha:"01/07", hora:"17:00", sede:"Seattle, USA" },
