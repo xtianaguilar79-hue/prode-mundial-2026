@@ -198,9 +198,9 @@
     </div>
   </div>
   <nav class="nav">
-    <a href="index.html"> Inicio</a>
+    <a href="index.html">🏠 Inicio</a>
     <a href="instructivo.html">📘 Reglamento</a>
-    <a href="index.html#ranking"> Ranking</a>
+    <a href="index.html#ranking">🏅 Ranking</a>
     <a href="chat.html">💬 Chat</a>
     <a href="grupos.html" style="color:var(--gold); font-weight:700;">📊 Grupos</a>
     <a href="login.html">🔐 Ingresar</a>
@@ -250,34 +250,34 @@
     "Nueva Zelanda": 85
   };
 
+  // ═══════════════════════════════════════════════════════
+  // CRUCES OFICIALES FIFA - SEGÚN IMAGEN CONFIRMADA
+  // ═══════════════════════════════════════════════════════
   const CRUCES_TERCIEROS_FIFA = {
-    'M075': ['A', 'B', 'C', 'D', 'F'],
-    'M077': ['C', 'D', 'F', 'G', 'H'],
-    'M079': ['C', 'E', 'F', 'H', 'I'],
-    'M080': ['E', 'H', 'I', 'J', 'K'],
-    'M081': ['B', 'E', 'F', 'I', 'J'],
-    'M082': ['A', 'E', 'H', 'I', 'J'],
-    'M085': ['E', 'F', 'G', 'I', 'J'],
-    'M087': ['D', 'E', 'I', 'J', 'L']
+    'M085': ['C', 'E', 'F', 'H', 'I'],  // México vs 3°
+    'M080': ['E', 'H', 'I', 'J', 'K'],  // 1°L vs 3°
+    'M087': ['A', 'E', 'H', 'I', 'J'],  // Bélgica vs 3°
+    'M088': ['E', 'F', 'G', 'I', 'J'],  // Suiza vs 3°
+    'M090': ['D', 'E', 'I', 'J', 'L']   // 1°K vs 3°
   };
 
   const ESTRUCTURA_16AVOS = [
-    { id: 'M073', local: '2°A', visit: '2°B' },
-    { id: 'M074', local: '1°C', visit: '2°F' },
-    { id: 'M075', local: '1°E', visit: '3°' },
-    { id: 'M076', local: '1°F', visit: '2°C' },
-    { id: 'M077', local: '1°I', visit: '3°' },
-    { id: 'M078', local: '2°E', visit: '2°I' },
-    { id: 'M079', local: '1°A', visit: '3°' },
+    { id: 'M073', local: 'Sudáfrica', visit: 'Canadá' },
+    { id: 'M074', local: 'Brasil', visit: 'Japón' },
+    { id: 'M075', local: 'Alemania', visit: 'Paraguay' },
+    { id: 'M076', local: 'Países Bajos', visit: 'Marruecos' },
+    { id: 'M077', local: 'Costa de Marfil', visit: 'Noruega' },
+    { id: 'M078', local: 'Francia', visit: 'Suecia' },
+    { id: 'M079', local: 'México', visit: '3°' },
     { id: 'M080', local: '1°L', visit: '3°' },
-    { id: 'M081', local: '1°D', visit: '3°' },
-    { id: 'M082', local: '1°G', visit: '3°' },
-    { id: 'M083', local: '2°K', visit: '2°L' },
-    { id: 'M084', local: '1°H', visit: '2°J' },
-    { id: 'M085', local: '1°B', visit: '3°' },
-    { id: 'M086', local: '1°J', visit: '2°H' },
-    { id: 'M087', local: '1°K', visit: '3°' },
-    { id: 'M088', local: '2°D', visit: '2°G' }
+    { id: 'M081', local: 'Bélgica', visit: '3°' },
+    { id: 'M082', local: 'Estados Unidos', visit: 'Bosnia-Herzegovina' },
+    { id: 'M083', local: 'España', visit: '2°J' },
+    { id: 'M084', local: '2°K', visit: '2°L' },
+    { id: 'M085', local: 'Suiza', visit: '3°' },
+    { id: 'M086', local: 'Australia', visit: 'Egipto' },
+    { id: 'M087', local: 'Argentina', visit: 'Cabo Verde' },
+    { id: 'M088', local: '1°K', visit: '3°' }
   ];
 
   const ESTRUCTURA_OCTAVOS = [
@@ -384,16 +384,6 @@
   // ═══════════════════════════════════════════════════════
   // FAIR PLAY (JUEGO LIMPIO)
   // ═══════════════════════════════════════════════════════
-  // Columnas existentes en la BD:
-  // - amarillas_local, amarillas_visit
-  // - rojas_local, rojas_visit
-  //
-  // Puntuación según reglamento FIFA:
-  // - Amarilla: -1 punto
-  // - Roja (directa o doble amarilla): -4 puntos
-  // (No distinguimos entre roja directa y doble amarilla porque
-  //  la BD solo tiene una columna "rojas")
-  // ═══════════════════════════════════════════════════════
 
   function calcularFairPlay(equipo, partidosGrupo, resultados) {
     let puntos = 0;
@@ -419,38 +409,23 @@
   // ═══════════════════════════════════════════════════════
   // COMPARADOR CON DESEMPATE OLÍMPICO COMPLETO
   // ═══════════════════════════════════════════════════════
-  // Orden según reglamento FIFA:
-  // 1. Puntos generales
-  // 2. Enfrentamiento directo (pts, DG, GF entre empatados)
-  // 3. Diferencia de goles general
-  // 4. Goles a favor general
-  // 5. Fair Play (más puntos = mejor)
-  // 6. Ranking FIFA (menor número = mejor)
-  // ═══════════════════════════════════════════════════════
 
   function compararEquipos(a, b, tabla, partidosGrupo, resultados) {
-    // 1. Puntos generales
     if (b.pts !== a.pts) return b.pts - a.pts;
 
-    // 2. Enfrentamiento directo (SOLO entre A y B)
     const { statsA, statsB } = calcularEstadisticasDirectas(a.equipo, b.equipo, partidosGrupo, resultados);
     
     if (statsB.pts !== statsA.pts) return statsB.pts - statsA.pts;
     if (statsB.dg !== statsA.dg) return statsB.dg - statsA.dg;
     if (statsB.gf !== statsA.gf) return statsB.gf - statsA.gf;
 
-    // 3. Diferencia de goles general
     if (b.dg !== a.dg) return b.dg - a.dg;
-
-    // 4. Goles a favor general
     if (b.gf !== a.gf) return b.gf - a.gf;
 
-    // 5. Fair Play (MÁS puntos = MEJOR, porque son negativos)
     const fairPlayA = calcularFairPlay(a.equipo, partidosGrupo, resultados);
     const fairPlayB = calcularFairPlay(b.equipo, partidosGrupo, resultados);
     if (fairPlayA !== fairPlayB) return fairPlayB - fairPlayA;
 
-    // 6. Ranking FIFA (menor número = mejor posición)
     const rA = RANKING_FIFA[a.equipo] || 100;
     const rB = RANKING_FIFA[b.equipo] || 100;
     return rA - rB;
@@ -481,7 +456,6 @@
         }
       });
 
-      // Ordenar usando el comparador completo
       const ordenados = Object.values(tabla).sort((a, b) => 
         compararEquipos(a, b, tabla, partidosGrupo, resultados)
       );
@@ -650,7 +624,7 @@
               ${segundos.map((eq, i) => `
                 <tr>
                   <td>${i + 1}</td>
-                  <td><span class="flag-sm">${FLAGS[eq.equipo] || '️'}</span> ${eq.equipo}</td>
+                  <td><span class="flag-sm">${FLAGS[eq.equipo] || '🏳️'}</span> ${eq.equipo}</td>
                   <td><span class="grupo-badge">${eq.grupo}</span></td>
                   <td><strong>${eq.pts}</strong></td>
                   <td>${eq.dg > 0 ? '+' + eq.dg : eq.dg}</td>
@@ -777,7 +751,7 @@
   }
 
   // ═══════════════════════════════════════════════════════
-  // DETERMINAR CRUCES DE 16AVOS
+  // DETERMINAR CRUCES DE 16AVOS (CON LÓGICA FIFA CORREGIDA)
   // ═══════════════════════════════════════════════════════
 
   function determinarCruces16avos(clasificacion) {
@@ -869,14 +843,17 @@
         }
       }
       
-      console.log(" Asignación final:", asignacionCruces);
+      console.log("📋 Asignación final:", asignacionCruces);
       console.log(`📊 Terceros asignados: ${Object.keys(asignacionCruces).length} de 8`);
 
       const cruces = ESTRUCTURA_16AVOS.map(estructura => {
         let local = null;
         let visit = null;
 
-        if (estructura.local.startsWith('1°')) {
+        // Si ya es un equipo confirmado (no es una posición)
+        if (!estructura.local.startsWith('1°') && !estructura.local.startsWith('2°') && !estructura.local.startsWith('3°')) {
+          local = { equipo: estructura.local, grupo: null, pts: 0 };
+        } else if (estructura.local.startsWith('1°')) {
           const grupo = estructura.local.substring(2);
           local = {
             equipo: clasificacion[grupo]?.primero || null,
@@ -892,7 +869,9 @@
           };
         }
 
-        if (estructura.visit.startsWith('1°')) {
+        if (!estructura.visit.startsWith('1°') && !estructura.visit.startsWith('2°') && !estructura.visit.startsWith('3°')) {
+          visit = { equipo: estructura.visit, grupo: null, pts: 0 };
+        } else if (estructura.visit.startsWith('1°')) {
           const grupo = estructura.visit.substring(2);
           visit = {
             equipo: clasificacion[grupo]?.primero || null,
@@ -996,7 +975,7 @@
       : 'Por definir';
 
     const localFlag = localEquipo ? (FLAGS[localEquipo] || '🏳️') : '❓';
-    const visitFlag = visitEquipo ? (FLAGS[visitEquipo] || '️') : '❓';
+    const visitFlag = visitEquipo ? (FLAGS[visitEquipo] || '🏳️') : '❓';
 
     return `
       <div class="cruce-card ${estado}">
