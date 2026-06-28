@@ -119,15 +119,6 @@
       color: var(--gold);
     }
 
-    .match-connector {
-      position: absolute;
-      right: -20px;
-      top: 50%;
-      width: 20px;
-      height: 2px;
-      background: var(--border);
-    }
-
     @media (max-width: 600px) {
       .hero-grupos h1 { font-size: 32px; }
       table { font-size: 12px; }
@@ -169,13 +160,8 @@
     <div class="spinner"></div> Cargando...
   </div>
 
-  <!-- Sección de Clasificados (solo si no terminó la fase de grupos) -->
   <div id="contenido-clasificados" class="clasificados-section" style="display:none;"></div>
-
-  <!-- Sección de Tablas de Grupos (solo si no terminó la fase de grupos) -->
   <div id="contenido-grupos"></div>
-
-  <!-- Sección de Bracket Completo (solo si terminó la fase de grupos) -->
   <div id="contenido-bracket" style="display:none;"></div>
 
   <p class="actualizado" id="txt-actualizado"></p>
@@ -205,42 +191,37 @@
     "Nueva Zelanda": 85
   };
 
-  const CRUCES_TERCIEROS_FIFA = {
-    'M079': ['C', 'E', 'F', 'H', 'I'],
-    'M080': ['E', 'H', 'I', 'J', 'K'],
-    'M081': ['A', 'E', 'H', 'I', 'J'],
-    'M085': ['E', 'F', 'G', 'I', 'J'],
-    'M088': ['D', 'E', 'I', 'J', 'L']
-  };
-
+  // ═══════════════════════════════════════════════════════
+  // CRUCES OFICIALES DE 16AVOS - SEGÚN DATOS PROPORCIONADOS
+  // ═══════════════════════════════════════════════════════
   const ESTRUCTURA_16AVOS = [
-    { id: 'M073', local: 'Sudáfrica', visit: 'Canadá' },
-    { id: 'M074', local: 'Brasil', visit: 'Japón' },
-    { id: 'M075', local: 'Alemania', visit: 'Paraguay' },
-    { id: 'M076', local: 'Países Bajos', visit: 'Marruecos' },
-    { id: 'M077', local: 'Costa de Marfil', visit: 'Noruega' },
-    { id: 'M078', local: 'Francia', visit: 'Suecia' },
-    { id: 'M079', local: 'México', visit: '3°' },
-    { id: 'M080', local: '1°L', visit: '3°' },
-    { id: 'M081', local: 'Bélgica', visit: '3°' },
-    { id: 'M082', local: 'Estados Unidos', visit: 'Bosnia-Herzegovina' },
-    { id: 'M083', local: 'España', visit: '2°J' },
-    { id: 'M084', local: '2°K', visit: '2°L' },
-    { id: 'M085', local: 'Suiza', visit: '3°' },
-    { id: 'M086', local: 'Australia', visit: 'Egipto' },
-    { id: 'M087', local: 'Argentina', visit: 'Cabo Verde' },
-    { id: 'M088', local: '1°K', visit: '3°' }
+    { id: 'M073', local: 'Sudáfrica', visit: 'Canadá', fecha: '28/06', hora: '16:00', sede: 'Los Angeles, USA' },
+    { id: 'M076', local: 'Brasil', visit: 'Japón', fecha: '29/06', hora: '14:00', sede: 'Houston, USA' },
+    { id: 'M074', local: 'Alemania', visit: 'Paraguay', fecha: '29/06', hora: '17:30', sede: 'Boston, USA' },
+    { id: 'M075', local: 'Países Bajos', visit: 'Marruecos', fecha: '29/06', hora: '22:00', sede: 'BBVA, MTY' },
+    { id: 'M078', local: 'Costa de Marfil', visit: 'Noruega', fecha: '30/06', hora: '14:00', sede: 'Dallas, USA' },
+    { id: 'M077', local: 'Francia', visit: 'Suecia', fecha: '30/06', hora: '18:00', sede: 'Nueva York/NJ, USA' },
+    { id: 'M079', local: 'México', visit: 'Ecuador', fecha: '30/06', hora: '22:00', sede: 'Azteca, CDMX' },
+    { id: 'M080', local: 'Inglaterra', visit: 'RD Congo', fecha: '01/07', hora: '13:00', sede: 'Atlanta, USA' },
+    { id: 'M082', local: 'Bélgica', visit: 'Senegal', fecha: '01/07', hora: '17:00', sede: 'Seattle, USA' },
+    { id: 'M081', local: 'Estados Unidos', visit: 'Bosnia-Herzegovina', fecha: '01/07', hora: '21:00', sede: 'San Francisco, USA' },
+    { id: 'M084', local: 'España', visit: 'Austria', fecha: '02/07', hora: '16:00', sede: 'Los Angeles, USA' },
+    { id: 'M083', local: 'Portugal', visit: 'Croacia', fecha: '02/07', hora: '20:00', sede: 'Toronto, CAN' },
+    { id: 'M085', local: 'Suiza', visit: 'Argelia', fecha: '03/07', hora: '00:00', sede: 'Vancouver, CAN' },
+    { id: 'M088', local: 'Australia', visit: 'Egipto', fecha: '03/07', hora: '15:00', sede: 'Dallas, USA' },
+    { id: 'M086', local: 'Argentina', visit: 'Cabo Verde', fecha: '03/07', hora: '19:00', sede: 'Miami, USA' },
+    { id: 'M087', local: 'Colombia', visit: 'Ghana', fecha: '03/07', hora: '22:30', sede: 'Kansas City, USA' }
   ];
 
   const ESTRUCTURA_OCTAVOS = [
-    { id: 'M089', local: 'G073', visit: 'G074' },
-    { id: 'M090', local: 'G075', visit: 'G076' },
-    { id: 'M091', local: 'G077', visit: 'G078' },
+    { id: 'M089', local: 'G073', visit: 'G076' },
+    { id: 'M090', local: 'G074', visit: 'G075' },
+    { id: 'M091', local: 'G078', visit: 'G077' },
     { id: 'M092', local: 'G079', visit: 'G080' },
-    { id: 'M093', local: 'G081', visit: 'G082' },
-    { id: 'M094', local: 'G083', visit: 'G084' },
-    { id: 'M095', local: 'G085', visit: 'G086' },
-    { id: 'M096', local: 'G087', visit: 'G088' }
+    { id: 'M093', local: 'G082', visit: 'G081' },
+    { id: 'M094', local: 'G084', visit: 'G083' },
+    { id: 'M095', local: 'G085', visit: 'G088' },
+    { id: 'M096', local: 'G086', visit: 'G087' }
   ];
 
   const ESTRUCTURA_CUARTOS = [
@@ -401,10 +382,6 @@
       .slice(0, 8);
   }
 
-  // ═══════════════════════════════════════════════════════
-  // VERIFICAR SI TERMINÓ LA FASE DE GRUPOS
-  // ═══════════════════════════════════════════════════════
-  
   function faseDeGruposTerminada(resultados) {
     const partidosGrupos = PARTIDOS_GRUPOS;
     const partidosConResultado = partidosGrupos.filter(p => {
@@ -414,10 +391,6 @@
     
     return partidosConResultado.length === partidosGrupos.length;
   }
-
-  // ═══════════════════════════════════════════════════════
-  // RESOLVER GANADOR DE UN PARTIDO
-  // ═══════════════════════════════════════════════════════
   
   function resolverGanador(partidoId, resultados) {
     const res = resultados.find(r => r.partido_id === partidoId);
@@ -429,38 +402,32 @@
     if (gL > gV) return 'local';
     if (gV > gL) return 'visit';
     
-    // Si hay empate, ver alargue
     if (res.alargue_local !== null && res.alargue_visit !== null) {
       const alL = parseInt(res.alargue_local);
       const alV = parseInt(res.alargue_visit);
       if (alL > alV) return 'local';
       if (alV > alL) return 'visit';
       
-      // Si sigue empate, ver penales
       if (res.penales_local !== null && res.penales_visit !== null) {
         return parseInt(res.penales_local) > parseInt(res.penales_visit) ? 'local' : 'visit';
       }
     }
     
-    return null; // Empate sin definir
+    return null;
   }
 
-  // ═══════════════════════════════════════════════════════
-  // OBTENER EQUIPO DE UN CRUCE
-  // ═══════════════════════════════════════════════════════
-  
-  function obtenerEquipoDeCruce(posicion, resultados, clasificacion, tercerosAsignados) {
+  function obtenerEquipoDeCruce(posicion, resultados, clasificacion) {
     if (!posicion) return null;
     if (typeof posicion === 'object' && posicion.equipo) return posicion;
     
-    // Si es un equipo directo (no posición)
-    if (!posicion.startsWith('G') && !posicion.startsWith('P') && 
-        !posicion.startsWith('1°') && !posicion.startsWith('2°') && 
-        !posicion.startsWith('3°')) {
+    if (!posicion.startsWith('G') && !posicion.startsWith('P')) {
+      const partido16 = ESTRUCTURA_16AVOS.find(p => p.id === posicion);
+      if (partido16) {
+        return { equipo: partido16.local, grupo: null };
+      }
       return { equipo: posicion, grupo: null };
     }
     
-    // Si es ganador de un partido de 16avos (G073, G074, etc.)
     if (posicion.startsWith('G07')) {
       const partidoId = 'M' + posicion.substring(1);
       const ganador = resolverGanador(partidoId, resultados);
@@ -473,7 +440,6 @@
       return { equipo: equipoNombre, grupo: null };
     }
     
-    // Si es ganador de octavos (G089, G090, etc.)
     if (posicion.startsWith('G08') || posicion.startsWith('G09')) {
       const partidoId = 'M' + posicion.substring(1);
       const ganador = resolverGanador(partidoId, resultados);
@@ -483,8 +449,8 @@
                       ESTRUCTURA_CUARTOS.find(p => p.id === partidoId);
       if (!partido) return null;
       
-      const local = obtenerEquipoDeCruce(partido.local, resultados, clasificacion, tercerosAsignados);
-      const visit = obtenerEquipoDeCruce(partido.visit, resultados, clasificacion, tercerosAsignados);
+      const local = obtenerEquipoDeCruce(partido.local, resultados, clasificacion);
+      const visit = obtenerEquipoDeCruce(partido.visit, resultados, clasificacion);
       
       if (!local || !visit) return null;
       
@@ -492,7 +458,6 @@
       return { equipo: equipoNombre, grupo: null };
     }
     
-    // Si es perdedor de semis (P101, P102)
     if (posicion.startsWith('P')) {
       const partidoId = 'M' + posicion.substring(1);
       const ganador = resolverGanador(partidoId, resultados);
@@ -501,8 +466,8 @@
       const partido = ESTRUCTURA_SEMIS.find(p => p.id === partidoId);
       if (!partido) return null;
       
-      const local = obtenerEquipoDeCruce(partido.local, resultados, clasificacion, tercerosAsignados);
-      const visit = obtenerEquipoDeCruce(partido.visit, resultados, clasificacion, tercerosAsignados);
+      const local = obtenerEquipoDeCruce(partido.local, resultados, clasificacion);
+      const visit = obtenerEquipoDeCruce(partido.visit, resultados, clasificacion);
       
       if (!local || !visit) return null;
       
@@ -510,25 +475,6 @@
       return { equipo: perdedorNombre, grupo: null };
     }
     
-    // Si es ganador de cuartos (G097, G098, etc.)
-    if (posicion.startsWith('G09') && !posicion.startsWith('G097') && !posicion.startsWith('G098')) {
-      const partidoId = 'M' + posicion.substring(1);
-      const ganador = resolverGanador(partidoId, resultados);
-      if (!ganador) return null;
-      
-      const partido = ESTRUCTURA_CUARTOS.find(p => p.id === partidoId);
-      if (!partido) return null;
-      
-      const local = obtenerEquipoDeCruce(partido.local, resultados, clasificacion, tercerosAsignados);
-      const visit = obtenerEquipoDeCruce(partido.visit, resultados, clasificacion, tercerosAsignados);
-      
-      if (!local || !visit) return null;
-      
-      const equipoNombre = ganador === 'local' ? local.equipo : visit.equipo;
-      return { equipo: equipoNombre, grupo: null };
-    }
-    
-    // Si es ganador de semis (G101, G102)
     if (posicion.startsWith('G10')) {
       const partidoId = 'M' + posicion.substring(1);
       const ganador = resolverGanador(partidoId, resultados);
@@ -537,8 +483,8 @@
       const partido = ESTRUCTURA_SEMIS.find(p => p.id === partidoId);
       if (!partido) return null;
       
-      const local = obtenerEquipoDeCruce(partido.local, resultados, clasificacion, tercerosAsignados);
-      const visit = obtenerEquipoDeCruce(partido.visit, resultados, clasificacion, tercerosAsignados);
+      const local = obtenerEquipoDeCruce(partido.local, resultados, clasificacion);
+      const visit = obtenerEquipoDeCruce(partido.visit, resultados, clasificacion);
       
       if (!local || !visit) return null;
       
@@ -546,97 +492,16 @@
       return { equipo: equipoNombre, grupo: null };
     }
     
-    // Si es 1° de grupo
-    if (posicion.startsWith('1°')) {
-      const grupo = posicion.substring(2);
-      const equipo = clasificacion[grupo]?.primero;
-      return equipo ? { equipo, grupo } : null;
-    }
-    
-    // Si es 2° de grupo
-    if (posicion.startsWith('2°')) {
-      const grupo = posicion.substring(2);
-      const equipo = clasificacion[grupo]?.segundo;
-      return equipo ? { equipo, grupo } : null;
-    }
-    
-    // Si es 3° de grupo
-    if (posicion === '3°' && tercerosAsignados) {
-      return tercerosAsignados;
-    }
-    
     return null;
   }
 
-  // ═══════════════════════════════════════════════════════
-  // DETERMINAR CRUCES DE 16AVOS
-  // ═══════════════════════════════════════════════════════
-
-  function determinarCruces16avos(clasificacion) {
-    try {
-      const tercerosOrdenados = obtenerMejoresTerceros(clasificacion, []);
-      const tercerosAsignados = {};
-      
-      // Asignar terceros según FIFA
-      Object.entries(CRUCES_TERCIEROS_FIFA).forEach(([cruceId, gruposPermitidos], index) => {
-        if (index < tercerosOrdenados.length) {
-          const tercero = tercerosOrdenados[index];
-          if (gruposPermitidos.includes(tercero.grupo)) {
-            tercerosAsignados[cruceId] = tercero;
-          }
-        }
-      });
-      
-      const cruces = ESTRUCTURA_16AVOS.map(estructura => {
-        let local = null;
-        let visit = null;
-
-        if (!estructura.local.startsWith('1°') && !estructura.local.startsWith('2°') && !estructura.local.startsWith('3°')) {
-          local = { equipo: estructura.local, grupo: null };
-        } else if (estructura.local.startsWith('1°')) {
-          const grupo = estructura.local.substring(2);
-          local = { equipo: clasificacion[grupo]?.primero || null, grupo };
-        } else if (estructura.local.startsWith('2°')) {
-          const grupo = estructura.local.substring(2);
-          local = { equipo: clasificacion[grupo]?.segundo || null, grupo };
-        }
-
-        if (!estructura.visit.startsWith('1°') && !estructura.visit.startsWith('2°') && !estructura.visit.startsWith('3°')) {
-          visit = { equipo: estructura.visit, grupo: null };
-        } else if (estructura.visit.startsWith('1°')) {
-          const grupo = estructura.visit.substring(2);
-          visit = { equipo: clasificacion[grupo]?.primero || null, grupo };
-        } else if (estructura.visit.startsWith('2°')) {
-          const grupo = estructura.visit.substring(2);
-          visit = { equipo: clasificacion[grupo]?.segundo || null, grupo };
-        } else if (estructura.visit === '3°') {
-          visit = tercerosAsignados[estructura.id] || null;
-        }
-
-        return { id: estructura.id, local, visit };
-      });
-
-      return { cruces, tercerosAsignados };
-    } catch (err) {
-      console.error("Error en determinarCruces16avos:", err);
-      return { cruces: [], tercerosAsignados: {} };
-    }
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // RENDERIZAR BRACKET COMPLETO
-  // ═══════════════════════════════════════════════════════
-  
   function renderBracketCompleto(resultados, clasificacion) {
-    const { cruces: cruces16avos, tercerosAsignados } = determinarCruces16avos(clasificacion);
-    
     let html = '<div class="bracket-container"><div class="bracket">';
     
     // 16AVOS
     html += '<div class="bracket-round">';
     html += '<div class="round-title">16avos de Final</div>';
-    cruces16avos.forEach(cruce => {
-      const partido = PARTIDOS_ELIM.find(p => p.id === cruce.id);
+    ESTRUCTURA_16AVOS.forEach(cruce => {
       const res = resultados.find(r => r.partido_id === cruce.id);
       const ganador = resolverGanador(cruce.id, resultados);
       
@@ -644,19 +509,21 @@
         <div class="bracket-match ${ganador ? 'winner' : ''}">
           <div class="match-team ${ganador === 'local' ? 'winner' : ''}">
             <div class="team-info">
-              <span class="team-flag">${cruce.local?.equipo ? FLAGS[cruce.local.equipo] || '🏳️' : '❓'}</span>
-              <span>${cruce.local?.equipo || 'Por definir'}</span>
+              <span class="team-flag">${FLAGS[cruce.local] || '🏳️'}</span>
+              <span>${cruce.local}</span>
             </div>
             ${res && res.local !== null ? `<span class="match-score">${res.local}</span>` : ''}
           </div>
           <div class="match-team ${ganador === 'visit' ? 'winner' : ''}">
             <div class="team-info">
-              <span class="team-flag">${cruce.visit?.equipo ? FLAGS[cruce.visit.equipo] || '🏳️' : '❓'}</span>
-              <span>${cruce.visit?.equipo || 'Por definir'}</span>
+              <span class="team-flag">${FLAGS[cruce.visit] || '🏳️'}</span>
+              <span>${cruce.visit}</span>
             </div>
             ${res && res.visit !== null ? `<span class="match-score">${res.visit}</span>` : ''}
           </div>
-          ${partido ? `<div style="font-size:10px; color:var(--text3); text-align:center; margin-top:4px;">${partido.fecha} ${partido.hora}</div>` : ''}
+          <div style="font-size:9px; color:var(--text3); text-align:center; margin-top:4px;">
+            ${cruce.fecha} ${cruce.hora}<br>${cruce.sede}
+          </div>
         </div>
       `;
     });
@@ -666,12 +533,11 @@
     html += '<div class="bracket-round">';
     html += '<div class="round-title">Octavos de Final</div>';
     ESTRUCTURA_OCTAVOS.forEach(estructura => {
-      const partido = PARTIDOS_ELIM.find(p => p.id === estructura.id);
       const res = resultados.find(r => r.partido_id === estructura.id);
       const ganador = resolverGanador(estructura.id, resultados);
       
-      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion, null);
-      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion, null);
+      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
+      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
       
       html += `
         <div class="bracket-match ${ganador ? 'winner' : ''}">
@@ -689,7 +555,6 @@
             </div>
             ${res && res.visit !== null ? `<span class="match-score">${res.visit}</span>` : ''}
           </div>
-          ${partido ? `<div style="font-size:10px; color:var(--text3); text-align:center; margin-top:4px;">${partido.fecha} ${partido.hora}</div>` : ''}
         </div>
       `;
     });
@@ -699,12 +564,11 @@
     html += '<div class="bracket-round">';
     html += '<div class="round-title">Cuartos de Final</div>';
     ESTRUCTURA_CUARTOS.forEach(estructura => {
-      const partido = PARTIDOS_ELIM.find(p => p.id === estructura.id);
       const res = resultados.find(r => r.partido_id === estructura.id);
       const ganador = resolverGanador(estructura.id, resultados);
       
-      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion, null);
-      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion, null);
+      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
+      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
       
       html += `
         <div class="bracket-match ${ganador ? 'winner' : ''}">
@@ -722,7 +586,6 @@
             </div>
             ${res && res.visit !== null ? `<span class="match-score">${res.visit}</span>` : ''}
           </div>
-          ${partido ? `<div style="font-size:10px; color:var(--text3); text-align:center; margin-top:4px;">${partido.fecha} ${partido.hora}</div>` : ''}
         </div>
       `;
     });
@@ -732,12 +595,11 @@
     html += '<div class="bracket-round">';
     html += '<div class="round-title">Semifinales</div>';
     ESTRUCTURA_SEMIS.forEach(estructura => {
-      const partido = PARTIDOS_ELIM.find(p => p.id === estructura.id);
       const res = resultados.find(r => r.partido_id === estructura.id);
       const ganador = resolverGanador(estructura.id, resultados);
       
-      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion, null);
-      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion, null);
+      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
+      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
       
       html += `
         <div class="bracket-match ${ganador ? 'winner' : ''}">
@@ -755,7 +617,6 @@
             </div>
             ${res && res.visit !== null ? `<span class="match-score">${res.visit}</span>` : ''}
           </div>
-          ${partido ? `<div style="font-size:10px; color:var(--text3); text-align:center; margin-top:4px;">${partido.fecha} ${partido.hora}</div>` : ''}
         </div>
       `;
     });
@@ -765,12 +626,11 @@
     html += '<div class="bracket-round">';
     html += '<div class="round-title">Final y 3er Puesto</div>';
     ESTRUCTURA_FINAL.forEach(estructura => {
-      const partido = PARTIDOS_ELIM.find(p => p.id === estructura.id);
       const res = resultados.find(r => r.partido_id === estructura.id);
       const ganador = resolverGanador(estructura.id, resultados);
       
-      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion, null);
-      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion, null);
+      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
+      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
       
       const esTercerPuesto = estructura.id === 'M103';
       
@@ -793,7 +653,6 @@
             </div>
             ${res && res.visit !== null ? `<span class="match-score">${res.visit}</span>` : ''}
           </div>
-          ${partido ? `<div style="font-size:10px; color:var(--text3); text-align:center; margin-top:4px;">${partido.fecha} ${partido.hora}</div>` : ''}
         </div>
       `;
     });
@@ -824,13 +683,11 @@
       const terminoFaseGrupos = faseDeGruposTerminada(resultados || []);
       
       if (terminoFaseGrupos) {
-        // Mostrar bracket completo
         document.getElementById('contenido-clasificados').style.display = 'none';
         document.getElementById('contenido-grupos').style.display = 'none';
         document.getElementById('contenido-bracket').style.display = 'block';
         document.getElementById('contenido-bracket').innerHTML = renderBracketCompleto(resultados || [], clasificacion);
       } else {
-        // Mostrar tablas de grupos normales
         document.getElementById('contenido-clasificados').style.display = 'block';
         document.getElementById('contenido-grupos').style.display = 'block';
         document.getElementById('contenido-bracket').style.display = 'none';
@@ -845,10 +702,6 @@
       document.getElementById('loader').innerHTML = `<p style="color:var(--red)">Error al cargar datos: ${err.message}</p>`;
     }
   })();
-
-  // ═══════════════════════════════════════════════════════
-  // RENDERIZADO: CLASIFICADOS
-  // ═══════════════════════════════════════════════════════
 
   function renderClasificados(clasificacion, resultados) {
     try {
@@ -965,10 +818,6 @@
       console.error("Error en renderClasificados:", err);
     }
   }
-
-  // ═══════════════════════════════════════════════════════
-  // RENDERIZADO: TABLAS POR GRUPO
-  // ═══════════════════════════════════════════════════════
 
   function renderTablas(resultados) {
     try {
