@@ -48,6 +48,78 @@ function getEstadoPartido(partido, resultado) {
   return { estado: "pendiente", texto: "⏳ Pendiente resultado oficial" };
 }
 
+// ═══════════════════════════════════════════════════════
+// FUNCIÓN AUXILIAR: CALCULAR PUNTOS DE ALARGUE
+// ═══════════════════════════════════════════════════════
+function calcularPuntosAlargue(prediccion, resultado) {
+  // Si no hay alargue en el resultado, no hay puntos
+  if (resultado.alargue_local === null || resultado.alargue_local === undefined) {
+    return 0;
+  }
+  
+  // Si el jugador no pronosticó alargue, no hay puntos
+  if (prediccion.alargue_local === null || prediccion.alargue_local === undefined) {
+    return 0;
+  }
+  
+  // Verificar si acertó el resultado del alargue
+  const predL = parseInt(prediccion.alargue_local);
+  const predV = parseInt(prediccion.alargue_visit);
+  const resL = parseInt(resultado.alargue_local);
+  const resV = parseInt(resultado.alargue_visit);
+  
+  // Resultado exacto del alargue: 14 puntos
+  if (predL === resL && predV === resV) {
+    return 14;
+  }
+  
+  // Acertó ganador del alargue: 6 puntos
+  const predGanador = predL > predV ? 'local' : predV > predL ? 'visit' : 'empate';
+  const resGanador = resL > resV ? 'local' : resV > resL ? 'visit' : 'empate';
+  
+  if (predGanador === resGanador && predGanador !== 'empate') {
+    return 6;
+  }
+  
+  return 0;
+}
+
+// ═══════════════════════════════════════════════════════
+// FUNCIÓN AUXILIAR: CALCULAR PUNTOS DE PENALES
+// ═══════════════════════════════════════════════════════
+function calcularPuntosPenales(prediccion, resultado) {
+  // Si no hay penales en el resultado, no hay puntos
+  if (resultado.penales_local === null || resultado.penales_local === undefined) {
+    return 0;
+  }
+  
+  // Si el jugador no pronosticó penales, no hay puntos
+  if (prediccion.penales_local === null || prediccion.penales_local === undefined) {
+    return 0;
+  }
+  
+  // Verificar si acertó el ganador de penales
+  const predL = parseInt(prediccion.penales_local);
+  const predV = parseInt(prediccion.penales_visit);
+  const resL = parseInt(resultado.penales_local);
+  const resV = parseInt(resultado.penales_visit);
+  
+  // Resultado exacto de penales: 14 puntos
+  if (predL === resL && predV === resV) {
+    return 14;
+  }
+  
+  // Acertó ganador de penales: 6 puntos
+  const predGanador = predL > predV ? 'local' : 'visit';
+  const resGanador = resL > resV ? 'local' : 'visit';
+  
+  if (predGanador === resGanador) {
+    return 6;
+  }
+  
+  return 0;
+}
+
 async function cargarDatosCompletos() {
   try {
     console.log(`📍 Modo: ${MODO_SALA ? 'SALA PRIVADA' : 'GENERAL'}`);
@@ -144,10 +216,14 @@ async function cargarDatosCompletos() {
         
         if (res) {
           const pts = calcularPuntos(pred, res);
-          ranking[pred.user_id].puntos += pts;
+          const ptsAlargue = calcularPuntosAlargue(pred, res);
+          const ptsPenales = calcularPuntosPenales(pred, res);
+          const ptsTotal = pts + ptsAlargue + ptsPenales;
+          
+          ranking[pred.user_id].puntos += ptsTotal;
           ranking[pred.user_id].partidosPronosticados += 1;
-          if (pts > 0) ranking[pred.user_id].partidosAcertados += 1;
-          totalPuntosCalculados += pts;
+          if (ptsTotal > 0) ranking[pred.user_id].partidosAcertados += 1;
+          totalPuntosCalculados += ptsTotal;
           prediccionesConResultado++;
           
           const partido = TODOS_PARTIDOS.find(p => p.id === pred.partido_id);
@@ -156,7 +232,10 @@ async function cargarDatosCompletos() {
               partido: partido,
               prediccion: pred,
               resultado: res,
-              puntos: pts
+              puntos: ptsTotal,
+              puntosRegular: pts,
+              puntosAlargue: ptsAlargue,
+              puntosPenales: ptsPenales
             });
           }
         }
@@ -431,6 +510,45 @@ window.mostrarDetalleJugador = async function(uid) {
           const predV = det.prediccion.visit !== null && det.prediccion.visit !== undefined ? det.prediccion.visit : "-";
           const resL = det.resultado.local !== null && det.resultado.local !== undefined ? det.resultado.local : "-";
           const resV = det.resultado.visit !== null && det.resultado.visit !== undefined ? det.resultado.visit : "-";
+          
+          // Verificar si hay alargue y penales
+          const tieneAlargue = det.resultado.alargue_local !== null && det.resultado.alargue_local !== undefined;
+          const tienePenales = det.resultado.penales_local !== null && det.resultado.penales_local !== undefined;
+          
+          let detalleExtra = "";
+          
+          if (tieneAlargue) {
+            const predAlL = det.prediccion.alargue_local !== null && det.prediccion.alargue_local !== undefined ? det.prediccion.alargue_local : "-";
+            const predAlV = det.prediccion.alargue_visit !== null && det.prediccion.alargue_visit !== undefined ? det.prediccion.alargue_visit : "-";
+            const resAlL = det.resultado.alargue_local;
+            const resAlV = det.resultado.alargue_visit;
+            
+            detalleExtra += `
+              <div style="margin-top:6px; padding:4px 8px; background:var(--bg2); border-radius:4px; font-size:11px;">
+                <strong style="color:var(--gold);">⏱️ Alargue:</strong> 
+                <span style="color:var(--text2);">Resultado: ${resAlL}-${resAlV}</span> · 
+                <span>Tu pronóstico: <strong>${predAlL}-${predAlV}</strong></span>
+                ${det.puntosAlargue > 0 ? `<span style="color:var(--green); font-weight:700;"> +${det.puntosAlargue} pts</span>` : ''}
+              </div>
+            `;
+          }
+          
+          if (tienePenales) {
+            const predPenL = det.prediccion.penales_local !== null && det.prediccion.penales_local !== undefined ? det.prediccion.penales_local : "-";
+            const predPenV = det.prediccion.penales_visit !== null && det.prediccion.penales_visit !== undefined ? det.prediccion.penales_visit : "-";
+            const resPenL = det.resultado.penales_local;
+            const resPenV = det.resultado.penales_visit;
+            
+            detalleExtra += `
+              <div style="margin-top:6px; padding:4px 8px; background:var(--bg2); border-radius:4px; font-size:11px;">
+                <strong style="color:var(--gold);">🎯 Penales:</strong> 
+                <span style="color:var(--text2);">Resultado: ${resPenL}-${resPenV}</span> · 
+                <span>Tu pronóstico: <strong>${predPenL}-${predPenV}</strong></span>
+                ${det.puntosPenales > 0 ? `<span style="color:var(--green); font-weight:700;"> +${det.puntosPenales} pts</span>` : ''}
+              </div>
+            `;
+          }
+          
           html += `
             <div style="display:flex; justify-content:space-between; align-items:center; padding:12px; background:var(--card); border:1px solid var(--border); border-radius:6px; margin-bottom:8px; border-left:3px solid ${det.puntos > 0 ? 'var(--gold)' : 'var(--border)'};">
               <div style="flex:1;">
@@ -439,7 +557,9 @@ window.mostrarDetalleJugador = async function(uid) {
                 </div>
                 <div style="font-size:12px; color:var(--text2);">
                   Tu predicción: <strong>${predL} - ${predV}</strong>
+                  ${det.puntosRegular > 0 ? `<span style="color:var(--green); font-weight:700;"> +${det.puntosRegular} pts</span>` : ''}
                 </div>
+                ${detalleExtra}
               </div>
               <div style="text-align:right; margin-left:16px; padding:8px 12px; background:${det.puntos > 0 ? 'var(--gold-soft)' : 'var(--bg2)'}; border-radius:6px; min-width:60px;">
                 <div style="font-family:'Anton'; font-size:24px; color:${det.puntos > 0 ? 'var(--gold)' : 'var(--text3)'}; line-height:1;">+${det.puntos}</div>
@@ -501,16 +621,26 @@ window.mostrarDetallePartido = async function(partidoId) {
       return;
     }
     
+    // Verificar si hay alargue y penales
+    const tieneAlargue = resultadoData.alargue_local !== null && resultadoData.alargue_local !== undefined;
+    const tienePenales = resultadoData.penales_local !== null && resultadoData.penales_local !== undefined;
+    
     const prediccionesConPuntos = prediccionesFiltradas.map(pred => {
       const u = usuariosMap[pred.user_id];
-      const pts = calcularPuntos(pred, resultadoData);
+      const ptsRegular = calcularPuntos(pred, resultadoData);
+      const ptsAlargue = calcularPuntosAlargue(pred, resultadoData);
+      const ptsPenales = calcularPuntosPenales(pred, resultadoData);
+      const ptsTotal = ptsRegular + ptsAlargue + ptsPenales;
       
       return {
         nombre: u.nombre || "Jugador",
         apellido: u.apellido || "",
         apodo: u.apodo || null,
         prediccion: pred,
-        puntos: pts
+        puntos: ptsTotal,
+        puntosRegular: ptsRegular,
+        puntosAlargue: ptsAlargue,
+        puntosPenales: ptsPenales
       };
     }).sort((a, b) => b.puntos - a.puntos);
 
@@ -526,6 +656,14 @@ window.mostrarDetallePartido = async function(partidoId) {
     const flagL = partido ? (FLAGS[partido.local] || "🏳️") : "🏳️";
     const flagV = partido ? (FLAGS[partido.visit] || "🏳️") : "🏳️";
 
+    let marcadorHTML = `${resultadoData.local} - ${resultadoData.visit}`;
+    if (tieneAlargue) {
+      marcadorHTML += `<div style="font-size:18px; color:var(--text2); margin-top:4px;">Alargue: ${resultadoData.alargue_local}-${resultadoData.alargue_visit}</div>`;
+    }
+    if (tienePenales) {
+      marcadorHTML += `<div style="font-size:18px; color:var(--text2); margin-top:4px;">Penales: ${resultadoData.penales_local}-${resultadoData.penales_visit}</div>`;
+    }
+
     let html = `
       <div style="text-align:center; margin-bottom:24px; padding-bottom:16px; border-bottom:2px solid var(--border);">
         <div style="font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; margin-bottom:8px;">
@@ -535,7 +673,7 @@ window.mostrarDetallePartido = async function(partidoId) {
           ${flagL} ${partido?.local || ''} <span style="color:var(--text);">vs</span> ${partido?.visit || ''} ${flagV}
         </h2>
         <div style="font-family:'Anton'; font-size:48px; color:var(--gold); letter-spacing:3px;">
-          ${resultadoData.local} - ${resultadoData.visit}
+          ${marcadorHTML}
         </div>
         <div style="font-size:12px; color:var(--text2); margin-top:8px;">
           ${prediccionesConPuntos.length} jugador${prediccionesConPuntos.length === 1 ? '' : 'es'} pronosticaron este partido
@@ -584,6 +722,20 @@ window.mostrarDetallePartido = async function(partidoId) {
         const predL = j.prediccion.local !== null && j.prediccion.local !== undefined ? j.prediccion.local : "-";
         const predV = j.prediccion.visit !== null && j.prediccion.visit !== undefined ? j.prediccion.visit : "-";
         
+        let detalleExtra = "";
+        
+        if (tieneAlargue) {
+          const predAlL = j.prediccion.alargue_local !== null && j.prediccion.alargue_local !== undefined ? j.prediccion.alargue_local : "-";
+          const predAlV = j.prediccion.alargue_visit !== null && j.prediccion.alargue_visit !== undefined ? j.prediccion.alargue_visit : "-";
+          detalleExtra += `<div style="font-size:10px; color:var(--text3); margin-top:2px;">⏱️ Alargue: ${predAlL}-${predAlV} ${j.puntosAlargue > 0 ? `<span style="color:var(--green);">+${j.puntosAlargue}</span>` : ''}</div>`;
+        }
+        
+        if (tienePenales) {
+          const predPenL = j.prediccion.penales_local !== null && j.prediccion.penales_local !== undefined ? j.prediccion.penales_local : "-";
+          const predPenV = j.prediccion.penales_visit !== null && j.prediccion.penales_visit !== undefined ? j.prediccion.penales_visit : "-";
+          detalleExtra += `<div style="font-size:10px; color:var(--text3); margin-top:2px;">🎯 Penales: ${predPenL}-${predPenV} ${j.puntosPenales > 0 ? `<span style="color:var(--green);">+${j.puntosPenales}</span>` : ''}</div>`;
+        }
+        
         let medalla = "";
         if (index === 0 && j.puntos > 0) medalla = "🥇";
         else if (index === 1 && j.puntos > 0) medalla = "🥈";
@@ -600,7 +752,9 @@ window.mostrarDetallePartido = async function(partidoId) {
                 ${j.apodo ? `<div style="font-size:11px; color:var(--text2);">"${j.apodo}"</div>` : ""}
                 <div style="font-size:12px; color:var(--text3); margin-top:2px;">
                   Pronóstico: <strong style="color:var(--text);">${predL} - ${predV}</strong>
+                  ${j.puntosRegular > 0 ? `<span style="color:var(--green);">+${j.puntosRegular}</span>` : ''}
                 </div>
+                ${detalleExtra}
               </div>
             </div>
             <div style="text-align:right; margin-left:12px; padding:6px 10px; background:${j.puntos > 0 ? 'var(--gold-soft)' : 'var(--bg2)'}; border-radius:6px; min-width:50px;">
@@ -686,9 +840,6 @@ function renderCardPartido(p, resultado) {
   `;
 }
 
-// ═══════════════════════════════════════════════════════
-// RENDERIZADO DE RESULTADOS (ORDEN INVERTIDO)
-// ═══════════════════════════════════════════════════════
 function renderResultados(resultados) {
   const cont = document.getElementById("resultadosContenido");
   const loader = document.getElementById("resultadosLoader");
@@ -696,9 +847,6 @@ function renderResultados(resultados) {
   if (loader) loader.style.display = "none";
   if (!cont) return;
 
-  // ══════════════════════════════════════════════════════
-  // ORDEN INVERTIDO: Los más recientes primero
-  // ══════════════════════════════════════════════════════
   const secciones = [
     { label: "🏆 Final", partidos: PARTIDOS_ELIM.filter(p => p.fase === "final") },
     { label: "🥉 3er Puesto", partidos: PARTIDOS_ELIM.filter(p => p.fase === "3er") },
@@ -724,9 +872,6 @@ function renderResultados(resultados) {
     if (enJuego.length === 0 && finalizados.length === 0 && pendientes.length === 0) return;
 
     hayContenido = true;
-    // ══════════════════════════════════════════════════════
-    // INVERTIR ORDEN: Los más recientes primero
-    // ══════════════════════════════════════════════════════
     const ordenados = [...enJuego, ...finalizados, ...pendientes].reverse();
 
     html += `<h3 class="seccion-titulo">${sec.label}</h3>`;
