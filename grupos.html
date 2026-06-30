@@ -40,9 +40,6 @@
 
     .actualizado { text-align: center; font-size: 12px; color: var(--text3); margin-top: 40px; }
 
-    /* ═══════════════════════════════════════════════════════ */
-    /* BRACKET CIRCULAR CONTAINER */
-    /* ═══════════════════════════════════════════════════════ */
     #bracketCircular {
       width: 100%;
       min-height: 1000px;
@@ -95,7 +92,6 @@
   <div id="contenido-clasificados" class="clasificados-section" style="display:none;"></div>
   <div id="contenido-grupos"></div>
   
-  <!-- ETAPA 3: CONTENEDOR DEL BRACKET CIRCULAR -->
   <div id="contenido-bracket" style="display:none;">
     <div id="bracketCircular"></div>
   </div>
@@ -107,8 +103,11 @@
   Prode Mundial 2026 · Tablas de Posiciones
 </footer>
 
-<!-- Scripts existentes -->
 <script type="module">
+  // ═══════════════════════════════════════════════════════
+  // IMPORTS
+  // ═══════════════════════════════════════════════════════
+  import { renderBracketCircular } from "./js/bracket-circular.js";
   import { supabase } from "./js/supabase-config.js";
   import { PARTIDOS_GRUPOS, PARTIDOS_ELIM, TODOS_PARTIDOS, FLAGS, getKickoffTimestamp } from "./datos-partidos.js";
 
@@ -437,6 +436,9 @@
     return { equipo: perdedorNombre, grupo: null };
   }
 
+  // ═══════════════════════════════════════════════════════
+  // INICIALIZACIÓN
+  // ═══════════════════════════════════════════════════════
   (async () => {
     try {
       const { data: resultados, error } = await supabase
@@ -458,7 +460,7 @@
         document.getElementById('contenido-grupos').style.display = 'none';
         document.getElementById('contenido-bracket').style.display = 'block';
         
-        // ETAPA 5: LLAMAR AL NUEVO BRACKET CIRCULAR
+        // LLAMAR AL BRACKET CIRCULAR
         renderBracketCircular(resultados || [], clasificacion);
       } else {
         document.getElementById('contenido-clasificados').style.display = 'block';
@@ -519,7 +521,7 @@
 
       const terceros = obtenerMejoresTerceros(clasificacion, resultados);
 
-      let html = '<div class="clasificados-title">🏆 CLASIFICADOS A 16AVOS DE FINAL</div>';
+      let html = '<div class="clasificados-title"> CLASIFICADOS A 16AVOS DE FINAL</div>';
       html += '<div class="clasificados-grid">';
 
       html += `
@@ -652,9 +654,6 @@
     }
   }
 </script>
-
-<!-- ETAPA 4: AGREGAR EL ARCHIVO DEL BRACKET CIRCULAR -->
-<script type="module" src="js/bracket-circular.js"></script>
 
 </body>
 </html>
