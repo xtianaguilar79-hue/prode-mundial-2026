@@ -1,7 +1,7 @@
 import { supabase } from "./supabase-config.js";
 import { 
   TODOS_PARTIDOS, PARTIDOS_GRUPOS, PARTIDOS_ELIM, FLAGS, 
-  calcularPuntos, calcularPuntosCampeon,
+  calcularPuntosCampeon,
   getKickoffTimestamp,
   sincronizarHoraServidor, horaReal
 } from "../datos-partidos.js";
@@ -49,75 +49,90 @@ function getEstadoPartido(partido, resultado) {
 }
 
 // ═══════════════════════════════════════════════════════
-// FUNCIÓN AUXILIAR: CALCULAR PUNTOS DE ALARGUE
+// SISTEMA DE PUNTUACIÓN (MÁXIMO 14 PTS POR FASE)
+// ═══════════════════════════════════════════════════════
+// - Acertar el signo (1/X/2): 3 pts
+// - Acertar goles del local: 3 pts
+// - Acertar goles del visitante: 3 pts
+// - Bonus resultado perfecto: 5 pts EXTRA
+// ═══════════════════════════════════════════════════════
+function calcularPuntosFase(prediccion, resultado) {
+  const predL = parseInt(prediccion.local);
+  const predV = parseInt(prediccion.visit);
+  const resL = parseInt(resultado.local);
+  const resV = parseInt(resultado.visit);
+  
+  if (isNaN(predL) || isNaN(predV) || isNaN(resL) || isNaN(resV)) return 0;
+  
+  let puntos = 0;
+  
+  // 1. Acertar el signo (ganador o empate)
+  const predSigno = predL > predV ? 'local' : predV > predL ? 'visit' : 'empate';
+  const resSigno = resL > resV ? 'local' : resV > resL ? 'visit' : 'empate';
+  
+  if (predSigno === resSigno) {
+    puntos += 3;
+  }
+  
+  // 2. Acertar goles del local
+  if (predL === resL) {
+    puntos += 3;
+  }
+  
+  // 3. Acertar goles del visitante
+  if (predV === resV) {
+    puntos += 3;
+  }
+  
+  // 4. Bonus resultado perfecto (todo correcto)
+  if (predL === resL && predV === resV) {
+    puntos += 5;
+  }
+  
+  return puntos; // Máximo: 3 + 3 + 3 + 5 = 14 pts
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTOS TIEMPO REGULAR (MÁXIMO 14 PTS)
+// ═══════════════════════════════════════════════════════
+function calcularPuntosRegular(prediccion, resultado) {
+  return calcularPuntosFase(prediccion, resultado);
+}
+
+// ═══════════════════════════════════════════════════════
+// PUNTOS ALARGUE (MÁXIMO 14 PTS)
 // ═══════════════════════════════════════════════════════
 function calcularPuntosAlargue(prediccion, resultado) {
-  // Si no hay alargue en el resultado, no hay puntos
   if (resultado.alargue_local === null || resultado.alargue_local === undefined) {
     return 0;
   }
   
-  // Si el jugador no pronosticó alargue, no hay puntos
   if (prediccion.alargue_local === null || prediccion.alargue_local === undefined) {
     return 0;
   }
   
-  // Verificar si acertó el resultado del alargue
-  const predL = parseInt(prediccion.alargue_local);
-  const predV = parseInt(prediccion.alargue_visit);
-  const resL = parseInt(resultado.alargue_local);
-  const resV = parseInt(resultado.alargue_visit);
-  
-  // Resultado exacto del alargue: 14 puntos
-  if (predL === resL && predV === resV) {
-    return 14;
-  }
-  
-  // Acertó ganador del alargue: 6 puntos
-  const predGanador = predL > predV ? 'local' : predV > predL ? 'visit' : 'empate';
-  const resGanador = resL > resV ? 'local' : resV > resL ? 'visit' : 'empate';
-  
-  if (predGanador === resGanador && predGanador !== 'empate') {
-    return 6;
-  }
-  
-  return 0;
+  return calcularPuntosFase(
+    { local: prediccion.alargue_local, visit: prediccion.alargue_visit },
+    { local: resultado.alargue_local, visit: resultado.alargue_visit }
+  );
 }
 
 // ═══════════════════════════════════════════════════════
-// FUNCIÓN AUXILIAR: CALCULAR PUNTOS DE PENALES
+// PUNTOS PENALES (MÁXIMO 14 PTS)
 // ═══════════════════════════════════════════════════════
 function calcularPuntosPenales(prediccion, resultado) {
-  // Si no hay penales en el resultado, no hay puntos
   if (resultado.penales_local === null || resultado.penales_local === undefined) {
     return 0;
   }
   
-  // Si el jugador no pronosticó penales, no hay puntos
   if (prediccion.penales_local === null || prediccion.penales_local === undefined) {
     return 0;
   }
   
-  // Verificar si acertó el ganador de penales
-  const predL = parseInt(prediccion.penales_local);
-  const predV = parseInt(prediccion.penales_visit);
-  const resL = parseInt(resultado.penales_local);
-  const resV = parseInt(resultado.penales_visit);
-  
-  // Resultado exacto de penales: 14 puntos
-  if (predL === resL && predV === resV) {
-    return 14;
-  }
-  
-  // Acertó ganador de penales: 6 puntos
-  const predGanador = predL > predV ? 'local' : 'visit';
-  const resGanador = resL > resV ? 'local' : 'visit';
-  
-  if (predGanador === resGanador) {
-    return 6;
-  }
-  
-  return 0;
+  return calcularPuntosFase(
+    { local: prediccion.penales_local, visit: prediccion.penales_visit },
+    { local: resultado.penales_local, visit: resultado.penales_visit }
+  );
 }
 
 async function cargarDatosCompletos() {
@@ -215,10 +230,13 @@ async function cargarDatosCompletos() {
         }
         
         if (res) {
-          const pts = calcularPuntos(pred, res);
+          // Calcular puntos por fase (cada una con máximo 14 pts)
+          const ptsRegular = calcularPuntosRegular(pred, res);
           const ptsAlargue = calcularPuntosAlargue(pred, res);
           const ptsPenales = calcularPuntosPenales(pred, res);
-          const ptsTotal = pts + ptsAlargue + ptsPenales;
+          
+          // Sumar las tres fases (máximo total: 14 + 14 + 14 = 42 pts)
+          const ptsTotal = ptsRegular + ptsAlargue + ptsPenales;
           
           ranking[pred.user_id].puntos += ptsTotal;
           ranking[pred.user_id].partidosPronosticados += 1;
@@ -233,7 +251,7 @@ async function cargarDatosCompletos() {
               prediccion: pred,
               resultado: res,
               puntos: ptsTotal,
-              puntosRegular: pts,
+              puntosRegular: ptsRegular,
               puntosAlargue: ptsAlargue,
               puntosPenales: ptsPenales
             });
@@ -379,7 +397,7 @@ function renderRanking(lista, totalUsuarios) {
   if (top3Div && lista.length >= 3) {
     const orden = [0, 1, 2];
     const colores = ["p1", "p2", "p3"];
-    const emojis = ["🥇", "🥈", "🥉"];
+    const emojis = ["🥇", "", "🥉"];
     
     top3Div.innerHTML = orden.map((idx, i) => {
       const u = lista[idx];
@@ -511,7 +529,6 @@ window.mostrarDetalleJugador = async function(uid) {
           const resL = det.resultado.local !== null && det.resultado.local !== undefined ? det.resultado.local : "-";
           const resV = det.resultado.visit !== null && det.resultado.visit !== undefined ? det.resultado.visit : "-";
           
-          // Verificar si hay alargue y penales
           const tieneAlargue = det.resultado.alargue_local !== null && det.resultado.alargue_local !== undefined;
           const tienePenales = det.resultado.penales_local !== null && det.resultado.penales_local !== undefined;
           
@@ -621,13 +638,13 @@ window.mostrarDetallePartido = async function(partidoId) {
       return;
     }
     
-    // Verificar si hay alargue y penales
     const tieneAlargue = resultadoData.alargue_local !== null && resultadoData.alargue_local !== undefined;
     const tienePenales = resultadoData.penales_local !== null && resultadoData.penales_local !== undefined;
     
     const prediccionesConPuntos = prediccionesFiltradas.map(pred => {
       const u = usuariosMap[pred.user_id];
-      const ptsRegular = calcularPuntos(pred, resultadoData);
+      
+      const ptsRegular = calcularPuntosRegular(pred, resultadoData);
       const ptsAlargue = calcularPuntosAlargue(pred, resultadoData);
       const ptsPenales = calcularPuntosPenales(pred, resultadoData);
       const ptsTotal = ptsRegular + ptsAlargue + ptsPenales;
