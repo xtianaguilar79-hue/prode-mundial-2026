@@ -36,9 +36,6 @@ export function renderBracketCircular(resultados, clasificacion) {
     { id: 'M087', local: 'Colombia', visit: 'Ghana' }
   ];
 
-  // ══════════════════════════════════════════════════════
-  // CRUCES REALES según los datos
-  // ═══════════════════════════════════════════════════════
   const partidosOctavos = [
     { id: 'M090', from1: 'M073', from2: 'M075' },
     { id: 'M089', from1: 'M074', from2: 'M077' },
@@ -64,7 +61,7 @@ export function renderBracketCircular(resultados, clasificacion) {
 
   // ═══════════════════════════════════════════════════════
   // FUNCIONES AUXILIARES
-  // ══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════
   function resolverGanador(partidoId) {
     const res = resultados.find(r => r.partido_id === partidoId);
     if (!res || res.local === null || res.visit === null) return null;
@@ -84,12 +81,6 @@ export function renderBracketCircular(resultados, clasificacion) {
     return null;
   }
 
-  function getEquipoPartido(partidoId, lado) {
-    const partido = partidos16avos.find(p => p.id === partidoId);
-    if (partido) return lado === 'local' ? partido.local : partido.visit;
-    return null;
-  }
-
   function getGanadorDe16avo(partidoId) {
     const ganador = resolverGanador(partidoId);
     if (!ganador) return null;
@@ -99,7 +90,6 @@ export function renderBracketCircular(resultados, clasificacion) {
   }
 
   function getGanadorDeRonda(partidoId) {
-    // Buscar en octavos
     const octavo = partidosOctavos.find(p => p.id === partidoId);
     if (octavo) {
       const g1 = getGanadorDe16avo(octavo.from1);
@@ -109,7 +99,6 @@ export function renderBracketCircular(resultados, clasificacion) {
       if (!ganador) return null;
       return ganador === 'local' ? g1 : g2;
     }
-    // Buscar en cuartos
     const cuarto = partidosCuartos.find(p => p.id === partidoId);
     if (cuarto) {
       const g1 = getGanadorDeRonda(cuarto.from1);
@@ -119,7 +108,6 @@ export function renderBracketCircular(resultados, clasificacion) {
       if (!ganador) return null;
       return ganador === 'local' ? g1 : g2;
     }
-    // Buscar en semis
     const semi = partidosSemis.find(p => p.id === partidoId);
     if (semi) {
       const g1 = getGanadorDeRonda(semi.from1);
@@ -142,7 +130,7 @@ export function renderBracketCircular(resultados, clasificacion) {
 
   // ═══════════════════════════════════════════════════════
   // GENERAR SVG
-  // ═══════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════
   let svg = `
     <svg viewBox="0 0 ${width} ${height}" style="width:100%; height:auto; min-height:1000px; background: linear-gradient(135deg, #0a0a0a 0%, #1a1a2e 50%, #0a0a0a 100%);">
       <defs>
@@ -163,7 +151,7 @@ export function renderBracketCircular(resultados, clasificacion) {
       </defs>
   `;
 
-  // ══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════
   // CÍRCULOS GUÍA
   // ═══════════════════════════════════════════════════════
   svg += `<circle cx="${centerX}" cy="${centerY}" r="420" fill="none" stroke="rgba(255,201,60,0.15)" stroke-width="1.5" stroke-dasharray="4,4" />`;
@@ -181,8 +169,6 @@ export function renderBracketCircular(resultados, clasificacion) {
   // ═══════════════════════════════════════════════════════
   // LÍNEAS CONECTORAS
   // ═══════════════════════════════════════════════════════
-  
-  // 16avos → Octavos (cada octavo conecta con sus dos 16avos)
   partidosOctavos.forEach((octavo, idx) => {
     const pos1 = getPosicion(partidos16avos.findIndex(p => p.id === octavo.from1), 16, 420);
     const pos2 = getPosicion(partidos16avos.findIndex(p => p.id === octavo.from2), 16, 420);
@@ -197,7 +183,6 @@ export function renderBracketCircular(resultados, clasificacion) {
     svg += `<line x1="${pos2.x}" y1="${pos2.y}" x2="${posOct.x}" y2="${posOct.y}" stroke="${lineColor}" stroke-width="${lineWidth}" />`;
   });
 
-  // Octavos → Cuartos
   partidosCuartos.forEach((cuarto, idx) => {
     const pos1 = getPosicion(partidosOctavos.findIndex(p => p.id === cuarto.from1), 8, 320);
     const pos2 = getPosicion(partidosOctavos.findIndex(p => p.id === cuarto.from2), 8, 320);
@@ -212,7 +197,6 @@ export function renderBracketCircular(resultados, clasificacion) {
     svg += `<line x1="${pos2.x}" y1="${pos2.y}" x2="${posCua.x}" y2="${posCua.y}" stroke="${lineColor}" stroke-width="${lineWidth}" />`;
   });
 
-  // Cuartos → Semis
   partidosSemis.forEach((semi, idx) => {
     const pos1 = getPosicion(partidosCuartos.findIndex(p => p.id === semi.from1), 4, 220);
     const pos2 = getPosicion(partidosCuartos.findIndex(p => p.id === semi.from2), 4, 220);
@@ -227,7 +211,6 @@ export function renderBracketCircular(resultados, clasificacion) {
     svg += `<line x1="${pos2.x}" y1="${pos2.y}" x2="${posSemi.x}" y2="${posSemi.y}" stroke="${lineColor}" stroke-width="${lineWidth}" />`;
   });
 
-  // Semis → Final
   const posSemi1 = getPosicion(0, 2, 120);
   const posSemi2 = getPosicion(1, 2, 120);
   const gSemi1 = getGanadorDeRonda('M101');
@@ -240,7 +223,7 @@ export function renderBracketCircular(resultados, clasificacion) {
 
   // ═══════════════════════════════════════════════════════
   // 16AVOS - Círculo exterior (radio 420)
-  // ══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════
   partidos16avos.forEach((partido, index) => {
     const pos = getPosicion(index, 16, 420);
     const ganador = resolverGanador(partido.id);
@@ -253,13 +236,13 @@ export function renderBracketCircular(resultados, clasificacion) {
     
     svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${circleRadius}" fill="#1a1a2e" stroke="${circleColor}" stroke-width="${ganador ? '3' : '2'}" filter="url(#shadow)" />`;
     
-    // Mostrar ambas banderas
     svg += `<text x="${pos.x - 12}" y="${pos.y + 7}" text-anchor="middle" font-size="18">${flagLocal}</text>`;
     svg += `<text x="${pos.x + 12}" y="${pos.y + 7}" text-anchor="middle" font-size="18">${flagVisit}</text>`;
   });
 
-  // ══════════════════════════════════════════════════════
+  // ═══════════════════════════════════════════════════════
   // OCTAVOS - Círculo 2 (radio 320)
+  // MOSTRAR BANDERAS QUE YA AVANZARON
   // ═══════════════════════════════════════════════════════
   partidosOctavos.forEach((octavo, index) => {
     const pos = getPosicion(index, 8, 320);
@@ -267,23 +250,35 @@ export function renderBracketCircular(resultados, clasificacion) {
     const g2 = getGanadorDe16avo(octavo.from2);
     const ganador = resolverGanador(octavo.id);
     
-    if (g1 && g2) {
-      const equipoGanador = ganador ? (ganador === 'local' ? g1 : g2) : null;
-      const circleColor = ganador ? '#FFC93C' : 'rgba(255,201,60,0.5)';
-      const circleRadius = ganador ? '28' : '24';
+    if (ganador && g1 && g2) {
+      // Hay ganador del octavo
+      const equipoGanador = ganador === 'local' ? g1 : g2;
+      const flagGanador = FLAGS[equipoGanador] || '🏳️';
       
-      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${circleRadius}" fill="#1a1a2e" stroke="${circleColor}" stroke-width="${ganador ? '3' : '2'}" filter="url(#shadow)" />`;
+      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="30" fill="#1a1a2e" stroke="#FFC93C" stroke-width="3" filter="url(#shadow)" />`;
+      svg += `<text x="${pos.x}" y="${pos.y + 10}" text-anchor="middle" font-size="32">${flagGanador}</text>`;
+    } else if (g1 || g2) {
+      // Solo uno de los dos equipos está definido - MOSTRAR EL QUE AVANZÓ
+      const circleColor = 'rgba(255,201,60,0.4)';
+      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="26" fill="#1a1a2e" stroke="${circleColor}" stroke-width="2" filter="url(#shadow)" />`;
       
-      if (equipoGanador) {
-        const flagGanador = FLAGS[equipoGanador] || '🏳️';
-        svg += `<text x="${pos.x}" y="${pos.y + 9}" text-anchor="middle" font-size="30">${flagGanador}</text>`;
-      } else {
+      if (g1 && g2) {
+        // Ambos definidos pero sin ganador aún
         const flag1 = FLAGS[g1] || '🏳️';
         const flag2 = FLAGS[g2] || '🏳️';
         svg += `<text x="${pos.x - 13}" y="${pos.y + 8}" text-anchor="middle" font-size="20">${flag1}</text>`;
         svg += `<text x="${pos.x + 13}" y="${pos.y + 8}" text-anchor="middle" font-size="20">${flag2}</text>`;
+      } else if (g1) {
+        // Solo g1 definido
+        const flag1 = FLAGS[g1] || '🏳️';
+        svg += `<text x="${pos.x}" y="${pos.y + 8}" text-anchor="middle" font-size="24">${flag1}</text>`;
+      } else if (g2) {
+        // Solo g2 definido
+        const flag2 = FLAGS[g2] || '🏳️';
+        svg += `<text x="${pos.x}" y="${pos.y + 8}" text-anchor="middle" font-size="24">${flag2}</text>`;
       }
     } else {
+      // Ninguno definido aún
       svg += `<circle cx="${pos.x}" cy="${pos.y}" r="20" fill="#1a1a2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3" />`;
       svg += `<text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" font-size="14" fill="rgba(255,255,255,0.3)">?</text>`;
     }
@@ -291,28 +286,34 @@ export function renderBracketCircular(resultados, clasificacion) {
 
   // ═══════════════════════════════════════════════════════
   // CUARTOS - Círculo 3 (radio 220)
-  // ═══════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════
   partidosCuartos.forEach((cuarto, index) => {
     const pos = getPosicion(index, 4, 220);
     const g1 = getGanadorDeRonda(cuarto.from1);
     const g2 = getGanadorDeRonda(cuarto.from2);
     const ganador = resolverGanador(cuarto.id);
     
-    if (g1 && g2) {
-      const equipoGanador = ganador ? (ganador === 'local' ? g1 : g2) : null;
-      const circleColor = ganador ? '#FFC93C' : 'rgba(255,201,60,0.6)';
-      const circleRadius = ganador ? '30' : '26';
+    if (ganador && g1 && g2) {
+      const equipoGanador = ganador === 'local' ? g1 : g2;
+      const flagGanador = FLAGS[equipoGanador] || '🏳️';
       
-      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${circleRadius}" fill="#1a1a2e" stroke="${circleColor}" stroke-width="${ganador ? '3' : '2'}" filter="url(#shadow)" />`;
+      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="32" fill="#1a1a2e" stroke="#FFC93C" stroke-width="3" filter="url(#shadow)" />`;
+      svg += `<text x="${pos.x}" y="${pos.y + 11}" text-anchor="middle" font-size="34">${flagGanador}</text>`;
+    } else if (g1 || g2) {
+      const circleColor = 'rgba(255,201,60,0.4)';
+      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="28" fill="#1a1a2e" stroke="${circleColor}" stroke-width="2" filter="url(#shadow)" />`;
       
-      if (equipoGanador) {
-        const flagGanador = FLAGS[equipoGanador] || '🏳️';
-        svg += `<text x="${pos.x}" y="${pos.y + 10}" text-anchor="middle" font-size="32">${flagGanador}</text>`;
-      } else {
-        const flag1 = FLAGS[g1] || '️';
+      if (g1 && g2) {
+        const flag1 = FLAGS[g1] || '🏳️';
         const flag2 = FLAGS[g2] || '🏳️';
         svg += `<text x="${pos.x - 14}" y="${pos.y + 9}" text-anchor="middle" font-size="22">${flag1}</text>`;
         svg += `<text x="${pos.x + 14}" y="${pos.y + 9}" text-anchor="middle" font-size="22">${flag2}</text>`;
+      } else if (g1) {
+        const flag1 = FLAGS[g1] || '️';
+        svg += `<text x="${pos.x}" y="${pos.y + 9}" text-anchor="middle" font-size="26">${flag1}</text>`;
+      } else if (g2) {
+        const flag2 = FLAGS[g2] || '🏳️';
+        svg += `<text x="${pos.x}" y="${pos.y + 9}" text-anchor="middle" font-size="26">${flag2}</text>`;
       }
     } else {
       svg += `<circle cx="${pos.x}" cy="${pos.y}" r="20" fill="#1a1a2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3" />`;
@@ -329,21 +330,27 @@ export function renderBracketCircular(resultados, clasificacion) {
     const g2 = getGanadorDeRonda(semi.from2);
     const ganador = resolverGanador(semi.id);
     
-    if (g1 && g2) {
-      const equipoGanador = ganador ? (ganador === 'local' ? g1 : g2) : null;
-      const circleColor = ganador ? '#FFC93C' : 'rgba(255,201,60,0.7)';
-      const circleRadius = ganador ? '32' : '28';
+    if (ganador && g1 && g2) {
+      const equipoGanador = ganador === 'local' ? g1 : g2;
+      const flagGanador = FLAGS[equipoGanador] || '🏳️';
       
-      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${circleRadius}" fill="#1a1a2e" stroke="${circleColor}" stroke-width="${ganador ? '3' : '2'}" filter="url(#shadow)" />`;
+      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="34" fill="#1a1a2e" stroke="#FFC93C" stroke-width="3" filter="url(#shadow)" />`;
+      svg += `<text x="${pos.x}" y="${pos.y + 12}" text-anchor="middle" font-size="36">${flagGanador}</text>`;
+    } else if (g1 || g2) {
+      const circleColor = 'rgba(255,201,60,0.4)';
+      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="30" fill="#1a1a2e" stroke="${circleColor}" stroke-width="2" filter="url(#shadow)" />`;
       
-      if (equipoGanador) {
-        const flagGanador = FLAGS[equipoGanador] || '🏳️';
-        svg += `<text x="${pos.x}" y="${pos.y + 11}" text-anchor="middle" font-size="34">${flagGanador}</text>`;
-      } else {
+      if (g1 && g2) {
         const flag1 = FLAGS[g1] || '🏳️';
         const flag2 = FLAGS[g2] || '🏳️';
         svg += `<text x="${pos.x - 15}" y="${pos.y + 10}" text-anchor="middle" font-size="24">${flag1}</text>`;
         svg += `<text x="${pos.x + 15}" y="${pos.y + 10}" text-anchor="middle" font-size="24">${flag2}</text>`;
+      } else if (g1) {
+        const flag1 = FLAGS[g1] || '🏳️';
+        svg += `<text x="${pos.x}" y="${pos.y + 10}" text-anchor="middle" font-size="28">${flag1}</text>`;
+      } else if (g2) {
+        const flag2 = FLAGS[g2] || '🏳️';
+        svg += `<text x="${pos.x}" y="${pos.y + 10}" text-anchor="middle" font-size="28">${flag2}</text>`;
       }
     } else {
       svg += `<circle cx="${pos.x}" cy="${pos.y}" r="20" fill="#1a1a2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3" />`;
