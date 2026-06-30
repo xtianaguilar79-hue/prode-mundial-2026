@@ -1,10 +1,5 @@
 import { FLAGS } from "../datos-partidos.js";
 
-// ══════════════════════════════════════════════════════
-// BRACKET CIRCULAR - MUNDIAL 2026
-// Solo banderas, avanzan al ganar
-// ═══════════════════════════════════════════════════════
-
 export function renderBracketCircular(resultados, clasificacion) {
   const container = document.getElementById('bracketCircular');
   if (!container) {
@@ -19,8 +14,8 @@ export function renderBracketCircular(resultados, clasificacion) {
   const centerX = width / 2;
   const centerY = height / 2;
 
-  // ══════════════════════════════════════════════════════
-  // ESTRUCTURA DE PARTIDOS
+  // ═══════════════════════════════════════════════════════
+  // ESTRUCTURA DE PARTIDOS CON CRUCES CORRECTOS
   // ═══════════════════════════════════════════════════════
   const partidos16avos = [
     { id: 'M073', local: 'Sudáfrica', visit: 'Canadá' },
@@ -41,15 +36,16 @@ export function renderBracketCircular(resultados, clasificacion) {
     { id: 'M087', local: 'Colombia', visit: 'Ghana' }
   ];
 
+  // Cruces de octavos: cada octavo recibe ganadores de dos 16avos
   const partidosOctavos = [
-    { id: 'M089', from1: 'M073', from2: 'M076' },
-    { id: 'M090', from1: 'M074', from2: 'M075' },
-    { id: 'M091', from1: 'M078', from2: 'M077' },
-    { id: 'M092', from1: 'M079', from2: 'M080' },
-    { id: 'M093', from1: 'M082', from2: 'M081' },
-    { id: 'M094', from1: 'M084', from2: 'M083' },
-    { id: 'M095', from1: 'M085', from2: 'M088' },
-    { id: 'M096', from1: 'M086', from2: 'M087' }
+    { id: 'M089', from1: 'M073', from2: 'M076' },  // Ganador Sudáfrica/Canadá vs Ganador Brasil/Japón
+    { id: 'M090', from1: 'M074', from2: 'M075' },  // Ganador Alemania/Paraguay vs Ganador Países Bajos/Marruecos
+    { id: 'M091', from1: 'M078', from2: 'M077' },  // Ganador Costa de Marfil/Noruega vs Ganador Francia/Suecia
+    { id: 'M092', from1: 'M079', from2: 'M080' },  // Ganador México/Ecuador vs Ganador Inglaterra/RD Congo
+    { id: 'M093', from1: 'M082', from2: 'M081' },  // Ganador Bélgica/Senegal vs Ganador Estados Unidos/Bosnia
+    { id: 'M094', from1: 'M084', from2: 'M083' },  // Ganador España/Austria vs Ganador Portugal/Croacia
+    { id: 'M095', from1: 'M085', from2: 'M088' },  // Ganador Suiza/Argelia vs Ganador Australia/Egipto
+    { id: 'M096', from1: 'M086', from2: 'M087' }   // Ganador Argentina/Cabo Verde vs Ganador Colombia/Ghana
   ];
 
   const partidosCuartos = [
@@ -64,7 +60,7 @@ export function renderBracketCircular(resultados, clasificacion) {
     { id: 'M102', from1: 'M099', from2: 'M100' }
   ];
 
-  // ═══════════════════════════════════════════════════════
+  // ══════════════════════════════════════════════════════
   // FUNCIONES AUXILIARES
   // ═══════════════════════════════════════════════════════
   function resolverGanador(partidoId) {
@@ -86,12 +82,6 @@ export function renderBracketCircular(resultados, clasificacion) {
     return null;
   }
 
-  function getEquipo(partidoId, lado) {
-    const partido16 = partidos16avos.find(p => p.id === partidoId);
-    if (partido16) return lado === 'local' ? partido16.local : partido16.visit;
-    return null;
-  }
-
   function getGanadorDePartido(partidoId) {
     const ganador = resolverGanador(partidoId);
     if (!ganador) return null;
@@ -100,37 +90,6 @@ export function renderBracketCircular(resultados, clasificacion) {
     return null;
   }
 
-  function getEquipoDeRonda(partidoId, lado) {
-    // Buscar en octavos
-    const octavo = partidosOctavos.find(p => p.id === partidoId);
-    if (octavo) {
-      const g1 = getGanadorDePartido(octavo.from1);
-      const g2 = getGanadorDePartido(octavo.from2);
-      if (!g1 || !g2) return null;
-      return lado === 'local' ? g1 : g2;
-    }
-    // Buscar en cuartos
-    const cuarto = partidosCuartos.find(p => p.id === partidoId);
-    if (cuarto) {
-      const g1 = getGanadorDePartido(cuarto.from1);
-      const g2 = getGanadorDePartido(cuarto.from2);
-      if (!g1 || !g2) return null;
-      return lado === 'local' ? g1 : g2;
-    }
-    // Buscar en semis
-    const semi = partidosSemis.find(p => p.id === partidoId);
-    if (semi) {
-      const g1 = getGanadorDePartido(semi.from1);
-      const g2 = getGanadorDePartido(semi.from2);
-      if (!g1 || !g2) return null;
-      return lado === 'local' ? g1 : g2;
-    }
-    return null;
-  }
-
-  // ═══════════════════════════════════════════════════════
-  // POSICIONES EN CADA CÍRCULO
-  // ═══════════════════════════════════════════════════════
   function getPosicion(index, total, radius) {
     const angle = (index * (360 / total) - 90) * (Math.PI / 180);
     return {
@@ -152,23 +111,23 @@ export function renderBracketCircular(resultados, clasificacion) {
         <filter id="shadow">
           <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="#000" flood-opacity="0.5"/>
         </filter>
-        <filter id="glowFilter">
-          <feGaussianBlur stdDeviation="4" result="blur"/>
-          <feMerge>
-            <feMergeNode in="blur"/>
-            <feMergeNode in="SourceGraphic"/>
-          </feMerge>
-        </filter>
       </defs>
   `;
 
   // ═══════════════════════════════════════════════════════
-  // CÍRCULOS CONCENTRICOS (guías)
+  // CÍRCULOS GUÍA
   // ═══════════════════════════════════════════════════════
-  svg += `<circle cx="${centerX}" cy="${centerY}" r="420" fill="none" stroke="rgba(255,201,60,0.15)" stroke-width="1.5" stroke-dasharray="4,4" />`;
-  svg += `<circle cx="${centerX}" cy="${centerY}" r="320" fill="none" stroke="rgba(255,201,60,0.15)" stroke-width="1.5" stroke-dasharray="4,4" />`;
-  svg += `<circle cx="${centerX}" cy="${centerY}" r="220" fill="none" stroke="rgba(255,201,60,0.15)" stroke-width="1.5" stroke-dasharray="4,4" />`;
-  svg += `<circle cx="${centerX}" cy="${centerY}" r="120" fill="none" stroke="rgba(255,201,60,0.15)" stroke-width="1.5" stroke-dasharray="4,4" />`;
+  svg += `<circle cx="${centerX}" cy="${centerY}" r="420" fill="none" stroke="rgba(255,201,60,0.2)" stroke-width="2" stroke-dasharray="5,5" />`;
+  svg += `<circle cx="${centerX}" cy="${centerY}" r="320" fill="none" stroke="rgba(255,201,60,0.2)" stroke-width="2" stroke-dasharray="5,5" />`;
+  svg += `<circle cx="${centerX}" cy="${centerY}" r="220" fill="none" stroke="rgba(255,201,60,0.2)" stroke-width="2" stroke-dasharray="5,5" />`;
+  svg += `<circle cx="${centerX}" cy="${centerY}" r="120" fill="none" stroke="rgba(255,201,60,0.2)" stroke-width="2" stroke-dasharray="5,5" />`;
+
+  // ═══════════════════════════════════════════════════════
+  // CENTRO - TROFEO
+  // ═══════════════════════════════════════════════════════
+  svg += `<circle cx="${centerX}" cy="${centerY}" r="80" fill="url(#glow)" />`;
+  svg += `<text x="${centerX}" y="${centerY - 10}" text-anchor="middle" font-size="65">🏆</text>`;
+  svg += `<text x="${centerX}" y="${centerY + 50}" text-anchor="middle" font-family="Anton, sans-serif" font-size="18" fill="#FFC93C" letter-spacing="3">FINAL</text>`;
 
   // ═══════════════════════════════════════════════════════
   // LÍNEAS CONECTORAS
@@ -183,7 +142,7 @@ export function renderBracketCircular(resultados, clasificacion) {
     const g1 = getGanadorDePartido(octavo.from1);
     const g2 = getGanadorDePartido(octavo.from2);
     const lineColor = (g1 && g2) ? 'rgba(255,201,60,0.6)' : 'rgba(255,255,255,0.15)';
-    const lineWidth = (g1 && g2) ? '2.5' : '1';
+    const lineWidth = (g1 && g2) ? '2.5' : '1.5';
     
     svg += `<line x1="${pos1.x}" y1="${pos1.y}" x2="${posOct.x}" y2="${posOct.y}" stroke="${lineColor}" stroke-width="${lineWidth}" />`;
     svg += `<line x1="${pos2.x}" y1="${pos2.y}" x2="${posOct.x}" y2="${posOct.y}" stroke="${lineColor}" stroke-width="${lineWidth}" />`;
@@ -198,7 +157,7 @@ export function renderBracketCircular(resultados, clasificacion) {
     const g1 = getGanadorDePartido(cuarto.from1);
     const g2 = getGanadorDePartido(cuarto.from2);
     const lineColor = (g1 && g2) ? 'rgba(255,201,60,0.7)' : 'rgba(255,255,255,0.15)';
-    const lineWidth = (g1 && g2) ? '2.5' : '1';
+    const lineWidth = (g1 && g2) ? '2.5' : '1.5';
     
     svg += `<line x1="${pos1.x}" y1="${pos1.y}" x2="${posCua.x}" y2="${posCua.y}" stroke="${lineColor}" stroke-width="${lineWidth}" />`;
     svg += `<line x1="${pos2.x}" y1="${pos2.y}" x2="${posCua.x}" y2="${posCua.y}" stroke="${lineColor}" stroke-width="${lineWidth}" />`;
@@ -213,7 +172,7 @@ export function renderBracketCircular(resultados, clasificacion) {
     const g1 = getGanadorDePartido(semi.from1);
     const g2 = getGanadorDePartido(semi.from2);
     const lineColor = (g1 && g2) ? 'rgba(255,201,60,0.8)' : 'rgba(255,255,255,0.15)';
-    const lineWidth = (g1 && g2) ? '2.5' : '1';
+    const lineWidth = (g1 && g2) ? '2.5' : '1.5';
     
     svg += `<line x1="${pos1.x}" y1="${pos1.y}" x2="${posSemi.x}" y2="${posSemi.y}" stroke="${lineColor}" stroke-width="${lineWidth}" />`;
     svg += `<line x1="${pos2.x}" y1="${pos2.y}" x2="${posSemi.x}" y2="${posSemi.y}" stroke="${lineColor}" stroke-width="${lineWidth}" />`;
@@ -225,48 +184,36 @@ export function renderBracketCircular(resultados, clasificacion) {
   const gSemi1 = getGanadorDePartido('M101');
   const gSemi2 = getGanadorDePartido('M102');
   const finalColor = (gSemi1 && gSemi2) ? 'rgba(255,201,60,1)' : 'rgba(255,255,255,0.15)';
-  const finalWidth = (gSemi1 && gSemi2) ? '3' : '1';
+  const finalWidth = (gSemi1 && gSemi2) ? '3' : '1.5';
   
   svg += `<line x1="${posSemi1.x}" y1="${posSemi1.y}" x2="${centerX}" y2="${centerY - 60}" stroke="${finalColor}" stroke-width="${finalWidth}" />`;
   svg += `<line x1="${posSemi2.x}" y1="${posSemi2.y}" x2="${centerX}" y2="${centerY - 60}" stroke="${finalColor}" stroke-width="${finalWidth}" />`;
 
-  // ═══════════════════════════════════════════════════════
-  // CENTRO - TROFEO
   // ══════════════════════════════════════════════════════
-  svg += `<circle cx="${centerX}" cy="${centerY}" r="80" fill="url(#glow)" />`;
-  svg += `<text x="${centerX}" y="${centerY - 10}" text-anchor="middle" font-size="65" filter="url(#glowFilter)">🏆</text>`;
-  svg += `<text x="${centerX}" y="${centerY + 50}" text-anchor="middle" font-family="Anton, sans-serif" font-size="18" fill="#FFC93C" letter-spacing="3">FINAL</text>`;
-
-  // ═══════════════════════════════════════════════════════
   // 16AVOS - Círculo exterior (radio 420)
+  // Mostrar AMBAS banderas
   // ═══════════════════════════════════════════════════════
   partidos16avos.forEach((partido, index) => {
     const pos = getPosicion(index, 16, 420);
     const ganador = resolverGanador(partido.id);
-    const equipoGanador = ganador ? (ganador === 'local' ? partido.local : partido.visit) : null;
     
     const flagLocal = FLAGS[partido.local] || '🏳️';
-    const flagVisit = FLAGS[partido.visit] || '🏳️';
+    const flagVisit = FLAGS[partido.visit] || '️';
     
-    // Círculo del partido
+    // Círculo con borde dorado si hay ganador
     const circleColor = ganador ? '#FFC93C' : 'rgba(255,255,255,0.3)';
-    const circleRadius = ganador ? '22' : '18';
+    const circleRadius = ganador ? '28' : '24';
     
     svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${circleRadius}" fill="#1a1a2e" stroke="${circleColor}" stroke-width="${ganador ? '3' : '2'}" filter="url(#shadow)" />`;
     
-    // Mostrar bandera ganadora o ambas
-    if (equipoGanador) {
-      const flagGanador = FLAGS[equipoGanador] || '🏳️';
-      svg += `<text x="${pos.x}" y="${pos.y + 8}" text-anchor="middle" font-size="28">${flagGanador}</text>`;
-    } else {
-      // Mostrar ambas banderas pequeñas
-      svg += `<text x="${pos.x - 12}" y="${pos.y + 6}" text-anchor="middle" font-size="16">${flagLocal}</text>`;
-      svg += `<text x="${pos.x + 12}" y="${pos.y + 6}" text-anchor="middle" font-size="16">${flagVisit}</text>`;
-    }
+    // Mostrar ambas banderas
+    svg += `<text x="${pos.x - 14}" y="${pos.y + 8}" text-anchor="middle" font-size="20">${flagLocal}</text>`;
+    svg += `<text x="${pos.x + 14}" y="${pos.y + 8}" text-anchor="middle" font-size="20">${flagVisit}</text>`;
   });
 
   // ═══════════════════════════════════════════════════════
   // OCTAVOS - Círculo 2 (radio 320)
+  // Mostrar ganadores de 16avos
   // ══════════════════════════════════════════════════════
   partidosOctavos.forEach((octavo, index) => {
     const pos = getPosicion(index, 8, 320);
@@ -277,23 +224,22 @@ export function renderBracketCircular(resultados, clasificacion) {
     if (g1 && g2) {
       const equipoGanador = ganador ? (ganador === 'local' ? g1 : g2) : null;
       const circleColor = ganador ? '#FFC93C' : 'rgba(255,201,60,0.5)';
-      const circleRadius = ganador ? '24' : '20';
+      const circleRadius = ganador ? '30' : '26';
       
       svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${circleRadius}" fill="#1a1a2e" stroke="${circleColor}" stroke-width="${ganador ? '3' : '2'}" filter="url(#shadow)" />`;
       
       if (equipoGanador) {
         const flagGanador = FLAGS[equipoGanador] || '🏳️';
-        svg += `<text x="${pos.x}" y="${pos.y + 9}" text-anchor="middle" font-size="30">${flagGanador}</text>`;
+        svg += `<text x="${pos.x}" y="${pos.y + 10}" text-anchor="middle" font-size="32">${flagGanador}</text>`;
       } else {
         const flag1 = FLAGS[g1] || '🏳️';
-        const flag2 = FLAGS[g2] || '🏳️';
-        svg += `<text x="${pos.x - 13}" y="${pos.y + 7}" text-anchor="middle" font-size="18">${flag1}</text>`;
-        svg += `<text x="${pos.x + 13}" y="${pos.y + 7}" text-anchor="middle" font-size="18">${flag2}</text>`;
+        const flag2 = FLAGS[g2] || '️';
+        svg += `<text x="${pos.x - 14}" y="${pos.y + 8}" text-anchor="middle" font-size="22">${flag1}</text>`;
+        svg += `<text x="${pos.x + 14}" y="${pos.y + 8}" text-anchor="middle" font-size="22">${flag2}</text>`;
       }
     } else {
-      // Aún no hay ganadores de 16avos
-      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="18" fill="#1a1a2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3" />`;
-      svg += `<text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" font-size="14" fill="rgba(255,255,255,0.3)">?</text>`;
+      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="22" fill="#1a1a2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3" />`;
+      svg += `<text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,0.3)">?</text>`;
     }
   });
 
@@ -309,28 +255,28 @@ export function renderBracketCircular(resultados, clasificacion) {
     if (g1 && g2) {
       const equipoGanador = ganador ? (ganador === 'local' ? g1 : g2) : null;
       const circleColor = ganador ? '#FFC93C' : 'rgba(255,201,60,0.6)';
-      const circleRadius = ganador ? '26' : '22';
+      const circleRadius = ganador ? '32' : '28';
       
       svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${circleRadius}" fill="#1a1a2e" stroke="${circleColor}" stroke-width="${ganador ? '3' : '2'}" filter="url(#shadow)" />`;
       
       if (equipoGanador) {
         const flagGanador = FLAGS[equipoGanador] || '🏳️';
-        svg += `<text x="${pos.x}" y="${pos.y + 10}" text-anchor="middle" font-size="32">${flagGanador}</text>`;
+        svg += `<text x="${pos.x}" y="${pos.y + 11}" text-anchor="middle" font-size="34">${flagGanador}</text>`;
       } else {
-        const flag1 = FLAGS[g1] || '️';
+        const flag1 = FLAGS[g1] || '🏳️';
         const flag2 = FLAGS[g2] || '🏳️';
-        svg += `<text x="${pos.x - 14}" y="${pos.y + 8}" text-anchor="middle" font-size="20">${flag1}</text>`;
-        svg += `<text x="${pos.x + 14}" y="${pos.y + 8}" text-anchor="middle" font-size="20">${flag2}</text>`;
+        svg += `<text x="${pos.x - 15}" y="${pos.y + 9}" text-anchor="middle" font-size="24">${flag1}</text>`;
+        svg += `<text x="${pos.x + 15}" y="${pos.y + 9}" text-anchor="middle" font-size="24">${flag2}</text>`;
       }
     } else {
-      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="18" fill="#1a1a2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3" />`;
-      svg += `<text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" font-size="14" fill="rgba(255,255,255,0.3)">?</text>`;
+      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="22" fill="#1a1a2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3" />`;
+      svg += `<text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,0.3)">?</text>`;
     }
   });
 
-  // ══════════════════════════════════════════════════════
-  // SEMIS - Círculo 4 (radio 120)
   // ═══════════════════════════════════════════════════════
+  // SEMIS - Círculo 4 (radio 120)
+  // ══════════════════════════════════════════════════════
   partidosSemis.forEach((semi, index) => {
     const pos = getPosicion(index, 2, 120);
     const g1 = getGanadorDePartido(semi.from1);
@@ -340,22 +286,22 @@ export function renderBracketCircular(resultados, clasificacion) {
     if (g1 && g2) {
       const equipoGanador = ganador ? (ganador === 'local' ? g1 : g2) : null;
       const circleColor = ganador ? '#FFC93C' : 'rgba(255,201,60,0.7)';
-      const circleRadius = ganador ? '28' : '24';
+      const circleRadius = ganador ? '34' : '30';
       
       svg += `<circle cx="${pos.x}" cy="${pos.y}" r="${circleRadius}" fill="#1a1a2e" stroke="${circleColor}" stroke-width="${ganador ? '3' : '2'}" filter="url(#shadow)" />`;
       
       if (equipoGanador) {
-        const flagGanador = FLAGS[equipoGanador] || '️';
-        svg += `<text x="${pos.x}" y="${pos.y + 11}" text-anchor="middle" font-size="34">${flagGanador}</text>`;
+        const flagGanador = FLAGS[equipoGanador] || '🏳️';
+        svg += `<text x="${pos.x}" y="${pos.y + 12}" text-anchor="middle" font-size="36">${flagGanador}</text>`;
       } else {
         const flag1 = FLAGS[g1] || '️';
         const flag2 = FLAGS[g2] || '🏳️';
-        svg += `<text x="${pos.x - 15}" y="${pos.y + 9}" text-anchor="middle" font-size="22">${flag1}</text>`;
-        svg += `<text x="${pos.x + 15}" y="${pos.y + 9}" text-anchor="middle" font-size="22">${flag2}</text>`;
+        svg += `<text x="${pos.x - 16}" y="${pos.y + 10}" text-anchor="middle" font-size="26">${flag1}</text>`;
+        svg += `<text x="${pos.x + 16}" y="${pos.y + 10}" text-anchor="middle" font-size="26">${flag2}</text>`;
       }
     } else {
-      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="18" fill="#1a1a2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3" />`;
-      svg += `<text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" font-size="14" fill="rgba(255,255,255,0.3)">?</text>`;
+      svg += `<circle cx="${pos.x}" cy="${pos.y}" r="22" fill="#1a1a2e" stroke="rgba(255,255,255,0.2)" stroke-width="1.5" stroke-dasharray="3,3" />`;
+      svg += `<text x="${pos.x}" y="${pos.y + 6}" text-anchor="middle" font-size="16" fill="rgba(255,255,255,0.3)">?</text>`;
     }
   });
 
