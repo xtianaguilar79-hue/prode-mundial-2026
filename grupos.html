@@ -41,133 +41,15 @@
     .actualizado { text-align: center; font-size: 12px; color: var(--text3); margin-top: 40px; }
 
     /* ═══════════════════════════════════════════════════════ */
-    /* BRACKET STYLE - ALINEACIÓN SIMÉTRICA */
+    /* BRACKET CIRCULAR CONTAINER */
     /* ═══════════════════════════════════════════════════════ */
-    .bracket-section {
-      margin: 40px 0;
-      padding: 30px 20px;
-      background: var(--card);
-      border-radius: var(--r-lg);
-      border: 1px solid var(--border);
-    }
-
-    .bracket-title {
-      font-family: 'Anton', sans-serif;
-      font-size: 32px;
-      color: var(--gold);
-      text-align: center;
-      margin-bottom: 30px;
-      letter-spacing: 2px;
-    }
-
-    .bracket-container {
-      overflow-x: auto;
-      padding: 20px 0;
-    }
-
-    .bracket {
-      display: flex;
-      gap: 30px;
-      min-width: 1400px;
-      align-items: stretch;
-    }
-
-    .bracket-round {
-      display: flex;
-      flex-direction: column;
-      justify-content: space-around;
-      min-width: 220px;
-      flex: 1;
-    }
-
-    .round-title {
-      font-family: 'Anton', sans-serif;
-      font-size: 16px;
-      color: var(--gold);
-      text-align: center;
-      margin-bottom: 15px;
-      text-transform: uppercase;
-      padding-bottom: 8px;
-      border-bottom: 2px solid var(--border);
-    }
-
-    .bracket-match {
-      background: var(--bg2);
-      border: 2px solid var(--border);
-      border-radius: var(--r);
-      padding: 10px;
-      margin: 8px 0;
+    #bracketCircular {
+      width: 100%;
+      min-height: 1000px;
       position: relative;
-      transition: all 0.3s ease;
-    }
-
-    .bracket-match:hover {
-      border-color: var(--gold);
-      box-shadow: 0 0 15px rgba(255, 201, 60, 0.2);
-    }
-
-    .bracket-match.winner-local {
-      border-left: 4px solid var(--gold);
-    }
-
-    .bracket-match.winner-visit {
-      border-left: 4px solid var(--gold);
-    }
-
-    .match-team {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 5px 0;
-      font-size: 12px;
-    }
-
-    .match-team.winner {
-      font-weight: 700;
-      color: var(--gold);
-    }
-
-    .team-info {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .team-flag {
-      font-size: 14px;
-    }
-
-    .match-score {
-      font-family: 'Anton', sans-serif;
-      font-size: 14px;
-      color: var(--gold);
-    }
-
-    .match-info {
-      font-size: 9px;
-      color: var(--text3);
-      text-align: center;
-      margin-top: 4px;
-      line-height: 1.3;
-    }
-
-    .final-match {
-      border: 3px solid var(--gold);
-      background: rgba(255, 201, 60, 0.05);
-    }
-
-    .third-place-match {
-      border: 2px solid var(--text3);
-      opacity: 0.8;
-    }
-
-    .match-label {
-      font-size: 10px;
-      color: var(--gold);
-      text-align: center;
-      font-weight: 700;
-      margin-bottom: 6px;
-      text-transform: uppercase;
+      background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 50%, #0f0f0f 100%);
+      border-radius: var(--r-lg);
+      overflow: hidden;
     }
 
     @media (max-width: 600px) {
@@ -176,8 +58,7 @@
       th, td { padding: 8px 4px; }
       .cruces-grid { grid-template-columns: 1fr; }
       .clasificados-grid { grid-template-columns: 1fr; }
-      .bracket { min-width: 1000px; }
-      .bracket-round { min-width: 180px; }
+      #bracketCircular { min-height: 800px; }
     }
   </style>
 </head>
@@ -213,7 +94,11 @@
 
   <div id="contenido-clasificados" class="clasificados-section" style="display:none;"></div>
   <div id="contenido-grupos"></div>
-  <div id="contenido-bracket" style="display:none;"></div>
+  
+  <!-- ETAPA 3: CONTENEDOR DEL BRACKET CIRCULAR -->
+  <div id="contenido-bracket" style="display:none;">
+    <div id="bracketCircular"></div>
+  </div>
 
   <p class="actualizado" id="txt-actualizado"></p>
 </main>
@@ -222,6 +107,7 @@
   Prode Mundial 2026 · Tablas de Posiciones
 </footer>
 
+<!-- Scripts existentes -->
 <script type="module">
   import { supabase } from "./js/supabase-config.js";
   import { PARTIDOS_GRUPOS, PARTIDOS_ELIM, TODOS_PARTIDOS, FLAGS, getKickoffTimestamp } from "./datos-partidos.js";
@@ -535,205 +421,6 @@
     return null;
   }
 
-  function renderBracketCompleto(resultados, clasificacion) {
-    let html = '<div class="bracket-section">';
-    html += '<div class="bracket-title">🏆 BRACKET ELIMINATORIAS</div>';
-    html += '<div class="bracket-container"><div class="bracket">';
-    
-    // 16AVOS
-    html += '<div class="bracket-round">';
-    html += '<div class="round-title">16avos de Final</div>';
-    ESTRUCTURA_16AVOS.forEach(cruce => {
-      const res = resultados.find(r => r.partido_id === cruce.id);
-      const ganador = resolverGanador(cruce.id, resultados);
-      const winnerClass = ganador === 'local' ? 'winner-local' : ganador === 'visit' ? 'winner-visit' : '';
-      
-      html += `
-        <div class="bracket-match ${winnerClass}">
-          <div class="match-team ${ganador === 'local' ? 'winner' : ''}">
-            <div class="team-info">
-              <span class="team-flag">${FLAGS[cruce.local] || '️'}</span>
-              <span>${cruce.local}</span>
-            </div>
-            ${res && res.local !== null ? `<span class="match-score">${res.local}</span>` : ''}
-          </div>
-          <div class="match-team ${ganador === 'visit' ? 'winner' : ''}">
-            <div class="team-info">
-              <span class="team-flag">${FLAGS[cruce.visit] || '🏳️'}</span>
-              <span>${cruce.visit}</span>
-            </div>
-            ${res && res.visit !== null ? `<span class="match-score">${res.visit}</span>` : ''}
-          </div>
-          <div class="match-info">
-            ${cruce.fecha} ${cruce.hora}<br>${cruce.sede}
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-    
-    // OCTAVOS
-    html += '<div class="bracket-round">';
-    html += '<div class="round-title">Octavos de Final</div>';
-    ESTRUCTURA_OCTAVOS.forEach(estructura => {
-      const res = resultados.find(r => r.partido_id === estructura.id);
-      const ganador = resolverGanador(estructura.id, resultados);
-      const winnerClass = ganador === 'local' ? 'winner-local' : ganador === 'visit' ? 'winner-visit' : '';
-      
-      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
-      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
-      
-      html += `
-        <div class="bracket-match ${winnerClass}">
-          <div class="match-team ${ganador === 'local' ? 'winner' : ''}">
-            <div class="team-info">
-              <span class="team-flag">${local?.equipo ? FLAGS[local.equipo] || '🏳️' : '❓'}</span>
-              <span>${local?.equipo || 'Ganador ' + estructura.local}</span>
-            </div>
-            ${res && res.local !== null ? `<span class="match-score">${res.local}</span>` : ''}
-          </div>
-          <div class="match-team ${ganador === 'visit' ? 'winner' : ''}">
-            <div class="team-info">
-              <span class="team-flag">${visit?.equipo ? FLAGS[visit.equipo] || '️' : '❓'}</span>
-              <span>${visit?.equipo || 'Ganador ' + estructura.visit}</span>
-            </div>
-            ${res && res.visit !== null ? `<span class="match-score">${res.visit}</span>` : ''}
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-    
-    // CUARTOS
-    html += '<div class="bracket-round">';
-    html += '<div class="round-title">Cuartos de Final</div>';
-    ESTRUCTURA_CUARTOS.forEach(estructura => {
-      const res = resultados.find(r => r.partido_id === estructura.id);
-      const ganador = resolverGanador(estructura.id, resultados);
-      const winnerClass = ganador === 'local' ? 'winner-local' : ganador === 'visit' ? 'winner-visit' : '';
-      
-      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
-      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
-      
-      html += `
-        <div class="bracket-match ${winnerClass}">
-          <div class="match-team ${ganador === 'local' ? 'winner' : ''}">
-            <div class="team-info">
-              <span class="team-flag">${local?.equipo ? FLAGS[local.equipo] || '🏳️' : '❓'}</span>
-              <span>${local?.equipo || 'Ganador ' + estructura.local}</span>
-            </div>
-            ${res && res.local !== null ? `<span class="match-score">${res.local}</span>` : ''}
-          </div>
-          <div class="match-team ${ganador === 'visit' ? 'winner' : ''}">
-            <div class="team-info">
-              <span class="team-flag">${visit?.equipo ? FLAGS[visit.equipo] || '🏳️' : ''}</span>
-              <span>${visit?.equipo || 'Ganador ' + estructura.visit}</span>
-            </div>
-            ${res && res.visit !== null ? `<span class="match-score">${res.visit}</span>` : ''}
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-    
-    // SEMIS
-    html += '<div class="bracket-round">';
-    html += '<div class="round-title">Semifinales</div>';
-    ESTRUCTURA_SEMIS.forEach(estructura => {
-      const res = resultados.find(r => r.partido_id === estructura.id);
-      const ganador = resolverGanador(estructura.id, resultados);
-      const winnerClass = ganador === 'local' ? 'winner-local' : ganador === 'visit' ? 'winner-visit' : '';
-      
-      const local = obtenerEquipoDeCruce(estructura.local, resultados, clasificacion);
-      const visit = obtenerEquipoDeCruce(estructura.visit, resultados, clasificacion);
-      
-      html += `
-        <div class="bracket-match ${winnerClass}">
-          <div class="match-team ${ganador === 'local' ? 'winner' : ''}">
-            <div class="team-info">
-              <span class="team-flag">${local?.equipo ? FLAGS[local.equipo] || '🏳️' : '❓'}</span>
-              <span>${local?.equipo || 'Ganador ' + estructura.local}</span>
-            </div>
-            ${res && res.local !== null ? `<span class="match-score">${res.local}</span>` : ''}
-          </div>
-          <div class="match-team ${ganador === 'visit' ? 'winner' : ''}">
-            <div class="team-info">
-              <span class="team-flag">${visit?.equipo ? FLAGS[visit.equipo] || '🏳️' : '❓'}</span>
-              <span>${visit?.equipo || 'Ganador ' + estructura.visit}</span>
-            </div>
-            ${res && res.visit !== null ? `<span class="match-score">${res.visit}</span>` : ''}
-          </div>
-        </div>
-      `;
-    });
-    html += '</div>';
-    
-    // FINAL Y 3ER PUESTO
-    html += '<div class="bracket-round">';
-    html += '<div class="round-title">Final y 3er Puesto</div>';
-    
-    // 3ER PUESTO (Perdedores de semis)
-    const semi1 = ESTRUCTURA_SEMIS[0];
-    const semi2 = ESTRUCTURA_SEMIS[1];
-    const res103 = resultados.find(r => r.partido_id === 'M103');
-    const ganador103 = resolverGanador('M103', resultados);
-    
-    const perdedorSemi1 = obtenerPerdedorSemi(semi1.id, resultados, clasificacion);
-    const perdedorSemi2 = obtenerPerdedorSemi(semi2.id, resultados, clasificacion);
-    
-    html += `
-      <div class="bracket-match third-place-match">
-        <div class="match-label">🥉 3er Puesto</div>
-        <div class="match-team ${ganador103 === 'local' ? 'winner' : ''}">
-          <div class="team-info">
-            <span class="team-flag">${perdedorSemi1?.equipo ? FLAGS[perdedorSemi1.equipo] || '🏳️' : '❓'}</span>
-            <span>${perdedorSemi1?.equipo || 'Perdedor M101'}</span>
-          </div>
-          ${res103 && res103.local !== null ? `<span class="match-score">${res103.local}</span>` : ''}
-        </div>
-        <div class="match-team ${ganador103 === 'visit' ? 'winner' : ''}">
-          <div class="team-info">
-            <span class="team-flag">${perdedorSemi2?.equipo ? FLAGS[perdedorSemi2.equipo] || '🏳️' : '❓'}</span>
-            <span>${perdedorSemi2?.equipo || 'Perdedor M102'}</span>
-          </div>
-          ${res103 && res103.visit !== null ? `<span class="match-score">${res103.visit}</span>` : ''}
-        </div>
-      </div>
-    `;
-    
-    // FINAL (Ganadores de semis)
-    const res104 = resultados.find(r => r.partido_id === 'M104');
-    const ganador104 = resolverGanador('M104', resultados);
-    
-    const ganadorSemi1 = obtenerEquipoDeCruce('G101', resultados, clasificacion);
-    const ganadorSemi2 = obtenerEquipoDeCruce('G102', resultados, clasificacion);
-    
-    html += `
-      <div class="bracket-match final-match">
-        <div class="match-label"> FINAL</div>
-        <div class="match-team ${ganador104 === 'local' ? 'winner' : ''}">
-          <div class="team-info">
-            <span class="team-flag">${ganadorSemi1?.equipo ? FLAGS[ganadorSemi1.equipo] || '️' : '❓'}</span>
-            <span>${ganadorSemi1?.equipo || 'Ganador M101'}</span>
-          </div>
-          ${res104 && res104.local !== null ? `<span class="match-score">${res104.local}</span>` : ''}
-        </div>
-        <div class="match-team ${ganador104 === 'visit' ? 'winner' : ''}">
-          <div class="team-info">
-            <span class="team-flag">${ganadorSemi2?.equipo ? FLAGS[ganadorSemi2.equipo] || '🏳️' : ''}</span>
-            <span>${ganadorSemi2?.equipo || 'Ganador M102'}</span>
-          </div>
-          ${res104 && res104.visit !== null ? `<span class="match-score">${res104.visit}</span>` : ''}
-        </div>
-      </div>
-    `;
-    
-    html += '</div>';
-    
-    html += '</div></div></div>';
-    return html;
-  }
-
   function obtenerPerdedorSemi(semiId, resultados, clasificacion) {
     const estructura = ESTRUCTURA_SEMIS.find(s => s.id === semiId);
     if (!estructura) return null;
@@ -770,7 +457,9 @@
         document.getElementById('contenido-clasificados').style.display = 'none';
         document.getElementById('contenido-grupos').style.display = 'none';
         document.getElementById('contenido-bracket').style.display = 'block';
-        document.getElementById('contenido-bracket').innerHTML = renderBracketCompleto(resultados || [], clasificacion);
+        
+        // ETAPA 5: LLAMAR AL NUEVO BRACKET CIRCULAR
+        renderBracketCircular(resultados || [], clasificacion);
       } else {
         document.getElementById('contenido-clasificados').style.display = 'block';
         document.getElementById('contenido-grupos').style.display = 'block';
@@ -877,7 +566,7 @@
 
       html += `
         <div class="clasificados-columna">
-          <h3> MEJORES TERCEROS (8)</h3>
+          <h3>🥉 MEJORES TERCEROS (8)</h3>
           <table>
             <thead><tr><th>#</th><th>Equipo</th><th>Grupo</th><th>PTS</th><th>DG</th><th>GF</th></tr></thead>
             <tbody>
@@ -963,6 +652,9 @@
     }
   }
 </script>
+
+<!-- ETAPA 4: AGREGAR EL ARCHIVO DEL BRACKET CIRCULAR -->
+<script type="module" src="js/bracket-circular.js"></script>
 
 </body>
 </html>
