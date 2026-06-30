@@ -397,7 +397,7 @@ function renderRanking(lista, totalUsuarios) {
   if (top3Div && lista.length >= 3) {
     const orden = [0, 1, 2];
     const colores = ["p1", "p2", "p3"];
-    const emojis = ["🥇", "", "🥉"];
+    const emojis = ["🥇", "🥈", "🥉"];
     
     top3Div.innerHTML = orden.map((idx, i) => {
       const u = lista[idx];
