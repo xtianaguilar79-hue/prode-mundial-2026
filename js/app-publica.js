@@ -51,11 +51,6 @@ function getEstadoPartido(partido, resultado) {
 // ═══════════════════════════════════════════════════════
 // SISTEMA DE PUNTUACIÓN (MÁXIMO 14 PTS POR FASE)
 // ═══════════════════════════════════════════════════════
-// - Acertar el signo (1/X/2): 3 pts
-// - Acertar goles del local: 3 pts
-// - Acertar goles del visitante: 3 pts
-// - Bonus resultado perfecto: 5 pts EXTRA
-// ═══════════════════════════════════════════════════════
 function calcularPuntosFase(prediccion, resultado) {
   const predL = parseInt(prediccion.local);
   const predV = parseInt(prediccion.visit);
@@ -66,7 +61,6 @@ function calcularPuntosFase(prediccion, resultado) {
   
   let puntos = 0;
   
-  // 1. Acertar el signo (ganador o empate)
   const predSigno = predL > predV ? 'local' : predV > predL ? 'visit' : 'empate';
   const resSigno = resL > resV ? 'local' : resV > resL ? 'visit' : 'empate';
   
@@ -74,34 +68,25 @@ function calcularPuntosFase(prediccion, resultado) {
     puntos += 3;
   }
   
-  // 2. Acertar goles del local
   if (predL === resL) {
     puntos += 3;
   }
   
-  // 3. Acertar goles del visitante
   if (predV === resV) {
     puntos += 3;
   }
   
-  // 4. Bonus resultado perfecto (todo correcto)
   if (predL === resL && predV === resV) {
     puntos += 5;
   }
   
-  return puntos; // Máximo: 3 + 3 + 3 + 5 = 14 pts
+  return puntos;
 }
 
-// ═══════════════════════════════════════════════════════
-// PUNTOS TIEMPO REGULAR (MÁXIMO 14 PTS)
-// ═══════════════════════════════════════════════════════
 function calcularPuntosRegular(prediccion, resultado) {
   return calcularPuntosFase(prediccion, resultado);
 }
 
-// ═══════════════════════════════════════════════════════
-// PUNTOS ALARGUE (MÁXIMO 14 PTS)
-// ═══════════════════════════════════════════════════════
 function calcularPuntosAlargue(prediccion, resultado) {
   if (resultado.alargue_local === null || resultado.alargue_local === undefined) {
     return 0;
@@ -117,9 +102,6 @@ function calcularPuntosAlargue(prediccion, resultado) {
   );
 }
 
-// ═══════════════════════════════════════════════════════
-// PUNTOS PENALES (MÁXIMO 14 PTS)
-// ═══════════════════════════════════════════════════════
 function calcularPuntosPenales(prediccion, resultado) {
   if (resultado.penales_local === null || resultado.penales_local === undefined) {
     return 0;
@@ -230,12 +212,10 @@ async function cargarDatosCompletos() {
         }
         
         if (res) {
-          // Calcular puntos por fase (cada una con máximo 14 pts)
           const ptsRegular = calcularPuntosRegular(pred, res);
           const ptsAlargue = calcularPuntosAlargue(pred, res);
           const ptsPenales = calcularPuntosPenales(pred, res);
           
-          // Sumar las tres fases (máximo total: 14 + 14 + 14 = 42 pts)
           const ptsTotal = ptsRegular + ptsAlargue + ptsPenales;
           
           ranking[pred.user_id].puntos += ptsTotal;
@@ -299,8 +279,11 @@ async function cargarDatosCompletos() {
       }
     });
 
+    // ═══════════════════════════════════════════════════════
+    // BONUS DE FIDELIDAD: 100 pts si pronosticó 100+ partidos
+    // ═══════════════════════════════════════════════════════
     const lista = Object.values(ranking).map(u => {
-      const bonus = u.partidosPronosticados >= 104 ? 100 : 0;
+      const bonus = u.partidosPronosticados >= 100 ? 100 : 0;
       return { ...u, bonus, total: u.puntos + u.puntosCampeon + bonus };
     });
 
