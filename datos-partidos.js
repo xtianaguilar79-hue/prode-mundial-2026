@@ -185,7 +185,7 @@ export const PARTIDOS_ELIM = [
   { id:"M093", fase:"octavos", local:"Portugal", visit:"España", fecha:"06/07", hora:"16:00", sede:"Dallas, USA" },
   { id:"M094", fase:"octavos", local:"Estados Unidos", visit:"Bélgica", fecha:"06/07", hora:"21:00", sede:"Seattle, USA" },
   { id:"M095", fase:"octavos", local:"Argentina", visit:"Egipto", fecha:"07/07", hora:"13:00", sede:"Atlanta, USA" },
-  { id:"M096", fase:"octavos", local:"Suiza", visit:"G87", fecha:"07/07", hora:"17:00", sede:"Vancouver, CAN" },
+  { id:"M096", fase:"octavos", local:"Suiza", visit:"Colombia", fecha:"07/07", hora:"17:00", sede:"Vancouver, CAN" },
   { id:"M097", fase:"cuartos", local:"G89", visit:"G90", fecha:"09/07", hora:"17:00", sede:"Boston, USA" },
   { id:"M098", fase:"cuartos", local:"G93", visit:"G94", fecha:"10/07", hora:"16:00", sede:"Los Angeles, USA" },
   { id:"M099", fase:"cuartos", local:"G91", visit:"G92", fecha:"11/07", hora:"18:00", sede:"Miami, USA" },
