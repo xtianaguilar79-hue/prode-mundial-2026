@@ -191,7 +191,7 @@ export const PARTIDOS_ELIM = [
   { id:"M099", fase:"cuartos", local:"Noruega", visit:"Inglaterra", fecha:"11/07", hora:"18:00", sede:"Miami, USA" },
   { id:"M100", fase:"cuartos", local:"Argentina", visit:"Suiza", fecha:"11/07", hora:"22:00", sede:"Kansas City, USA" },
   { id:"M101", fase:"semis", local:"Francia", visit:"España", fecha:"14/07", hora:"16:00", sede:"Dallas, USA" },
-  { id:"M102", fase:"semis", local:"G99", visit:"G100", fecha:"15/07", hora:"16:00", sede:"Atlanta, USA" },
+  { id:"M102", fase:"semis", local:"Inglaterra", visit:"Argentina", fecha:"15/07", hora:"16:00", sede:"Atlanta, USA" },
   { id:"M103", fase:"3er", local:"Perdedor SF1", visit:"Perdedor SF2", fecha:"18/07", hora:"18:00", sede:"Miami, USA" },
   { id:"M104", fase:"final", local:"Ganador SF1", visit:"Ganador SF2", fecha:"19/07", hora:"16:00", sede:"MetLife, NJ" },
 ];
