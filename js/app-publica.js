@@ -283,7 +283,7 @@ async function cargarDatosCompletos() {
     // BONUS DE FIDELIDAD: 100 pts si pronosticó 100+ partidos
     // ═══════════════════════════════════════════════════════
     const lista = Object.values(ranking).map(u => {
-      const bonus = u.partidosPronosticados >= 100 ? 100 : 0;
+      const bonus = 0;
       return { ...u, bonus, total: u.puntos + u.puntosCampeon + bonus };
     });
 
